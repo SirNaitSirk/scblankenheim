@@ -1,0 +1,207 @@
+/**
+ * German UI copy for the admin surface. Single source of truth so wording stays
+ * consistent and reviewable (AGENTS.md language conventions). Code stays English;
+ * only the string values are German.
+ */
+
+import type {
+  LogLevel,
+  PaymentStatus,
+  RegistrationStatus,
+  UserRole,
+} from "./types";
+
+export const de = {
+  brand: {
+    name: "CampConnect",
+    panel: "Admin-Bereich",
+  },
+  nav: {
+    dashboard: "Dashboard",
+    finances: "Finanzen",
+    camps: "Camps",
+    logs: "Logs",
+    users: "Benutzer",
+    profile: "Profil",
+  },
+  shell: {
+    collapse: "Seitenleiste einklappen",
+    expand: "Seitenleiste ausklappen",
+    openMenu: "Menü öffnen",
+    closeMenu: "Menü schließen",
+    account: "Konto",
+    theme: {
+      label: "Design",
+      light: "Hell",
+      dark: "Dunkel",
+      system: "System",
+    },
+  },
+  common: {
+    all: "Alle",
+    search: "Suchen",
+    add: "Hinzufügen",
+    create: "Erstellen",
+    edit: "Bearbeiten",
+    delete: "Löschen",
+    restore: "Wiederherstellen",
+    export: "Export",
+    exportCsv: "CSV exportieren",
+    retry: "Erneut versuchen",
+    copyEmail: "E-Mail kopieren",
+    copied: "Kopiert",
+    of: "von",
+    loading: "Wird geladen",
+  },
+  dashboard: {
+    title: "Dashboard",
+    description: (camp: string) => `Verwalte die Anmeldungen für ${camp}.`,
+    stats: {
+      registrations: "Anmeldungen",
+      paid: "Bezahlt",
+      open: "Offen",
+      revenue: "Einnahmen",
+    },
+  },
+  payments: {
+    title: "Zahlungsübersicht",
+    basePrice: "Standardpreis",
+    perPerson: "pro Person",
+    expected: "Erwartet",
+    collected: "Eingenommen",
+    outstanding: "Ausstehend",
+    empty: "Noch keine Zahlungen erfasst.",
+  },
+  registrations: {
+    title: "Anmeldungen",
+    searchPlaceholder: "Name, E-Mail oder Ort …",
+    status: "Status",
+    payment: "Zahlung",
+    tier: "Preistufe",
+    showDeleted: "Gelöschte anzeigen",
+    addFilter: "Filter hinzufügen",
+    clearFilters: "Filter zurücksetzen",
+    resultCount: (n: number) =>
+      n === 1 ? "1 Anmeldung" : `${n} Anmeldungen`,
+    columns: {
+      name: "Name",
+      contact: "Kontakt",
+      city: "Ort",
+      camp: "Camp",
+      id: "ID",
+      registeredAt: "Angemeldet",
+      amount: "Betrag",
+      status: "Status",
+      payment: "Zahlung",
+    },
+    empty: {
+      title: "Keine Anmeldungen gefunden",
+      description:
+        "Für die aktuelle Filterauswahl gibt es keine Treffer. Setze die Filter zurück, um alle Anmeldungen zu sehen.",
+    },
+    deletedBadge: "Gelöscht",
+  },
+  finances: {
+    title: "Finanzen",
+    description: (camp: string) => `Einnahmen und offene Beträge für ${camp}.`,
+    collectedRatio: "Zahlungsquote",
+    paidRegistrations: "Bezahlte Anmeldungen",
+    tierBreakdown: "Aufschlüsselung nach Preistufe",
+    hiddenTier: "Versteckt",
+    tierColumns: {
+      tier: "Preistufe",
+      price: "Preis",
+      count: "Anmeldungen",
+      revenue: "Einnahmen",
+    },
+  },
+  camps: {
+    title: "Camps",
+    description: "Lege Camps an, konfiguriere Felder und wähle das aktuelle Camp.",
+    create: "Camp erstellen",
+    current: "Aktuell",
+    registrationOpen: "Anmeldung offen",
+    registrationClosed: "Anmeldung geschlossen",
+    capacity: "Auslastung",
+    formFields: (n: number) => `${n} Formularfelder`,
+    configureFields: "Felder konfigurieren",
+    setCurrent: "Als aktuell festlegen",
+  },
+  logs: {
+    title: "Logs",
+    description: "Aktivitäts- und Fehlerprotokoll der letzten Ereignisse.",
+    columns: {
+      level: "Ebene",
+      actor: "Benutzer",
+      event: "Ereignis",
+      time: "Zeitpunkt",
+    },
+    empty: {
+      title: "Keine Einträge",
+      description: "Sobald Ereignisse auftreten, erscheinen sie hier.",
+    },
+  },
+  users: {
+    title: "Benutzer",
+    description: "Verwalte Administratoren, Rollen und Berechtigungen.",
+    invite: "Benutzer einladen",
+    columns: {
+      user: "Benutzer",
+      role: "Rolle",
+      permissions: "Berechtigungen",
+      lastActive: "Zuletzt aktiv",
+      status: "Status",
+    },
+    statusActive: "Aktiv",
+    statusInvited: "Eingeladen",
+    neverActive: "Noch nicht aktiv",
+    allPermissions: "Alle Berechtigungen",
+    permissionCount: (n: number) =>
+      n === 1 ? "1 Berechtigung" : `${n} Berechtigungen`,
+  },
+  profile: {
+    title: "Profil",
+    description: "Deine Kontodaten, Rolle und Berechtigungen.",
+    role: "Rolle",
+    email: "E-Mail",
+    permissions: "Berechtigungen",
+    visibleTabs: "Sichtbare Bereiche",
+    manageAccount: "Konto verwalten",
+  },
+  states: {
+    errorTitle: "Etwas ist schiefgelaufen",
+    errorDescription:
+      "Die Daten konnten nicht geladen werden. Bitte versuche es erneut.",
+  },
+} as const;
+
+export const REGISTRATION_STATUS_LABELS: Record<RegistrationStatus, string> = {
+  confirmed: "Bestätigt",
+  pending: "Offen",
+  cancelled: "Storniert",
+};
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  paid: "Bezahlt",
+  partial: "Teilweise",
+  unpaid: "Offen",
+};
+
+export const ROLE_LABELS: Record<UserRole, string> = {
+  superadmin: "Superadmin",
+  admin: "Admin",
+};
+
+export const LOG_LEVEL_LABELS: Record<LogLevel, string> = {
+  info: "Info",
+  warning: "Warnung",
+  error: "Fehler",
+};
+
+export const PERMISSION_LABELS: Record<string, string> = {
+  registrations: "Anmeldungen",
+  finances: "Finanzen",
+  camps: "Camps",
+  users: "Benutzer",
+  logs: "Logs",
+};

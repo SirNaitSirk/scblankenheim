@@ -1,0 +1,53 @@
+import { Reveal } from "@/components/marketing/reveal";
+
+/* Placeholder values — real Termin/Ort/Beitrag come from camps/camp_settings later. */
+const facts = [
+  { label: "Wann", value: "Sommer 2027", note: "Eine Woche in den Ferien" },
+  { label: "Wo", value: "Blankenheim", note: "Check-in ab 16 Uhr, Bahnhofstraße 18" },
+  { label: "Beitrag", value: "ab 150 €", note: "Übernachtung & Verpflegung inklusive" },
+];
+
+/**
+ * Intro section (Persuade): asymmetric split — narrative lead on the left,
+ * three key-fact tiles stacked on the right. Anchored as `#camp`.
+ */
+export function IntroFacts() {
+  return (
+    <section id="camp" className="border-t border-border bg-canvas">
+      <div className="mx-auto grid max-w-[1400px] gap-12 px-6 py-24 md:grid-cols-[1.1fr_0.9fr] md:px-10 lg:py-32">
+        <Reveal>
+          <h2 className="max-w-[16ch] font-display text-4xl font-black leading-[1.02] tracking-tight text-foreground md:text-5xl">
+            Eine Woche, die du{" "}
+            <span className="text-accent-strong">nicht vergisst</span>.
+          </h2>
+          <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-muted-foreground">
+            Ein Camp voller Gemeinschaft, Abenteuer und Glaube. Zusammen mit
+            Jugendlichen aus der ganzen Region erlebst du eine unvergessliche
+            Woche voller Spaß, echter Begegnungen und Zeit mit Gott. Wir freuen
+            uns auf dich und deine Gruppe.
+          </p>
+        </Reveal>
+
+        <div className="flex flex-col divide-y divide-border overflow-hidden rounded-card border border-border bg-surface shadow-card">
+          {facts.map((fact, i) => (
+            <Reveal
+              key={fact.label}
+              delay={i * 90}
+              className="flex items-baseline justify-between gap-6 p-6"
+            >
+              <div>
+                <span className="eyebrow">{fact.label}</span>
+                <p className="mt-2 font-display text-2xl font-extrabold tracking-tight text-foreground">
+                  {fact.value}
+                </p>
+              </div>
+              <p className="max-w-[18ch] text-right text-sm leading-snug text-muted-foreground">
+                {fact.note}
+              </p>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
