@@ -5,7 +5,7 @@ import type {
 } from "react";
 import { cn } from "@/lib/cn";
 
-type ButtonVariant = "primary" | "inverse" | "outline" | "ghost";
+type ButtonVariant = "primary" | "inverse" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 const base =
@@ -20,6 +20,7 @@ const variants: Record<ButtonVariant, string> = {
   outline:
     "border border-ink-200 bg-transparent text-foreground hover:border-ink-300 hover:bg-ink-50",
   ghost: "bg-transparent text-foreground hover:bg-ink-100",
+  danger: "bg-danger text-white hover:bg-danger/90",
 };
 
 const sizes: Record<ButtonSize, string> = {

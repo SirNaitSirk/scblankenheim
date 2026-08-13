@@ -57,6 +57,49 @@ export type Camp = {
   config: Record<string, unknown>; // escape hatch for future per-camp settings
 };
 
+/**
+ * Raw camp form values as they leave the client dialog: every field is a string
+ * (from `<input>`/`<textarea>`) except the boolean toggle. The server-side Zod
+ * schema validates and coerces these into a `CampInput`.
+ */
+export type CampFormValues = {
+  name: string;
+  location: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  capacity: string;
+  basePrice: string;
+  roomCapacity: string;
+  registrationOpen: boolean;
+  registrationOpensAt: string; // datetime-local (YYYY-MM-DDTHH:mm)
+  registrationClosesAt: string;
+  paymentDueDate: string; // YYYY-MM-DD
+  tagline: string;
+  description: string;
+};
+
+/** Validated, row-ready camp payload (output of the Zod schema). */
+export type CampInput = {
+  name: string;
+  location: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  capacity: number | null;
+  basePrice: number; // whole euros
+  roomCapacity: number | null;
+  registrationOpen: boolean;
+  registrationOpensAt: string | null;
+  registrationClosesAt: string | null;
+  paymentDueDate: string | null;
+  tagline: string | null;
+  description: string | null;
+};
+
+/** Server Action result: German error copy + optional per-field messages. */
+export type ActionResult =
+  | { ok: true; id?: string }
+  | { ok: false; error: string; fieldErrors?: Record<string, string> };
+
 export type CampFormField = {
   id: string;
   campId: string;

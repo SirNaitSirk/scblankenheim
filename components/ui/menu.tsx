@@ -95,7 +95,9 @@ export function Menu({
               ref={panelRef}
               role="menu"
               style={{ top: coords.top, left: coords.left, width: WIDTH }}
-              className="fixed z-50 overflow-hidden rounded-input border border-border bg-surface p-1 shadow-pop"
+              // `admin-theme-scope`: this portal mounts on <body>, outside the
+              // AdminShell scope, so the admin dark theme tokens must be re-applied.
+              className="admin-theme-scope fixed z-50 overflow-hidden rounded-input border border-border bg-surface p-1 shadow-pop"
             >
               {items.map((item) => {
                 const Glyph = item.icon;

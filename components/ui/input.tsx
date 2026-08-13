@@ -2,7 +2,7 @@ import type { InputHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 const control =
-  "h-10 w-full rounded-input border border-ink-200 bg-surface px-3 text-sm text-foreground " +
+  "h-10 w-full min-w-0 rounded-input border border-ink-200 bg-surface px-3 text-sm text-foreground " +
   "placeholder:text-muted-foreground transition-colors duration-150 " +
   "focus-visible:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 " +
   "disabled:cursor-not-allowed disabled:opacity-50";
@@ -31,17 +31,20 @@ export function Field({
   label,
   htmlFor,
   hint,
+  error,
   className,
   children,
 }: {
   label: string;
   htmlFor?: string;
   hint?: string;
+  /** Validation message; shown in the danger tone and takes precedence over hint. */
+  error?: string;
   className?: string;
   children: ReactNode;
 }) {
   return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
+    <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
       <label
         htmlFor={htmlFor}
         className="text-xs font-medium text-muted-foreground"
@@ -49,7 +52,9 @@ export function Field({
         {label}
       </label>
       {children}
-      {hint ? (
+      {error ? (
+        <span className="text-xs text-danger">{error}</span>
+      ) : hint ? (
         <span className="text-xs text-muted-foreground">{hint}</span>
       ) : null}
     </div>

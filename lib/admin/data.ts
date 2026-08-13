@@ -8,8 +8,10 @@ import type {
   AppSettings,
   Camp,
   CampFormField,
+  CampInput,
   FinanceSummary,
   LogEntry,
+  LogLevel,
   PaymentStatus,
   PriceTier,
   Registration,
@@ -296,6 +298,93 @@ export async function getCurrentProfile(): Promise<AdminUser | null> {
 
   const role = (roleRes.data?.role as UserRole) ?? "admin";
   return mapAdminUser(profileRes.data, role);
+}
+
+// --- writes (service-role; callers must have passed requireAdmin) -----------
+
+/** Domain (camelCase) camp payload → `camps` row (snake_case). */
+function mapCampInputToRow(input: CampInput) {
+  return {
+    name: input.name,
+    location: input.location,
+    start_date: input.startDate,
+    end_date: input.endDate,
+    capacity: input.capacity,
+    base_price: input.basePrice,
+    room_capacity: input.roomCapacity,
+    registration_open: input.registrationOpen,
+    registration_opens_at: input.registrationOpensAt,
+    registration_closes_at: input.registrationClosesAt,
+    payment_due_date: input.paymentDueDate,
+    tagline: input.tagline,
+    description: input.description,
+  };
+}
+
+export async function createCamp(input: CampInput): Promise<string> {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("camps")
+    .insert(mapCampInputToRow(input))
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function updateCamp(id: string, input: CampInput): Promise<void> {
+  const supabase = getServiceClient();
+  const { error } = await supabase
+    .from("camps")
+    .update(mapCampInputToRow(input))
+    .eq("id", id);
+  if (error) throw error;
+}
+
+// FK cascades remove this camp's form fields, price tiers and registrations.
+// If it was the current camp, `camp_settings.current_camp_id` becomes null
+// (`on delete set null`).
+export async function deleteCamp(id: string): Promise<void> {
+  const supabase = getServiceClient();
+  const { error } = await supabase.from("camps").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// Writes the current-camp pointer on the `camp_settings` singleton (id = true).
+// Upsert because the row may not exist yet on a fresh database.
+export async function setCurrentCamp(campId: string): Promise<void> {
+  const supabase = getServiceClient();
+  const { error } = await supabase
+    .from("camp_settings")
+    .upsert(
+      {
+        id: true,
+        current_camp_id: campId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
+  if (error) throw error;
+}
+
+// Best-effort activity log. A logging failure must never fail the mutation.
+export async function writeLog(entry: {
+  level?: LogLevel;
+  actor?: string | null;
+  action: string;
+  message?: string | null;
+}): Promise<void> {
+  try {
+    const supabase = getServiceClient();
+    await supabase.from("logs").insert({
+      level: entry.level ?? "info",
+      actor: entry.actor ?? null,
+      action: entry.action,
+      message: entry.message ?? null,
+    });
+  } catch {
+    // Swallow — logging is non-critical.
+  }
 }
 
 export async function getLogs(): Promise<LogEntry[]> {
