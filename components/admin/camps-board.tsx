@@ -178,7 +178,7 @@ export function CampsBoard({ camps }: { camps: Camp[] }) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => showToast(de.camps.pendingFields)}
+                      onClick={() => router.push(`/admin/camps/${camp.id}/felder`)}
                     >
                       <GearSix size={16} weight="regular" />
                       {de.camps.configureFields}

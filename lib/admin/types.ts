@@ -4,6 +4,8 @@
  * real typed queries is a data-source change, not a shape change.
  */
 
+import type { FieldType } from "./field-types";
+
 export type RegistrationStatus = "confirmed" | "pending" | "cancelled";
 export type PaymentStatus = "paid" | "partial" | "unpaid";
 export type UserRole = "superadmin" | "admin";
@@ -110,6 +112,38 @@ export type CampFormField = {
   options: unknown; // e.g. string[] for selects, null otherwise
   sortOrder: number;
   config: Record<string, unknown>; // placeholder, help text, validation, etc.
+};
+
+/** Field-level extras stored in `camp_form_fields.config` (extendable without a migration). */
+export type FieldConfig = {
+  placeholder: string | null;
+  helpText: string | null;
+};
+
+/**
+ * Raw field values as they leave the client dialog: strings from the inputs plus
+ * the required toggle. `options` is the newline-separated textarea value (only
+ * meaningful for `select`). The server-side Zod schema validates and coerces
+ * these into a `FieldInput`.
+ */
+export type FieldFormValues = {
+  key: string;
+  label: string;
+  fieldType: FieldType;
+  required: boolean;
+  options: string; // one choice per line (select only)
+  placeholder: string;
+  helpText: string;
+};
+
+/** Validated, row-ready form-field payload (output of the Zod schema). */
+export type FieldInput = {
+  key: string;
+  label: string;
+  fieldType: FieldType;
+  required: boolean;
+  options: string[] | null; // non-null only for `select`
+  config: FieldConfig;
 };
 
 /** App-wide settings bag (camp_settings.settings), admin-editable without a deploy. */

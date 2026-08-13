@@ -9,6 +9,7 @@ import type {
   Camp,
   CampFormField,
   CampInput,
+  FieldInput,
   FinanceSummary,
   LogEntry,
   LogLevel,
@@ -163,6 +164,11 @@ export async function getCamps(): Promise<Camp[]> {
 export async function getCurrentCamp(): Promise<Camp> {
   const camps = await buildCamps();
   return camps.find((c) => c.isCurrent) ?? camps[0];
+}
+
+export async function getCampById(campId: string): Promise<Camp | null> {
+  const camps = await buildCamps();
+  return camps.find((c) => c.id === campId) ?? null;
 }
 
 export async function getRegistrations(): Promise<Registration[]> {
@@ -365,6 +371,105 @@ export async function setCurrentCamp(campId: string): Promise<void> {
       { onConflict: "id" },
     );
   if (error) throw error;
+}
+
+// --- form fields (camp_form_fields; service-role writes) --------------------
+
+/** Postgres unique-violation (e.g. duplicate `(camp_id, key)`). */
+export function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "23505"
+  );
+}
+
+/** Domain (camelCase) form-field payload → `camp_form_fields` row (snake_case). */
+function mapFieldInputToRow(input: FieldInput) {
+  return {
+    key: input.key,
+    label: input.label,
+    field_type: input.fieldType,
+    required: input.required,
+    options: input.options,
+    config: input.config,
+  };
+}
+
+// Appends the new field last by giving it the next `sort_order`. Two admins
+// racing could collide on order, not on data — a later reorder resolves it.
+export async function createFormField(
+  campId: string,
+  input: FieldInput,
+): Promise<string> {
+  const supabase = getServiceClient();
+  const { data: last, error: orderError } = await supabase
+    .from("camp_form_fields")
+    .select("sort_order")
+    .eq("camp_id", campId)
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (orderError) throw orderError;
+
+  const nextOrder = (last?.sort_order ?? -1) + 1;
+  const { data, error } = await supabase
+    .from("camp_form_fields")
+    .insert({ camp_id: campId, sort_order: nextOrder, ...mapFieldInputToRow(input) })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function updateFormField(
+  id: string,
+  input: FieldInput,
+): Promise<void> {
+  const supabase = getServiceClient();
+  const { error } = await supabase
+    .from("camp_form_fields")
+    .update(mapFieldInputToRow(input))
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteFormField(id: string): Promise<void> {
+  const supabase = getServiceClient();
+  const { error } = await supabase.from("camp_form_fields").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// Persists `sort_order` = array index. Guards that every id belongs to `campId`
+// before writing, so a tampered payload cannot reorder another camp's fields.
+export async function reorderFormFields(
+  campId: string,
+  orderedIds: string[],
+): Promise<void> {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("camp_form_fields")
+    .select("id")
+    .eq("camp_id", campId);
+  if (error) throw error;
+
+  const owned = new Set((data ?? []).map((row) => row.id));
+  if (orderedIds.length !== owned.size || !orderedIds.every((id) => owned.has(id))) {
+    throw new Error("reorder payload does not match this camp's fields");
+  }
+
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase
+        .from("camp_form_fields")
+        .update({ sort_order: index })
+        .eq("id", id)
+        .then(({ error: updateError }) => {
+          if (updateError) throw updateError;
+        }),
+    ),
+  );
 }
 
 // Best-effort activity log. A logging failure must never fail the mutation.
