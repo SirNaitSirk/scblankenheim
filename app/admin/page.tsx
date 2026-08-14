@@ -3,8 +3,11 @@ import { PageBody, PageHeader } from "@/components/admin/page-header";
 import { PaymentOverview } from "@/components/admin/payment-overview";
 import { RegistrationsManager } from "@/components/admin/registrations-manager";
 import { StatCard } from "@/components/admin/stat-card";
+import { canUseSection } from "@/lib/admin/access";
 import {
+  getCampFormFields,
   getCurrentCamp,
+  getCurrentProfile,
   getFinanceSummary,
   getPriceTiers,
   getRegistrations,
@@ -13,13 +16,22 @@ import { formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { de } from "@/lib/admin/messages";
 
 export default async function DashboardPage() {
+  // Dashboard is always visible; only its registration actions are permission-gated.
   // MOCK BOUNDARY: swap these getters for real Supabase reads (server-side).
-  const [camp, registrations, priceTiers, finance] = await Promise.all([
+  const [profile, camp, registrations, priceTiers, finance] = await Promise.all([
+    getCurrentProfile(),
     getCurrentCamp(),
     getRegistrations(),
     getPriceTiers(),
     getFinanceSummary(),
   ]);
+
+  // The registration dialog is built from the current camp's dynamic fields.
+  const formFields = camp ? await getCampFormFields(camp.id) : [];
+
+  const canWriteRegistrations = profile
+    ? canUseSection(profile, "registrations")
+    : false;
 
   const active = registrations.filter((r) => !r.deleted);
   const total = active.length;
@@ -65,6 +77,9 @@ export default async function DashboardPage() {
       <RegistrationsManager
         initialRegistrations={registrations}
         priceTiers={priceTiers}
+        formFields={formFields}
+        canWrite={canWriteRegistrations}
+        userId={profile?.id ?? null}
       />
     </PageBody>
   );

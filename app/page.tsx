@@ -6,7 +6,12 @@ import { PackingTeaser } from "@/components/marketing/packing-teaser";
 import { ArrivalCommunity } from "@/components/marketing/arrival-community";
 import { PaymentFaq } from "@/components/marketing/payment-faq";
 import { ClosingCta } from "@/components/marketing/closing-cta";
+import { RegistrationSection } from "@/components/marketing/registration-section";
 import { SiteFooter } from "@/components/marketing/site-footer";
+
+// Read the current camp's registration state (open / countdown / closed) live on
+// every request, so admin changes to camp settings are reflected immediately.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "FCG Blankenheim Summercamp · Sommer 2027",
@@ -24,6 +29,7 @@ export default function Home() {
       <ArrivalCommunity />
       <PaymentFaq />
       <ClosingCta />
+      <RegistrationSection />
       <SiteFooter />
     </main>
   );

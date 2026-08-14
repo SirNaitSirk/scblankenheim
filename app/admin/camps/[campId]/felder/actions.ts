@@ -12,7 +12,7 @@ import {
   writeLog,
 } from "@/lib/admin/data";
 import { FIELD_TYPES, isChoiceType } from "@/lib/admin/field-types";
-import { AuthError, requireAdmin } from "@/lib/admin/guard";
+import { AuthError, requirePermission } from "@/lib/admin/guard";
 import { de } from "@/lib/admin/messages";
 import type {
   ActionResult,
@@ -114,7 +114,7 @@ async function runGuarded(
 ): Promise<ActionResult> {
   let admin: AdminUser;
   try {
-    admin = await requireAdmin();
+    admin = await requirePermission("camps");
   } catch (error) {
     if (error instanceof AuthError) {
       return { ok: false, error: de.fields.toast.unauthorized };

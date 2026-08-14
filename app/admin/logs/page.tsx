@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/admin/states";
 import { PageBody, PageHeader } from "@/components/admin/page-header";
 import { getLogs } from "@/lib/admin/data";
+import { guardTab } from "@/lib/admin/guard";
 import { formatDateTime } from "@/lib/format";
 import { LOG_LEVEL_LABELS, de } from "@/lib/admin/messages";
 import type { LogLevel } from "@/lib/admin/types";
@@ -15,6 +16,8 @@ const levelTone: Record<LogLevel, "neutral" | "pending" | "danger"> = {
 };
 
 export default async function LogsPage() {
+  await guardTab("/admin/logs");
+
   // MOCK BOUNDARY: swap for real Supabase reads (server-side).
   const logs = await getLogs();
 

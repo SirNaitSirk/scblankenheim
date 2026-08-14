@@ -45,10 +45,12 @@ export function FieldsManager({
   campId,
   campName,
   fields,
+  canWrite,
 }: {
   campId: string;
   campName: string;
   fields: CampFormField[];
+  canWrite: boolean;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -120,10 +122,15 @@ export function FieldsManager({
               <ArrowLeft size={16} weight="bold" />
               {de.fields.back}
             </Button>
-            <Button size="sm" onClick={() => setDialog({ mode: "create", field: null })}>
-              <Plus size={16} weight="bold" />
-              {de.fields.add}
-            </Button>
+            {canWrite && (
+              <Button
+                size="sm"
+                onClick={() => setDialog({ mode: "create", field: null })}
+              >
+                <Plus size={16} weight="bold" />
+                {de.fields.add}
+              </Button>
+            )}
           </>
         }
       />
@@ -136,10 +143,15 @@ export function FieldsManager({
               title={de.fields.empty.title}
               description={de.fields.empty.description}
               action={
-                <Button size="sm" onClick={() => setDialog({ mode: "create", field: null })}>
-                  <Plus size={16} weight="bold" />
-                  {de.fields.add}
-                </Button>
+                canWrite ? (
+                  <Button
+                    size="sm"
+                    onClick={() => setDialog({ mode: "create", field: null })}
+                  >
+                    <Plus size={16} weight="bold" />
+                    {de.fields.add}
+                  </Button>
+                ) : undefined
               }
             />
           </Card>
@@ -147,26 +159,28 @@ export function FieldsManager({
           <div className="flex flex-col gap-3">
             {fields.map((field, index) => (
               <Card key={field.id} className="flex items-center gap-3 p-4">
-                <div className="flex flex-col">
-                  <button
-                    type="button"
-                    aria-label={de.fields.moveUp}
-                    disabled={index === 0}
-                    onClick={() => move(index, -1)}
-                    className="flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150 hover:bg-ink-100 hover:text-foreground disabled:pointer-events-none disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <ArrowUp size={14} weight="bold" />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={de.fields.moveDown}
-                    disabled={index === fields.length - 1}
-                    onClick={() => move(index, 1)}
-                    className="flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150 hover:bg-ink-100 hover:text-foreground disabled:pointer-events-none disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <ArrowDown size={14} weight="bold" />
-                  </button>
-                </div>
+                {canWrite && (
+                  <div className="flex flex-col">
+                    <button
+                      type="button"
+                      aria-label={de.fields.moveUp}
+                      disabled={index === 0}
+                      onClick={() => move(index, -1)}
+                      className="flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150 hover:bg-ink-100 hover:text-foreground disabled:pointer-events-none disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <ArrowUp size={14} weight="bold" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={de.fields.moveDown}
+                      disabled={index === fields.length - 1}
+                      onClick={() => move(index, 1)}
+                      className="flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150 hover:bg-ink-100 hover:text-foreground disabled:pointer-events-none disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <ArrowDown size={14} weight="bold" />
+                    </button>
+                  </div>
+                )}
 
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -179,24 +193,26 @@ export function FieldsManager({
                   </span>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-1">
-                  <button
-                    type="button"
-                    aria-label={de.fields.edit}
-                    onClick={() => setDialog({ mode: "edit", field })}
-                    className="flex h-8 w-8 items-center justify-center rounded-input text-muted-foreground transition-colors duration-150 hover:bg-ink-100 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <PencilSimple size={16} weight="regular" />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={de.fields.delete}
-                    onClick={() => setDeleteTarget(field)}
-                    className="flex h-8 w-8 items-center justify-center rounded-input text-muted-foreground transition-colors duration-150 hover:bg-danger/10 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <Trash size={16} weight="regular" />
-                  </button>
-                </div>
+                {canWrite && (
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label={de.fields.edit}
+                      onClick={() => setDialog({ mode: "edit", field })}
+                      className="flex h-8 w-8 items-center justify-center rounded-input text-muted-foreground transition-colors duration-150 hover:bg-ink-100 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <PencilSimple size={16} weight="regular" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={de.fields.delete}
+                      onClick={() => setDeleteTarget(field)}
+                      className="flex h-8 w-8 items-center justify-center rounded-input text-muted-foreground transition-colors duration-150 hover:bg-danger/10 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <Trash size={16} weight="regular" />
+                    </button>
+                  </div>
+                )}
               </Card>
             ))}
           </div>

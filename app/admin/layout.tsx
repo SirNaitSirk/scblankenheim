@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { getCurrentProfile } from "@/lib/admin/data";
 
 export const metadata: Metadata = {
   title: "Admin — CampConnect",
@@ -16,15 +17,24 @@ export const dynamic = "force-dynamic";
 const themeInitScript = `(function(){try{var c=localStorage.getItem("cc-admin-theme");var d=c==="dark"||((!c||c==="system")&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-admin-theme",d?"dark":"light");}catch(e){}})();`;
 
 // Access control is enforced in middleware.ts (clerkMiddleware protects /admin(.*)).
-export default function AdminLayout({
+// The current admin's grant drives which nav sections the sidebar renders; the
+// per-route "see" guard (guardTab) is the actual gate on each page.
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const profile = await getCurrentProfile();
+
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      <AdminShell>{children}</AdminShell>
+      <AdminShell
+        visibleTabs={profile?.visibleTabs ?? []}
+        isSuperadmin={profile?.role === "superadmin"}
+      >
+        {children}
+      </AdminShell>
     </>
   );
 }

@@ -12,7 +12,8 @@ import {
 } from "@/lib/admin/messages";
 import type { PaymentStatus, RegistrationStatus } from "@/lib/admin/types";
 
-export type CustomField = "name" | "email" | "city" | "id";
+/** `"name" | "email" | "id"` for core fields, or a camp field's `key`. */
+export type CustomField = string;
 export type CustomFilter = { id: string; field: CustomField; value: string };
 
 export type RegistrationFilterState = {
@@ -38,17 +39,11 @@ const paymentOptions: SelectOption[] = [
   ),
 ];
 
-const customFieldOptions: SelectOption[] = [
-  { value: "name", label: de.registrations.columns.name },
-  { value: "email", label: de.registrations.columns.contact },
-  { value: "city", label: de.registrations.columns.city },
-  { value: "id", label: de.registrations.columns.id },
-];
-
 export function RegistrationsFilters({
   filters,
   onChange,
   tierOptions,
+  fieldOptions,
   customFilters,
   onAddCustom,
   onUpdateCustom,
@@ -59,6 +54,8 @@ export function RegistrationsFilters({
   filters: RegistrationFilterState;
   onChange: (patch: Partial<RegistrationFilterState>) => void;
   tierOptions: SelectOption[];
+  /** Core fields (Name/Kontakt/ID) plus one option per current-camp field. */
+  fieldOptions: SelectOption[];
   customFilters: CustomFilter[];
   onAddCustom: () => void;
   onUpdateCustom: (id: string, patch: Partial<CustomFilter>) => void;
@@ -116,7 +113,7 @@ export function RegistrationsFilters({
                       field: e.target.value as CustomField,
                     })
                   }
-                  options={customFieldOptions}
+                  options={fieldOptions}
                 />
               </div>
               <Input

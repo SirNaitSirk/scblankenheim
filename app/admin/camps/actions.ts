@@ -9,7 +9,7 @@ import {
   updateCamp,
   writeLog,
 } from "@/lib/admin/data";
-import { AuthError, requireAdmin } from "@/lib/admin/guard";
+import { AuthError, requirePermission } from "@/lib/admin/guard";
 import { de } from "@/lib/admin/messages";
 import type { ActionResult, AdminUser, CampFormValues, CampInput } from "@/lib/admin/types";
 
@@ -120,7 +120,7 @@ async function runGuarded(
 ): Promise<ActionResult> {
   let admin: AdminUser;
   try {
-    admin = await requireAdmin();
+    admin = await requirePermission("camps");
   } catch (error) {
     if (error instanceof AuthError) {
       return { ok: false, error: de.camps.toast.unauthorized };

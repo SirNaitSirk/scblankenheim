@@ -7,10 +7,13 @@ import {
   getFinanceSummary,
   getPriceTiers,
 } from "@/lib/admin/data";
+import { guardTab } from "@/lib/admin/guard";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { de } from "@/lib/admin/messages";
 
 export default async function FinancesPage() {
+  await guardTab("/admin/finanzen");
+
   // MOCK BOUNDARY: swap for real Supabase aggregates (server-side).
   const [camp, finance, tiers] = await Promise.all([
     getCurrentCamp(),

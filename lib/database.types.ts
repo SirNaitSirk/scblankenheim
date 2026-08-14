@@ -136,7 +136,6 @@ export type Database = {
           first_name: string | null;
           last_name: string | null;
           email: string | null;
-          city: string | null;
           form_data: Json;
           status: string;
           payment_status: string;
@@ -156,7 +155,6 @@ export type Database = {
           first_name?: string | null;
           last_name?: string | null;
           email?: string | null;
-          city?: string | null;
           form_data?: Json;
           status?: string;
           payment_status?: string;

@@ -36,7 +36,15 @@ function setCollapsedPersisted(value: boolean) {
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
-export function AdminShell({ children }: { children: ReactNode }) {
+export function AdminShell({
+  children,
+  visibleTabs,
+  isSuperadmin,
+}: {
+  children: ReactNode;
+  visibleTabs: string[];
+  isSuperadmin: boolean;
+}) {
   const collapsed = useSyncExternalStore(subscribe, getCollapsed, () => false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -70,7 +78,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
           collapsed ? "md:w-[72px]" : "md:w-[248px]",
         )}
       >
-        <SidebarContent collapsed={collapsed} />
+        <SidebarContent
+          collapsed={collapsed}
+          visibleTabs={visibleTabs}
+          isSuperadmin={isSuperadmin}
+        />
       </aside>
 
       {/* Mobile drawer */}
@@ -86,7 +98,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
             aria-label={de.shell.openMenu}
             className="fixed inset-y-0 left-0 z-50 w-[248px] border-r border-border bg-surface shadow-pop"
           >
-            <SidebarContent onNavigate={closeMobile} />
+            <SidebarContent
+              onNavigate={closeMobile}
+              visibleTabs={visibleTabs}
+              isSuperadmin={isSuperadmin}
+            />
           </aside>
         </div>
       )}

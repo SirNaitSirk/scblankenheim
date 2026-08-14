@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
+import { canSeeTab } from "@/lib/admin/access";
 import { de } from "@/lib/admin/messages";
 import { NAV_ITEMS } from "./nav-items";
 
@@ -36,11 +37,19 @@ function isActive(pathname: string, href: string): boolean {
 export function SidebarContent({
   collapsed = false,
   onNavigate,
+  visibleTabs,
+  isSuperadmin,
 }: {
   collapsed?: boolean;
   onNavigate?: () => void;
+  visibleTabs: string[];
+  isSuperadmin: boolean;
 }) {
   const pathname = usePathname();
+  const role = isSuperadmin ? "superadmin" : "admin";
+  const navItems = NAV_ITEMS.filter((item) =>
+    canSeeTab({ role, visibleTabs }, item.href),
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -74,7 +83,7 @@ export function SidebarContent({
 
       <nav className="flex-1 overflow-y-auto p-3">
         <ul className="flex flex-col gap-1">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active = isActive(pathname, item.href);
             const Glyph = NAV_ICONS[item.href];
             return (

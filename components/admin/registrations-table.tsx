@@ -1,16 +1,10 @@
 "use client";
 
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowsDownUp,
-  Copy,
-  MagnifyingGlass,
-  Trash,
-} from "@phosphor-icons/react";
+import { ArrowDown, ArrowUp, ArrowsDownUp, MagnifyingGlass } from "@phosphor-icons/react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Menu, type MenuItem } from "@/components/ui/menu";
+import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/admin/states";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
@@ -24,8 +18,8 @@ import type {
   Registration,
   RegistrationStatus,
 } from "@/lib/admin/types";
+import { type ColumnDef, formatFieldValue } from "./registration-columns";
 
-export type SortKey = "name" | "registeredAt" | "amountDue";
 export type SortDir = "asc" | "desc";
 
 const statusTone: Record<RegistrationStatus, "paid" | "pending" | "danger"> = {
@@ -40,60 +34,165 @@ const paymentTone: Record<PaymentStatus, "paid" | "pending" | "neutral"> = {
   unpaid: "neutral",
 };
 
+const PAYMENT_OPTIONS = (
+  Object.keys(PAYMENT_STATUS_LABELS) as PaymentStatus[]
+).map((value) => ({ value, label: PAYMENT_STATUS_LABELS[value] }));
+
 function SortHeader({
   label,
   active,
   dir,
   onClick,
-  className,
 }: {
   label: string;
   active: boolean;
   dir: SortDir;
   onClick: () => void;
-  className?: string;
 }) {
   return (
-    <th className={cn("px-4 py-3 text-left font-medium", className)}>
-      <button
-        type="button"
-        onClick={onClick}
-        className="inline-flex items-center gap-1 text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-none focus-visible:text-foreground"
-      >
-        {label}
-        {active ? (
-          dir === "asc" ? (
-            <ArrowUp size={12} weight="bold" />
-          ) : (
-            <ArrowDown size={12} weight="bold" />
-          )
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1 text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-none focus-visible:text-foreground"
+    >
+      {label}
+      {active ? (
+        dir === "asc" ? (
+          <ArrowUp size={12} weight="bold" />
         ) : (
-          <ArrowsDownUp size={12} className="text-ink-300" />
-        )}
-      </button>
-    </th>
+          <ArrowDown size={12} weight="bold" />
+        )
+      ) : (
+        <ArrowsDownUp size={12} className="text-ink-300" />
+      )}
+    </button>
   );
+}
+
+/** Renders the cell for a given column of a registration row. */
+function Cell({
+  column,
+  row,
+  canWrite,
+  onPaymentChange,
+}: {
+  column: ColumnDef;
+  row: Registration;
+  canWrite: boolean;
+  onPaymentChange: (id: string, payment: PaymentStatus) => void;
+}) {
+  if (column.kind === "field" && column.field) {
+    return (
+      <td className="px-4 py-3 text-muted-foreground">
+        {formatFieldValue(column.field, row.formData[column.field.key])}
+      </td>
+    );
+  }
+
+  switch (column.key) {
+    case "name":
+      return (
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">
+              {row.firstName} {row.lastName}
+            </span>
+            {row.deleted && (
+              <Badge tone="danger">{de.registrations.deletedBadge}</Badge>
+            )}
+          </div>
+        </td>
+      );
+    case "contact":
+      return <td className="px-4 py-3 text-muted-foreground">{row.email}</td>;
+    case "id":
+      return (
+        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+          {row.id}
+        </td>
+      );
+    case "registeredAt":
+      return (
+        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+          {formatDate(row.registeredAt)}
+        </td>
+      );
+    case "amount":
+      return (
+        <td className="px-4 py-3 font-mono tabular-nums">
+          {formatCurrency(row.amountDue)}
+        </td>
+      );
+    case "payment":
+      // Editable inline for permitted admins; stop the row-open click/keydown so
+      // changing the status never opens the edit dialog.
+      return (
+        <td
+          className="px-4 py-3"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          {canWrite ? (
+            <div className="w-36">
+              <Select
+                aria-label={de.registrations.payment}
+                value={row.payment}
+                onChange={(e) =>
+                  onPaymentChange(row.id, e.target.value as PaymentStatus)
+                }
+                options={PAYMENT_OPTIONS}
+              />
+            </div>
+          ) : (
+            <Badge tone={paymentTone[row.payment]}>
+              {PAYMENT_STATUS_LABELS[row.payment]}
+            </Badge>
+          )}
+        </td>
+      );
+    case "status":
+      return (
+        <td className="px-4 py-3">
+          <Badge tone={statusTone[row.status]}>
+            {REGISTRATION_STATUS_LABELS[row.status]}
+          </Badge>
+        </td>
+      );
+    default:
+      return <td className="px-4 py-3" />;
+  }
 }
 
 export function RegistrationsTable({
   rows,
-  sortKey,
+  columns,
+  sortColumn,
   sortDir,
   onSort,
-  onDelete,
-  onRestore,
-  onCopyEmail,
+  onReorderColumn,
+  onEdit,
+  onPaymentChange,
   onResetFilters,
+  canWrite,
 }: {
   rows: Registration[];
-  sortKey: SortKey;
+  columns: ColumnDef[];
+  sortColumn: string;
   sortDir: SortDir;
-  onSort: (key: SortKey) => void;
-  onDelete: (id: string) => void;
-  onRestore: (id: string) => void;
-  onCopyEmail: (email: string) => void;
+  onSort: (key: string) => void;
+  onReorderColumn: (fromKey: string, toKey: string) => void;
+  onEdit: (registration: Registration) => void;
+  onPaymentChange: (id: string, payment: PaymentStatus) => void;
   onResetFilters: () => void;
+  canWrite: boolean;
 }) {
+  // Transient header drag state; the persisted order stays the source of truth.
+  const [draggingKey, setDraggingKey] = useState<string | null>(null);
+  const [overKey, setOverKey] = useState<string | null>(null);
+  const endColumnDrag = () => {
+    setDraggingKey(null);
+    setOverKey(null);
+  };
   if (rows.length === 0) {
     return (
       <EmptyState
@@ -114,114 +213,88 @@ export function RegistrationsTable({
       <table className="w-full min-w-[640px] text-sm">
         <thead>
           <tr className="border-b border-border text-xs">
-            <SortHeader
-              label={de.registrations.columns.name}
-              active={sortKey === "name"}
-              dir={sortDir}
-              onClick={() => onSort("name")}
-            />
-            <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground lg:table-cell">
-              {de.registrations.columns.contact}
-            </th>
-            <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground xl:table-cell">
-              {de.registrations.columns.city}
-            </th>
-            <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground md:table-cell">
-              {de.registrations.columns.id}
-            </th>
-            <SortHeader
-              label={de.registrations.columns.registeredAt}
-              active={sortKey === "registeredAt"}
-              dir={sortDir}
-              onClick={() => onSort("registeredAt")}
-              className="hidden md:table-cell"
-            />
-            <SortHeader
-              label={de.registrations.columns.amount}
-              active={sortKey === "amountDue"}
-              dir={sortDir}
-              onClick={() => onSort("amountDue")}
-            />
-            <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground sm:table-cell">
-              {de.registrations.columns.payment}
-            </th>
-            <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-              {de.registrations.columns.status}
-            </th>
-            <th className="w-12 px-4 py-3" aria-hidden />
+            {columns.map((column) => (
+              <th
+                key={column.key}
+                draggable
+                onDragStart={(e) => {
+                  setDraggingKey(column.key);
+                  e.dataTransfer.effectAllowed = "move";
+                  // Firefox requires data to be set for a drag to start.
+                  e.dataTransfer.setData("text/plain", column.key);
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (overKey !== column.key) setOverKey(column.key);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (draggingKey && draggingKey !== column.key) {
+                    onReorderColumn(draggingKey, column.key);
+                  }
+                  endColumnDrag();
+                }}
+                onDragEnd={endColumnDrag}
+                className={cn(
+                  "cursor-grab select-none px-4 py-3 text-left font-medium text-muted-foreground transition-colors duration-150",
+                  draggingKey === column.key && "opacity-50",
+                  overKey === column.key &&
+                    draggingKey &&
+                    draggingKey !== column.key &&
+                    "bg-ink-100",
+                )}
+              >
+                {column.sortable ? (
+                  <SortHeader
+                    label={column.label}
+                    active={sortColumn === column.key}
+                    dir={sortDir}
+                    onClick={() => onSort(column.key)}
+                  />
+                ) : (
+                  column.label
+                )}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
           {rows.map((row) => {
-            const actions: MenuItem[] = [
-              {
-                label: de.common.copyEmail,
-                icon: Copy,
-                onSelect: () => onCopyEmail(row.email),
-              },
-              row.deleted
-                ? {
-                    label: de.common.restore,
-                    onSelect: () => onRestore(row.id),
-                  }
-                : {
-                    label: de.common.delete,
-                    icon: Trash,
-                    danger: true,
-                    onSelect: () => onDelete(row.id),
-                  },
-            ];
+            const rowLabel = `${de.registrations.openRow}: ${row.firstName} ${row.lastName}`;
             return (
               <tr
                 key={row.id}
+                {...(canWrite
+                  ? {
+                      role: "button" as const,
+                      tabIndex: 0,
+                      "aria-label": rowLabel,
+                      onClick: () => onEdit(row),
+                      onKeyDown: (e: React.KeyboardEvent<HTMLTableRowElement>) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onEdit(row);
+                        }
+                      },
+                    }
+                  : {})}
                 className={cn(
                   "text-foreground transition-colors duration-150 hover:bg-ink-50",
+                  canWrite &&
+                    "cursor-pointer focus-visible:outline-none focus-visible:bg-ink-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
                   row.deleted && "opacity-55",
                 )}
               >
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">
-                      {row.firstName} {row.lastName}
-                    </span>
-                    {row.deleted && (
-                      <Badge tone="danger">
-                        {de.registrations.deletedBadge}
-                      </Badge>
-                    )}
-                  </div>
-                </td>
-                <td className="hidden px-4 py-3 text-muted-foreground lg:table-cell">
-                  {row.email}
-                </td>
-                <td className="hidden px-4 py-3 text-muted-foreground xl:table-cell">
-                  {row.city}
-                </td>
-                <td className="hidden px-4 py-3 font-mono text-xs text-muted-foreground md:table-cell">
-                  {row.id}
-                </td>
-                <td className="hidden px-4 py-3 font-mono text-xs text-muted-foreground md:table-cell">
-                  {formatDate(row.registeredAt)}
-                </td>
-                <td className="px-4 py-3 font-mono tabular-nums">
-                  {formatCurrency(row.amountDue)}
-                </td>
-                <td className="hidden px-4 py-3 sm:table-cell">
-                  <Badge tone={paymentTone[row.payment]}>
-                    {PAYMENT_STATUS_LABELS[row.payment]}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3">
-                  <Badge tone={statusTone[row.status]}>
-                    {REGISTRATION_STATUS_LABELS[row.status]}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3">
-                  <Menu
-                    label={`${de.common.edit} ${row.firstName} ${row.lastName}`}
-                    items={actions}
+                {columns.map((column) => (
+                  <Cell
+                    key={column.key}
+                    column={column}
+                    row={row}
+                    canWrite={canWrite}
+                    onPaymentChange={onPaymentChange}
                   />
-                </td>
+                ))}
               </tr>
             );
           })}

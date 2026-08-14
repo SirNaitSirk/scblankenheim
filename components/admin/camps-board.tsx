@@ -24,7 +24,13 @@ import type { ActionResult, Camp, CampFormValues } from "@/lib/admin/types";
 
 type DialogState = { mode: "create" | "edit"; camp: Camp | null } | null;
 
-export function CampsBoard({ camps }: { camps: Camp[] }) {
+export function CampsBoard({
+  camps,
+  canWrite,
+}: {
+  camps: Camp[];
+  canWrite: boolean;
+}) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [toast, setToast] = useState<string | null>(null);
@@ -74,10 +80,15 @@ export function CampsBoard({ camps }: { camps: Camp[] }) {
         title={de.camps.title}
         description={de.camps.description}
         actions={
-          <Button size="sm" onClick={() => setDialog({ mode: "create", camp: null })}>
-            <Plus size={16} weight="bold" />
-            {de.camps.create}
-          </Button>
+          canWrite ? (
+            <Button
+              size="sm"
+              onClick={() => setDialog({ mode: "create", camp: null })}
+            >
+              <Plus size={16} weight="bold" />
+              {de.camps.create}
+            </Button>
+          ) : undefined
         }
       />
 
@@ -93,10 +104,15 @@ export function CampsBoard({ camps }: { camps: Camp[] }) {
           title={de.camps.empty.title}
           description={de.camps.empty.description}
           action={
-            <Button size="sm" onClick={() => setDialog({ mode: "create", camp: null })}>
-              <Plus size={16} weight="bold" />
-              {de.camps.create}
-            </Button>
+            canWrite ? (
+              <Button
+                size="sm"
+                onClick={() => setDialog({ mode: "create", camp: null })}
+              >
+                <Plus size={16} weight="bold" />
+                {de.camps.create}
+              </Button>
+            ) : undefined
           }
         />
       ) : (
@@ -124,22 +140,24 @@ export function CampsBoard({ camps }: { camps: Camp[] }) {
                         ? de.camps.registrationOpen
                         : de.camps.registrationClosed}
                     </Badge>
-                    <Menu
-                      label={de.camps.actions}
-                      items={[
-                        {
-                          label: de.camps.edit,
-                          icon: PencilSimple,
-                          onSelect: () => setDialog({ mode: "edit", camp }),
-                        },
-                        {
-                          label: de.camps.delete,
-                          icon: Trash,
-                          danger: true,
-                          onSelect: () => setDeleteTarget(camp),
-                        },
-                      ]}
-                    />
+                    {canWrite && (
+                      <Menu
+                        label={de.camps.actions}
+                        items={[
+                          {
+                            label: de.camps.edit,
+                            icon: PencilSimple,
+                            onSelect: () => setDialog({ mode: "edit", camp }),
+                          },
+                          {
+                            label: de.camps.delete,
+                            icon: Trash,
+                            danger: true,
+                            onSelect: () => setDeleteTarget(camp),
+                          },
+                        ]}
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -183,7 +201,7 @@ export function CampsBoard({ camps }: { camps: Camp[] }) {
                       <GearSix size={16} weight="regular" />
                       {de.camps.configureFields}
                     </Button>
-                    {!camp.isCurrent && (
+                    {canWrite && !camp.isCurrent && (
                       <Button
                         variant="outline"
                         size="sm"

@@ -6,7 +6,17 @@ export const metadata: Metadata = {
   title: "Registrieren — CampConnect",
 };
 
-export default function SignUpPage() {
+export default async function SignUpPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  // A Clerk invitation link carries `__clerk_ticket`. Completing it should land on
+  // the accept page, which provisions the profile/role from the invitation grant.
+  const params = await searchParams;
+  const isInvitation = Boolean(params.__clerk_ticket);
+  const redirectUrl = isInvitation ? "/admin/accept-invitation" : "/admin";
+
   return (
     <main className="flex min-h-[100dvh] flex-col items-center justify-center gap-8 bg-canvas px-6 py-16">
       <div className="flex flex-col items-center gap-2 text-center">
@@ -17,7 +27,7 @@ export default function SignUpPage() {
           {de.brand.panel}
         </span>
       </div>
-      <SignUp forceRedirectUrl="/admin" signInUrl="/sign-in" />
+      <SignUp forceRedirectUrl={redirectUrl} signInUrl="/sign-in" />
     </main>
   );
 }
