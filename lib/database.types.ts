@@ -26,7 +26,6 @@ export type Database = {
           end_date: string | null;
           capacity: number | null;
           base_price: number;
-          room_capacity: number | null;
           registration_open: boolean;
           registration_opens_at: string | null;
           registration_closes_at: string | null;
@@ -44,7 +43,6 @@ export type Database = {
           end_date?: string | null;
           capacity?: number | null;
           base_price?: number;
-          room_capacity?: number | null;
           registration_open?: boolean;
           registration_opens_at?: string | null;
           registration_closes_at?: string | null;
@@ -194,6 +192,7 @@ export type Database = {
           email: string | null;
           permissions: string[];
           visible_tabs: string[];
+          dashboard_metrics: Json;
           status: string;
           last_active_at: string | null;
           created_at: string;
@@ -204,6 +203,7 @@ export type Database = {
           email?: string | null;
           permissions?: string[];
           visible_tabs?: string[];
+          dashboard_metrics?: Json;
           status?: string;
           last_active_at?: string | null;
           created_at?: string;

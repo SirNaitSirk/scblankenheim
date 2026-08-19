@@ -25,6 +25,8 @@ const EMPTY: FieldFormValues = {
   options: "",
   placeholder: "",
   helpText: "",
+  capacityOption: "",
+  capacityLimit: "",
 };
 
 // German-aware slug: transliterate umlauts, lowercase, non-alphanumerics → `_`.
@@ -52,7 +54,37 @@ function readConfigString(config: Record<string, unknown>, key: string): string 
   return typeof value === "string" ? value : "";
 }
 
+// Reads a stored `config.capacity` back into the two raw string form fields.
+function readCapacity(config: Record<string, unknown>): {
+  option: string;
+  limit: string;
+} {
+  const capacity = config.capacity;
+  if (capacity && typeof capacity === "object" && !Array.isArray(capacity)) {
+    const record = capacity as Record<string, unknown>;
+    const option = typeof record.option === "string" ? record.option : "";
+    const limit =
+      typeof record.limit === "number" ? String(record.limit) : "";
+    return { option, limit };
+  }
+  return { option: "", limit: "" };
+}
+
+// One choice per non-empty line, deduped, order preserved — mirrors the server.
+function parseOptionLines(raw: string): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const line of raw.split("\n")) {
+    const value = line.trim();
+    if (value === "" || seen.has(value)) continue;
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
+}
+
 function fromField(field: CampFormField): FieldFormValues {
+  const capacity = readCapacity(field.config);
   return {
     key: field.key,
     label: field.label,
@@ -63,6 +95,8 @@ function fromField(field: CampFormField): FieldFormValues {
     options: readOptionLines(field.options),
     placeholder: readConfigString(field.config, "placeholder"),
     helpText: readConfigString(field.config, "helpText"),
+    capacityOption: capacity.option,
+    capacityLimit: capacity.limit,
   };
 }
 
@@ -124,6 +158,14 @@ export function FieldFormDialog({
   }
 
   const showOptions = isChoiceType(values.fieldType);
+
+  // Choices offered as the limited option — the current options, plus the saved
+  // one if the admin has since removed it from the list (so it stays visible).
+  const parsedOptions = parseOptionLines(values.options);
+  const capacityOptions =
+    values.capacityOption !== "" && !parsedOptions.includes(values.capacityOption)
+      ? [values.capacityOption, ...parsedOptions]
+      : parsedOptions;
 
   return (
     <Dialog
@@ -197,20 +239,61 @@ export function FieldFormDialog({
         </div>
 
         {showOptions && (
-          <Field
-            label={t.options}
-            htmlFor="field-options"
-            error={errors.options}
-            hint={t.optionsHint}
-          >
-            <Textarea
-              id="field-options"
-              value={values.options}
-              onChange={(e) => set("options", e.target.value)}
-              placeholder={t.optionsPlaceholder}
-              aria-invalid={Boolean(errors.options)}
-            />
-          </Field>
+          <>
+            <Field
+              label={t.options}
+              htmlFor="field-options"
+              error={errors.options}
+              hint={t.optionsHint}
+            >
+              <Textarea
+                id="field-options"
+                value={values.options}
+                onChange={(e) => set("options", e.target.value)}
+                placeholder={t.optionsPlaceholder}
+                aria-invalid={Boolean(errors.options)}
+              />
+            </Field>
+
+            <Field
+              label={t.capacityOption}
+              htmlFor="field-capacity-option"
+              hint={t.capacityOptionHint}
+              error={errors.capacityOption}
+            >
+              <Select
+                id="field-capacity-option"
+                value={values.capacityOption}
+                onChange={(e) => set("capacityOption", e.target.value)}
+                aria-invalid={Boolean(errors.capacityOption)}
+                options={[
+                  { value: "", label: t.capacityOptionNone },
+                  ...capacityOptions.map((opt) => ({ value: opt, label: opt })),
+                ]}
+              />
+            </Field>
+
+            {values.capacityOption !== "" && (
+              <Field
+                label={t.capacityLimit}
+                htmlFor="field-capacity-limit"
+                error={errors.capacityLimit}
+              >
+                <Input
+                  id="field-capacity-limit"
+                  type="number"
+                  min={1}
+                  step={1}
+                  inputMode="numeric"
+                  value={values.capacityLimit}
+                  onChange={(e) => set("capacityLimit", e.target.value)}
+                  placeholder={t.capacityLimitPlaceholder}
+                  aria-invalid={Boolean(errors.capacityLimit)}
+                  autoComplete="off"
+                />
+              </Field>
+            )}
+          </>
         )}
 
         <Field label={t.placeholder} htmlFor="field-placeholder">

@@ -33,6 +33,14 @@ function nullify(value: string): string | null {
 // Raw string/boolean values in → validated `FieldInput` out. Cross-field checks
 // run in `superRefine` so each issue carries a field path; `transform` produces
 // the row-ready shape (options list, config bag) only once validation passed.
+// Parses the raw capacity limit; returns a positive integer or null when unset/invalid.
+function parseLimit(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (trimmed === "") return null;
+  const value = Number(trimmed);
+  return Number.isInteger(value) && value >= 1 ? value : null;
+}
+
 const fieldSchema = z
   .object({
     key: z.string(),
@@ -42,6 +50,8 @@ const fieldSchema = z
     options: z.string(),
     placeholder: z.string(),
     helpText: z.string(),
+    capacityOption: z.string(),
+    capacityLimit: z.string(),
   })
   .superRefine((values, ctx) => {
     if (values.label.trim() === "") {
@@ -53,27 +63,54 @@ const fieldSchema = z
     } else if (!KEY_PATTERN.test(key)) {
       ctx.addIssue({ code: "custom", path: ["key"], message: de.fields.errors.keyInvalid });
     }
-    if (isChoiceType(values.fieldType) && parseOptions(values.options).length === 0) {
+    const options = parseOptions(values.options);
+    if (isChoiceType(values.fieldType) && options.length === 0) {
       ctx.addIssue({
         code: "custom",
         path: ["options"],
         message: de.fields.errors.optionsRequired,
       });
     }
+    // Capacity only applies to select fields with a chosen option.
+    const capacityOption = values.capacityOption.trim();
+    if (isChoiceType(values.fieldType) && capacityOption !== "") {
+      if (!options.includes(capacityOption)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["capacityOption"],
+          message: de.fields.errors.capacityOptionInvalid,
+        });
+      }
+      if (parseLimit(values.capacityLimit) === null) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["capacityLimit"],
+          message: de.fields.errors.capacityLimitInvalid,
+        });
+      }
+    }
   })
-  .transform(
-    (values): FieldInput => ({
+  .transform((values): FieldInput => {
+    const isSelect = isChoiceType(values.fieldType);
+    const capacityOption = values.capacityOption.trim();
+    const limit = parseLimit(values.capacityLimit);
+    const capacity =
+      isSelect && capacityOption !== "" && limit !== null
+        ? { option: capacityOption, limit }
+        : null;
+    return {
       key: values.key.trim(),
       label: values.label.trim(),
       fieldType: values.fieldType,
       required: values.required,
-      options: isChoiceType(values.fieldType) ? parseOptions(values.options) : null,
+      options: isSelect ? parseOptions(values.options) : null,
       config: {
         placeholder: nullify(values.placeholder),
         helpText: nullify(values.helpText),
+        capacity,
       },
-    }),
-  );
+    };
+  });
 
 // One choice per line; trims, drops blanks, dedupes while preserving order.
 function parseOptions(raw: string): string[] {

@@ -25,7 +25,7 @@ function numberOrNull(value: string): number | null {
   return trimmed === "" ? null : Number(trimmed);
 }
 
-const INTEGER_KEYS = ["capacity", "basePrice", "roomCapacity"] as const;
+const INTEGER_KEYS = ["capacity", "basePrice"] as const;
 
 // Raw string/boolean values in → validated `CampInput` out. Cross-field and
 // numeric checks run in `superRefine` so each issue carries a field path;
@@ -38,7 +38,6 @@ const campSchema = z
     endDate: z.string(),
     capacity: z.string(),
     basePrice: z.string(),
-    roomCapacity: z.string(),
     registrationOpen: z.boolean(),
     registrationOpensAt: z.string(),
     registrationClosesAt: z.string(),
@@ -84,7 +83,6 @@ const campSchema = z
       endDate: nullify(values.endDate),
       capacity: numberOrNull(values.capacity),
       basePrice: numberOrNull(values.basePrice) ?? 0,
-      roomCapacity: numberOrNull(values.roomCapacity),
       registrationOpen: values.registrationOpen,
       registrationOpensAt: nullify(values.registrationOpensAt),
       registrationClosesAt: nullify(values.registrationClosesAt),

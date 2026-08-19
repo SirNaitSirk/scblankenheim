@@ -10,11 +10,9 @@ export const metadata: Metadata = {
 // Clerk session), so never statically prerender them at build time.
 export const dynamic = "force-dynamic";
 
-// Pre-hydration theme resolution: set `data-admin-theme` on <html> before first
-// paint so the admin dark theme never flashes. Mirrors hooks/use-admin-theme.ts
-// (key `cc-admin-theme`, values light | dark | system). Rendered only in the
-// admin layout, so public pages never carry the attribute on a fresh load.
-const themeInitScript = `(function(){try{var c=localStorage.getItem("cc-admin-theme");var d=c==="dark"||((!c||c==="system")&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-admin-theme",d?"dark":"light");}catch(e){}})();`;
+// The pre-hydration theme script (sets `data-admin-theme` before first paint)
+// lives in the root layout via next/script beforeInteractive — a raw <script>
+// here warns under React 19 on client-side navigation into /admin.
 
 // Access control is enforced in middleware.ts (clerkMiddleware protects /admin(.*)).
 // The current admin's grant drives which nav sections the sidebar renders; the
@@ -27,14 +25,11 @@ export default async function AdminLayout({
   const profile = await getCurrentProfile();
 
   return (
-    <>
-      <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      <AdminShell
-        visibleTabs={profile?.visibleTabs ?? []}
-        isSuperadmin={profile?.role === "superadmin"}
-      >
-        {children}
-      </AdminShell>
-    </>
+    <AdminShell
+      visibleTabs={profile?.visibleTabs ?? []}
+      isSuperadmin={profile?.role === "superadmin"}
+    >
+      {children}
+    </AdminShell>
   );
 }

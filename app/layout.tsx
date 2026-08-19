@@ -2,7 +2,14 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { deDE } from "@clerk/localizations";
 import type { Metadata } from "next";
 import { Archivo, Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
+
+// Pre-hydration theme resolution for the admin surface: set `data-admin-theme`
+// on <html> before first paint so the admin dark theme never flashes. Scoped to
+// /admin via the pathname guard, so public pages never carry the attribute.
+// Mirrors hooks/use-admin-theme.ts (key `cc-admin-theme`, values light|dark|system).
+const adminThemeInitScript = `(function(){try{if(!location.pathname.startsWith("/admin"))return;var c=localStorage.getItem("cc-admin-theme");var d=c==="dark"||((!c||c==="system")&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-admin-theme",d?"dark":"light");}catch(e){}})();`;
 
 // Clerk appearance mapped to the CampConnect design tokens (see app/globals.css).
 const clerkAppearance = {
@@ -50,9 +57,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="de"
+      suppressHydrationWarning
       className={`${archivo.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-canvas text-foreground">
+        <Script id="admin-theme-init" strategy="beforeInteractive">
+          {adminThemeInitScript}
+        </Script>
         <ClerkProvider localization={deDE} appearance={clerkAppearance}>
           {children}
         </ClerkProvider>

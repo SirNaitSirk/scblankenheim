@@ -2,7 +2,7 @@ import { CaretDown } from "@phosphor-icons/react";
 import type { SelectHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
-export type SelectOption = { value: string; label: string };
+export type SelectOption = { value: string; label: string; disabled?: boolean };
 
 type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   options: SelectOption[];
@@ -22,7 +22,7 @@ export function Select({ className, options, ...props }: SelectProps) {
         {...props}
       >
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
+          <option key={opt.value} value={opt.value} disabled={opt.disabled}>
             {opt.label}
           </option>
         ))}

@@ -4,6 +4,7 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  DotsSixVertical,
   ListPlus,
   PencilSimple,
   Plus,
@@ -25,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
+import { cn } from "@/lib/cn";
 import { FIELD_TYPES } from "@/lib/admin/field-types";
 import { de } from "@/lib/admin/messages";
 import type {
@@ -57,6 +59,9 @@ export function FieldsManager({
   const [toast, setToast] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [deleteTarget, setDeleteTarget] = useState<CampFormField | null>(null);
+  // Transient drag state only; the persisted order stays the source of truth.
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -105,6 +110,36 @@ export function FieldsManager({
       );
     },
     [campId, fields, runAction],
+  );
+
+  // Reorder by moving a field from one index to another, then persist.
+  const reorder = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      if (fromIndex === toIndex) return;
+      const next = [...fields];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      runAction(
+        reorderFieldsAction(campId, next.map((f) => f.id)),
+        de.fields.toast.reordered,
+      );
+    },
+    [campId, fields, runAction],
+  );
+
+  const endDrag = useCallback(() => {
+    setDraggingIndex(null);
+    setOverIndex(null);
+  }, []);
+
+  const drop = useCallback(
+    (index: number) => {
+      if (draggingIndex !== null && draggingIndex !== index) {
+        reorder(draggingIndex, index);
+      }
+      endDrag();
+    },
+    [draggingIndex, endDrag, reorder],
   );
 
   return (
@@ -158,7 +193,54 @@ export function FieldsManager({
         ) : (
           <div className="flex flex-col gap-3">
             {fields.map((field, index) => (
-              <Card key={field.id} className="flex items-center gap-3 p-4">
+              <Card
+                key={field.id}
+                draggable={canWrite}
+                onDragStart={
+                  canWrite
+                    ? (e) => {
+                        setDraggingIndex(index);
+                        e.dataTransfer.effectAllowed = "move";
+                        // Firefox requires data to be set for a drag to start.
+                        e.dataTransfer.setData("text/plain", field.id);
+                      }
+                    : undefined
+                }
+                onDragOver={
+                  canWrite
+                    ? (e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "move";
+                        if (overIndex !== index) setOverIndex(index);
+                      }
+                    : undefined
+                }
+                onDrop={
+                  canWrite
+                    ? (e) => {
+                        e.preventDefault();
+                        drop(index);
+                      }
+                    : undefined
+                }
+                onDragEnd={canWrite ? endDrag : undefined}
+                className={cn(
+                  "flex items-center gap-3 p-4 transition-colors duration-150",
+                  draggingIndex === index
+                    ? "opacity-50"
+                    : overIndex === index && draggingIndex !== null
+                      ? "bg-ink-100"
+                      : undefined,
+                )}
+              >
+                {canWrite && (
+                  <span
+                    aria-label={de.fields.dragHandle}
+                    className="flex h-7 w-6 shrink-0 cursor-grab items-center justify-center text-ink-300 transition-colors duration-150 hover:text-muted-foreground active:cursor-grabbing"
+                  >
+                    <DotsSixVertical size={16} weight="bold" />
+                  </span>
+                )}
                 {canWrite && (
                   <div className="flex flex-col">
                     <button

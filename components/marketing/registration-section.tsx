@@ -2,6 +2,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Reveal } from "@/components/marketing/reveal";
 import { CountdownPanel } from "@/components/marketing/countdown-panel";
 import { RegistrationForm } from "@/components/marketing/registration-form";
+import { getCampAvailability } from "@/lib/marketing/availability";
 import {
   getCountdownTarget,
   getLandingCamp,
@@ -44,6 +45,11 @@ export async function RegistrationSection() {
 
   const target = camp && state === "countdown" ? getCountdownTarget(camp) : null;
 
+  const availability =
+    camp && state === "open"
+      ? await getCampAvailability(camp.id, camp.fields)
+      : {};
+
   return (
     <section id="anmelden" className="border-t border-border bg-canvas">
       <div className="mx-auto max-w-[1400px] px-6 py-24 md:px-10 lg:py-32">
@@ -59,7 +65,7 @@ export async function RegistrationSection() {
 
         <Reveal delay={120} className="mx-auto mt-12 max-w-2xl">
           {state === "open" && camp ? (
-            <RegistrationForm fields={camp.fields} />
+            <RegistrationForm fields={camp.fields} availability={availability} />
           ) : state === "countdown" && target ? (
             <CountdownPanel target={target.toISOString()} />
           ) : (

@@ -3,6 +3,7 @@ import "server-only";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { getServiceClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/database.types";
+import { parseStoredMetrics } from "./dashboard-metrics";
 import type {
   AddUserInput,
   AdminUser,
@@ -11,6 +12,7 @@ import type {
   Camp,
   CampFormField,
   CampInput,
+  DashboardMetric,
   FieldInput,
   FinanceSummary,
   InvitationMetadata,
@@ -33,6 +35,71 @@ import type {
  * admin surface (Server Components). Function signatures match the former mock
  * getters, so consumers are unchanged. Row → domain mapping helpers live here.
  */
+
+// --- transient-error retry --------------------------------------------------
+
+/**
+ * Postgres/PostgREST error codes that are transient: a cold or just-restarted
+ * Supabase instance (schema cache not yet loaded), a statement timeout, or a
+ * dropped connection. These typically succeed on a quick retry, so admin reads
+ * retry them instead of surfacing the raw error after the app has been idle.
+ */
+const TRANSIENT_ERROR_CODES = new Set([
+  "PGRST002", // schema cache could not be loaded (instance waking up)
+  "PGRST001", // could not connect to the database
+  "57014", // statement_timeout
+  "08000", // connection_exception
+  "08003", // connection_does_not_exist
+  "08006", // connection_failure
+]);
+
+/**
+ * True for transient Supabase read failures worth a retry: an allowlisted
+ * PostgREST/Postgres code, a code-less network/fetch failure (e.g.
+ * `TypeError: fetch failed` from a dead keep-alive socket after idle), or a
+ * contentless error object with neither code nor message (a cold/dropped
+ * connection on the dev server's first request).
+ */
+function isTransientError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const code = (error as { code?: unknown }).code;
+  if (typeof code === "string" && code.length > 0) {
+    return TRANSIENT_ERROR_CODES.has(code);
+  }
+  const message = (error as { message?: unknown }).message;
+  if (
+    typeof message === "string" &&
+    /fetch failed|network|ECONNRESET|ETIMEDOUT|socket/i.test(message)
+  ) {
+    return true;
+  }
+  // Contentless PostgREST error: a cold or dropped connection (e.g. the dev
+  // server's first request after idle) can surface as an error object with no
+  // code and no message (details/hint null). A genuine Postgres rejection always
+  // carries a code, so a code-less, message-less error is treated as transient.
+  const hasMessage = typeof message === "string" && message.length > 0;
+  return !hasMessage;
+}
+
+/**
+ * Runs a read thunk, retrying only on transient errors (see `isTransientError`)
+ * with short backoff. Non-transient errors are rethrown immediately, and the
+ * last transient error is rethrown after the final attempt — so genuine failures
+ * still reach the admin error boundary and retries stay bounded.
+ */
+async function retryTransient<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries || !isTransientError(error)) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1) ** 2));
+    }
+  }
+  throw lastError;
+}
 
 // --- helpers ---------------------------------------------------------------
 
@@ -60,7 +127,6 @@ function mapCamp(
     isCurrent: row.id === currentCampId,
     registrationOpen: row.registration_open,
     formFieldCount,
-    roomCapacity: row.room_capacity,
     registrationOpensAt: row.registration_opens_at,
     registrationClosesAt: row.registration_closes_at,
     paymentDueDate: row.payment_due_date,
@@ -113,6 +179,7 @@ function mapAdminUser(
     role,
     permissions: profile.permissions,
     visibleTabs: profile.visible_tabs,
+    dashboardMetrics: parseStoredMetrics(profile.dashboard_metrics),
     status: profile.status === "invited" ? "invited" : "active",
     lastActiveAt: profile.last_active_at,
   };
@@ -163,27 +230,33 @@ async function buildCamps(): Promise<Camp[]> {
 // --- getters (mock-compatible signatures) ----------------------------------
 
 export async function getCamps(): Promise<Camp[]> {
-  return buildCamps();
+  return retryTransient(() => buildCamps());
 }
 
 export async function getCurrentCamp(): Promise<Camp> {
-  const camps = await buildCamps();
-  return camps.find((c) => c.isCurrent) ?? camps[0];
+  return retryTransient(async () => {
+    const camps = await buildCamps();
+    return camps.find((c) => c.isCurrent) ?? camps[0];
+  });
 }
 
 export async function getCampById(campId: string): Promise<Camp | null> {
-  const camps = await buildCamps();
-  return camps.find((c) => c.id === campId) ?? null;
+  return retryTransient(async () => {
+    const camps = await buildCamps();
+    return camps.find((c) => c.id === campId) ?? null;
+  });
 }
 
 export async function getRegistrations(): Promise<Registration[]> {
-  const supabase = getServiceClient();
-  const { data, error } = await supabase
-    .from("registrations")
-    .select("*")
-    .order("registered_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map(mapRegistration);
+  return retryTransient(async () => {
+    const supabase = getServiceClient();
+    const { data, error } = await supabase
+      .from("registrations")
+      .select("*")
+      .order("registered_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(mapRegistration);
+  });
 }
 
 // --- registrations (service-role writes; callers must pass requirePermission) ---
@@ -273,128 +346,156 @@ export async function setRegistrationDeleted(
 }
 
 export async function getCampFormFields(campId: string): Promise<CampFormField[]> {
-  const supabase = getServiceClient();
-  const { data, error } = await supabase
-    .from("camp_form_fields")
-    .select("*")
-    .eq("camp_id", campId)
-    .order("sort_order", { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map(mapFormField);
+  return retryTransient(async () => {
+    const supabase = getServiceClient();
+    const { data, error } = await supabase
+      .from("camp_form_fields")
+      .select("*")
+      .eq("camp_id", campId)
+      .order("sort_order", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(mapFormField);
+  });
 }
 
 export async function getPriceTiers(): Promise<PriceTier[]> {
-  const supabase = getServiceClient();
-  const currentCampId = await getCurrentCampId();
-  if (!currentCampId) return [];
+  return retryTransient(async () => {
+    const supabase = getServiceClient();
+    const currentCampId = await getCurrentCampId();
+    if (!currentCampId) return [];
 
-  const [tiersRes, regsRes] = await Promise.all([
-    supabase
-      .from("price_tiers")
-      .select("*")
-      .eq("camp_id", currentCampId)
-      .order("price", { ascending: false }),
-    supabase
-      .from("registrations")
-      .select("price_tier_id, deleted")
-      .eq("camp_id", currentCampId),
-  ]);
+    const [tiersRes, regsRes] = await Promise.all([
+      supabase
+        .from("price_tiers")
+        .select("*")
+        .eq("camp_id", currentCampId)
+        .order("price", { ascending: false }),
+      supabase
+        .from("registrations")
+        .select("price_tier_id, deleted")
+        .eq("camp_id", currentCampId),
+    ]);
 
-  if (tiersRes.error) throw tiersRes.error;
-  if (regsRes.error) throw regsRes.error;
+    if (tiersRes.error) throw tiersRes.error;
+    if (regsRes.error) throw regsRes.error;
 
-  const tierCount = new Map<string, number>();
-  for (const r of regsRes.data ?? []) {
-    if (r.deleted || !r.price_tier_id) continue;
-    tierCount.set(r.price_tier_id, (tierCount.get(r.price_tier_id) ?? 0) + 1);
-  }
+    const tierCount = new Map<string, number>();
+    for (const r of regsRes.data ?? []) {
+      if (r.deleted || !r.price_tier_id) continue;
+      tierCount.set(r.price_tier_id, (tierCount.get(r.price_tier_id) ?? 0) + 1);
+    }
 
-  return (tiersRes.data ?? []).map((tier) => ({
-    id: tier.id,
-    name: tier.name,
-    price: tier.price,
-    hidden: tier.hidden,
-    count: tierCount.get(tier.id) ?? 0,
-    validFrom: tier.valid_from,
-    validUntil: tier.valid_until,
-  }));
+    return (tiersRes.data ?? []).map((tier) => ({
+      id: tier.id,
+      name: tier.name,
+      price: tier.price,
+      hidden: tier.hidden,
+      count: tierCount.get(tier.id) ?? 0,
+      validFrom: tier.valid_from,
+      validUntil: tier.valid_until,
+    }));
+  });
 }
 
 export async function getAppSettings(): Promise<AppSettings> {
-  const supabase = getServiceClient();
-  const { data, error } = await supabase
-    .from("camp_settings")
-    .select("settings")
-    .eq("id", true)
-    .maybeSingle();
-  if (error) throw error;
-  return asRecord(data?.settings);
+  return retryTransient(async () => {
+    const supabase = getServiceClient();
+    const { data, error } = await supabase
+      .from("camp_settings")
+      .select("settings")
+      .eq("id", true)
+      .maybeSingle();
+    if (error) throw error;
+    return asRecord(data?.settings);
+  });
 }
 
 export async function getFinanceSummary(): Promise<FinanceSummary> {
-  const supabase = getServiceClient();
-  const currentCampId = await getCurrentCampId();
+  return retryTransient(async () => {
+    const supabase = getServiceClient();
+    const currentCampId = await getCurrentCampId();
 
-  const campsPromise = buildCamps();
-  const regsPromise = currentCampId
-    ? supabase
-        .from("registrations")
-        .select("amount_due, amount_paid, payment_status, deleted")
-        .eq("camp_id", currentCampId)
-    : Promise.resolve({ data: [], error: null } as const);
+    const campsPromise = buildCamps();
+    const regsPromise = currentCampId
+      ? supabase
+          .from("registrations")
+          .select("amount_due, amount_paid, payment_status, deleted")
+          .eq("camp_id", currentCampId)
+      : Promise.resolve({ data: [], error: null } as const);
 
-  const [camps, regsRes] = await Promise.all([campsPromise, regsPromise]);
-  if (regsRes.error) throw regsRes.error;
+    const [camps, regsRes] = await Promise.all([campsPromise, regsPromise]);
+    if (regsRes.error) throw regsRes.error;
 
-  const active = (regsRes.data ?? []).filter((r) => !r.deleted);
-  const expected = active.reduce((sum, r) => sum + r.amount_due, 0);
-  const collected = active.reduce((sum, r) => sum + r.amount_paid, 0);
-  const currentCamp = camps.find((c) => c.id === currentCampId) ?? camps[0];
+    const active = (regsRes.data ?? []).filter((r) => !r.deleted);
+    const expected = active.reduce((sum, r) => sum + r.amount_due, 0);
+    const collected = active.reduce((sum, r) => sum + r.amount_paid, 0);
+    const currentCamp = camps.find((c) => c.id === currentCampId) ?? camps[0];
 
-  return {
-    basePrice: currentCamp?.basePrice ?? 0,
-    expected,
-    collected,
-    outstanding: expected - collected,
-    paidCount: active.filter((r) => r.payment_status === "paid").length,
-    totalCount: active.length,
-  };
+    return {
+      basePrice: currentCamp?.basePrice ?? 0,
+      expected,
+      collected,
+      outstanding: expected - collected,
+      paidCount: active.filter((r) => r.payment_status === "paid").length,
+      totalCount: active.length,
+    };
+  });
 }
 
 export async function getAdminUsers(): Promise<AdminUser[]> {
-  const supabase = getServiceClient();
-  const [profilesRes, rolesRes] = await Promise.all([
-    supabase.from("profiles").select("*").order("created_at", { ascending: true }),
-    supabase.from("user_roles").select("user_id, role"),
-  ]);
-  if (profilesRes.error) throw profilesRes.error;
-  if (rolesRes.error) throw rolesRes.error;
+  return retryTransient(async () => {
+    const supabase = getServiceClient();
+    const [profilesRes, rolesRes] = await Promise.all([
+      supabase.from("profiles").select("*").order("created_at", { ascending: true }),
+      supabase.from("user_roles").select("user_id, role"),
+    ]);
+    if (profilesRes.error) throw profilesRes.error;
+    if (rolesRes.error) throw rolesRes.error;
 
-  const roleByUser = new Map<string, UserRole>();
-  for (const r of rolesRes.data ?? []) {
-    roleByUser.set(r.user_id, r.role as UserRole);
-  }
+    const roleByUser = new Map<string, UserRole>();
+    for (const r of rolesRes.data ?? []) {
+      roleByUser.set(r.user_id, r.role as UserRole);
+    }
 
-  return (profilesRes.data ?? []).map((profile) =>
-    mapAdminUser(profile, roleByUser.get(profile.id) ?? "admin"),
-  );
+    return (profilesRes.data ?? []).map((profile) =>
+      mapAdminUser(profile, roleByUser.get(profile.id) ?? "admin"),
+    );
+  });
 }
 
 export async function getCurrentProfile(): Promise<AdminUser | null> {
   const { userId } = await auth();
   if (!userId) return null;
 
-  const supabase = getServiceClient();
-  const [profileRes, roleRes] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
-    supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
-  ]);
-  if (profileRes.error) throw profileRes.error;
-  if (roleRes.error) throw roleRes.error;
-  if (!profileRes.data) return null;
+  return retryTransient(async () => {
+    const supabase = getServiceClient();
+    const [profileRes, roleRes] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
+    ]);
+    if (profileRes.error) throw profileRes.error;
+    if (roleRes.error) throw roleRes.error;
+    if (!profileRes.data) return null;
 
-  const role = (roleRes.data?.role as UserRole) ?? "admin";
-  return mapAdminUser(profileRes.data, role);
+    const role = (roleRes.data?.role as UserRole) ?? "admin";
+    return mapAdminUser(profileRes.data, role);
+  });
+}
+
+/**
+ * Persists an admin's dashboard metric selection to their own `profiles` row.
+ * Caller must be the same Clerk user (the Server Action passes the session id).
+ */
+export async function updateProfileDashboardMetrics(
+  userId: string,
+  metrics: DashboardMetric[],
+): Promise<void> {
+  const supabase = getServiceClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ dashboard_metrics: metrics })
+    .eq("id", userId);
+  if (error) throw error;
 }
 
 // --- writes (service-role; callers must have passed requireAdmin) -----------
@@ -408,7 +509,6 @@ function mapCampInputToRow(input: CampInput) {
     end_date: input.endDate,
     capacity: input.capacity,
     base_price: input.basePrice,
-    room_capacity: input.roomCapacity,
     registration_open: input.registrationOpen,
     registration_opens_at: input.registrationOpensAt,
     registration_closes_at: input.registrationClosesAt,
@@ -768,14 +868,16 @@ function mapInvitation(
 }
 
 export async function getPendingInvitations(): Promise<PendingInvitation[]> {
-  const supabase = getServiceClient();
-  const { data, error } = await supabase
-    .from("admin_invitations")
-    .select("*")
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map(mapInvitation);
+  return retryTransient(async () => {
+    const supabase = getServiceClient();
+    const { data, error } = await supabase
+      .from("admin_invitations")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(mapInvitation);
+  });
 }
 
 /**
@@ -889,18 +991,20 @@ export async function writeLog(entry: {
 }
 
 export async function getLogs(): Promise<LogEntry[]> {
-  const supabase = getServiceClient();
-  const { data, error } = await supabase
-    .from("logs")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map((log) => ({
-    id: log.id,
-    level: log.level as LogEntry["level"],
-    actor: log.actor ?? "",
-    action: log.action ?? "",
-    message: log.message ?? "",
-    createdAt: log.created_at,
-  }));
+  return retryTransient(async () => {
+    const supabase = getServiceClient();
+    const { data, error } = await supabase
+      .from("logs")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((log) => ({
+      id: log.id,
+      level: log.level as LogEntry["level"],
+      actor: log.actor ?? "",
+      action: log.action ?? "",
+      message: log.message ?? "",
+      createdAt: log.created_at,
+    }));
+  });
 }

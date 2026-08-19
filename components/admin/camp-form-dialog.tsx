@@ -18,7 +18,6 @@ const EMPTY: CampFormValues = {
   endDate: "",
   capacity: "",
   basePrice: "",
-  roomCapacity: "",
   registrationOpen: true,
   registrationOpensAt: "",
   registrationClosesAt: "",
@@ -40,7 +39,6 @@ function fromCamp(camp: Camp): CampFormValues {
     endDate: camp.endDate,
     capacity: camp.capacity ? String(camp.capacity) : "",
     basePrice: String(camp.basePrice),
-    roomCapacity: camp.roomCapacity != null ? String(camp.roomCapacity) : "",
     registrationOpen: camp.registrationOpen,
     registrationOpensAt: toLocalDateTime(camp.registrationOpensAt),
     registrationClosesAt: toLocalDateTime(camp.registrationClosesAt),
@@ -158,7 +156,7 @@ export function CampFormDialog({
           </Field>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label={t.capacity} htmlFor="camp-capacity" error={errors.capacity}>
             <Input
               id="camp-capacity"
@@ -181,20 +179,6 @@ export function CampFormDialog({
               onChange={(e) => set("basePrice", e.target.value)}
               placeholder={t.basePricePlaceholder}
               aria-invalid={Boolean(errors.basePrice)}
-            />
-          </Field>
-          <Field
-            label={t.roomCapacity}
-            htmlFor="camp-rooms"
-            error={errors.roomCapacity}
-          >
-            <Input
-              id="camp-rooms"
-              inputMode="numeric"
-              value={values.roomCapacity}
-              onChange={(e) => set("roomCapacity", e.target.value)}
-              placeholder={t.roomCapacityPlaceholder}
-              aria-invalid={Boolean(errors.roomCapacity)}
             />
           </Field>
         </div>

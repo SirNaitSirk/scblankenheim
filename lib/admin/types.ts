@@ -80,7 +80,6 @@ export type Camp = {
   isCurrent: boolean;
   registrationOpen: boolean;
   formFieldCount: number;
-  roomCapacity: number | null; // limited room spots, null = unlimited/unset
   registrationOpensAt: string | null; // ISO date-time, drives the countdown
   registrationClosesAt: string | null; // ISO date-time
   paymentDueDate: string | null; // ISO date
@@ -101,7 +100,6 @@ export type CampFormValues = {
   endDate: string; // YYYY-MM-DD
   capacity: string;
   basePrice: string;
-  roomCapacity: string;
   registrationOpen: boolean;
   registrationOpensAt: string; // datetime-local (YYYY-MM-DDTHH:mm)
   registrationClosesAt: string;
@@ -118,7 +116,6 @@ export type CampInput = {
   endDate: string | null;
   capacity: number | null;
   basePrice: number; // whole euros
-  roomCapacity: number | null;
   registrationOpen: boolean;
   registrationOpensAt: string | null;
   registrationClosesAt: string | null;
@@ -144,10 +141,17 @@ export type CampFormField = {
   config: Record<string, unknown>; // placeholder, help text, validation, etc.
 };
 
+/** Caps one `select` option to a fixed number of seats (see the room-capacity counter). */
+export type FieldCapacity = {
+  option: string; // must be one of the field's options
+  limit: number; // positive integer — max registrations holding this option
+};
+
 /** Field-level extras stored in `camp_form_fields.config` (extendable without a migration). */
 export type FieldConfig = {
   placeholder: string | null;
   helpText: string | null;
+  capacity?: FieldCapacity | null;
 };
 
 /**
@@ -164,6 +168,8 @@ export type FieldFormValues = {
   options: string; // one choice per line (select only)
   placeholder: string;
   helpText: string;
+  capacityOption: string; // limited option value, or "" for none (select only)
+  capacityLimit: string; // max seats for that option (only when capacityOption set)
 };
 
 /** Validated, row-ready form-field payload (output of the Zod schema). */
@@ -179,6 +185,33 @@ export type FieldInput = {
 /** App-wide settings bag (camp_settings.settings), admin-editable without a deploy. */
 export type AppSettings = Record<string, unknown>;
 
+/** Fixed dashboard metrics computed from registrations / finance / camp. */
+export type BuiltinMetricKey =
+  | "registrations"
+  | "paid"
+  | "open"
+  | "revenue"
+  | "outstanding"
+  | "capacity";
+
+/**
+ * A single dashboard metric card an admin can choose. A discriminated union so
+ * arbitrary German form-field option text is stored safely (no delimiter parsing).
+ * `field` references `camp_form_fields.key`.
+ */
+export type DashboardMetric =
+  | { kind: "builtin"; key: BuiltinMetricKey }
+  | { kind: "fieldOption"; field: string; value: string } // count of a select option
+  | { kind: "fieldChecked"; field: string }; // count of a checked checkbox
+
+/** A selectable metric in the "Kacheln anpassen" dialog (catalog entry). */
+export type DashboardMetricCatalogEntry = {
+  id: string; // stable key for React lists / reorder, see metricId()
+  label: string; // German label shown on the card and in the dialog
+  group: string; // dialog group heading (built-ins vs. a form field)
+  metric: DashboardMetric;
+};
+
 export type AdminUser = {
   id: string;
   name: string;
@@ -186,6 +219,7 @@ export type AdminUser = {
   role: UserRole;
   permissions: string[]; // permission keys, see PERMISSION_LABELS
   visibleTabs: string[]; // nav hrefs the admin may see
+  dashboardMetrics: DashboardMetric[]; // ordered dashboard card selection (empty ⇒ defaults)
   status: "active" | "invited";
   lastActiveAt: string | null; // ISO date, null for pending invites
 };

@@ -8,18 +8,27 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/cn";
 import type { CampFormField } from "@/lib/admin/types";
+import type { FieldAvailability } from "@/lib/marketing/availability";
 
 const copy = {
   submit: "Anmeldung absenden",
+  submitting: "Wird gesendet …",
   required: "Pflichtfeld",
   email: "Bitte gib eine gültige E-Mail-Adresse ein",
   number: "Bitte gib eine Zahl ein",
   checkbox: "Bitte bestätige dieses Feld",
   selectPlaceholder: "Bitte wählen",
   checkboxFallback: "Zustimmung",
-  deferredTitle: "Fast geschafft!",
-  deferredBody:
-    "Deine Angaben sind vollständig. Die Online-Anmeldung wird gerade finalisiert — in Kürze kannst du sie hier direkt absenden.",
+  soldOut: "ausgebucht",
+  seatsLeft: (remaining: number, limit: number, option: string) =>
+    `„${option}“: noch ${remaining} von ${limit} Plätzen frei`,
+  seatsSoldOut: (option: string) => `„${option}“: ausgebucht`,
+  successTitle: "Anmeldung eingegangen!",
+  successBody:
+    "Wir haben deine Anmeldung erhalten. Deine Referenznummer lautet {reference} — bewahre sie gut auf. Zur Bezahlung melden wir uns in Kürze bei dir.",
+  registerAnother: "Noch jemanden anmelden",
+  errorTitle: "Das hat nicht geklappt",
+  errorGeneric: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
 } as const;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -116,16 +125,34 @@ function initialValue(field: CampFormField): FieldValue {
   return field.fieldType === "checkbox" ? false : "";
 }
 
-export function RegistrationForm({ fields }: { fields: CampFormField[] }) {
+export function RegistrationForm({
+  fields,
+  availability = {},
+}: {
+  fields: CampFormField[];
+  availability?: Record<string, FieldAvailability>;
+}) {
   const allFields = mergeFields(fields);
   const [values, setValues] = useState<Record<string, FieldValue>>(() =>
     Object.fromEntries(allFields.map((f) => [f.key, initialValue(f)])),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [reference, setReference] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  function resetForm() {
+    setValues(
+      Object.fromEntries(allFields.map((f) => [f.key, initialValue(f)])),
+    );
+    setErrors({});
+    setServerError(null);
+    setReference(null);
+  }
 
   function setValue(key: string, value: FieldValue) {
     setValues((prev) => ({ ...prev, [key]: value }));
+    setServerError(null);
     setErrors((prev) => {
       if (!prev[key]) return prev;
       const next = { ...prev };
@@ -134,27 +161,64 @@ export function RegistrationForm({ fields }: { fields: CampFormField[] }) {
     });
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) return;
+
     const nextErrors: Record<string, string> = {};
     for (const field of allFields) {
       const message = validate(field, values[field.key]);
       if (message) nextErrors[field.key] = message;
     }
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length === 0) {
-      // Submit is deliberately deferred — no network call, no fake success.
-      setSubmitted(true);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    setSubmitting(true);
+    setServerError(null);
+    try {
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ values }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        reference?: string;
+        error?: string;
+        fieldErrors?: Record<string, string>;
+      };
+
+      if (response.ok && data.reference) {
+        setReference(data.reference);
+        return;
+      }
+      if (data.fieldErrors && Object.keys(data.fieldErrors).length > 0) {
+        setErrors(data.fieldErrors);
+      }
+      setServerError(data.error ?? copy.errorGeneric);
+    } catch {
+      setServerError(copy.errorGeneric);
+    } finally {
+      setSubmitting(false);
     }
   }
 
-  if (submitted) {
+  if (reference) {
     return (
       <Notice
         tone="success"
-        title={copy.deferredTitle}
-        body={copy.deferredBody}
-      />
+        title={copy.successTitle}
+        body={copy.successBody.replace("{reference}", reference)}
+      >
+        <Button
+          type="button"
+          size="lg"
+          variant="outline"
+          onClick={resetForm}
+          className="mt-6"
+        >
+          {copy.registerAnother}
+        </Button>
+      </Notice>
     );
   }
 
@@ -171,12 +235,26 @@ export function RegistrationForm({ fields }: { fields: CampFormField[] }) {
             field={field}
             value={values[field.key]}
             error={errors[field.key]}
+            availability={availability[field.key]}
             onChange={(value) => setValue(field.key, value)}
           />
         ))}
       </div>
-      <Button type="submit" size="lg" className="mt-7 w-full sm:w-auto">
-        {copy.submit}
+      {serverError && (
+        <p
+          role="alert"
+          className="mt-6 rounded-input border border-danger/40 bg-danger/5 px-4 py-3 text-sm text-danger"
+        >
+          {serverError}
+        </p>
+      )}
+      <Button
+        type="submit"
+        size="lg"
+        disabled={submitting}
+        className="mt-7 w-full sm:w-auto"
+      >
+        {submitting ? copy.submitting : copy.submit}
       </Button>
     </form>
   );
@@ -186,11 +264,13 @@ function FormField({
   field,
   value,
   error,
+  availability,
   onChange,
 }: {
   field: CampFormField;
   value: FieldValue;
   error?: string;
+  availability?: FieldAvailability;
   onChange: (value: FieldValue) => void;
 }) {
   const id = `reg-${field.key}`;
@@ -247,21 +327,29 @@ function FormField({
           className={cn(error && "border-danger focus-visible:border-danger")}
         />
       ) : field.fieldType === "select" ? (
-        <Select
-          id={id}
-          value={stringValue}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={errorId}
-          onChange={(e) => onChange(e.target.value)}
-          className={cn(error && "border-danger focus-visible:border-danger")}
-          options={[
-            { value: "", label: placeholder ?? copy.selectPlaceholder },
-            ...readOptions(field.options).map((opt) => ({
-              value: opt,
-              label: opt,
-            })),
-          ]}
-        />
+        <>
+          <Select
+            id={id}
+            value={stringValue}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={errorId}
+            onChange={(e) => onChange(e.target.value)}
+            className={cn(error && "border-danger focus-visible:border-danger")}
+            options={[
+              { value: "", label: placeholder ?? copy.selectPlaceholder },
+              ...readOptions(field.options).map((opt) => {
+                const soldOut =
+                  availability?.option === opt && availability.remaining <= 0;
+                return {
+                  value: opt,
+                  label: soldOut ? `${opt} — ${copy.soldOut}` : opt,
+                  disabled: soldOut,
+                };
+              }),
+            ]}
+          />
+          {availability && <SeatNote availability={availability} />}
+        </>
       ) : (
         <Input
           id={id}
@@ -278,14 +366,41 @@ function FormField({
   );
 }
 
+/** Small live-seat indicator under a capacity-limited select. */
+function SeatNote({ availability }: { availability: FieldAvailability }) {
+  const { option, limit, remaining } = availability;
+  const soldOut = remaining <= 0;
+  return (
+    <span
+      className={cn(
+        "mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium",
+        soldOut ? "text-danger" : "text-accent-strong",
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          "h-1.5 w-1.5 rounded-full",
+          soldOut ? "bg-danger" : "bg-accent",
+        )}
+      />
+      {soldOut
+        ? copy.seatsSoldOut(option)
+        : copy.seatsLeft(remaining, limit, option)}
+    </span>
+  );
+}
+
 function Notice({
   tone,
   title,
   body,
+  children,
 }: {
   tone: "success" | "muted";
   title: string;
   body: string;
+  children?: React.ReactNode;
 }) {
   return (
     <div
@@ -305,6 +420,7 @@ function Notice({
       <p className="mx-auto mt-3 max-w-[46ch] text-sm leading-relaxed text-muted-foreground">
         {body}
       </p>
+      {children}
     </div>
   );
 }

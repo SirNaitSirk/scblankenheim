@@ -11,6 +11,7 @@ import type { CampFormField } from "@/lib/admin/types";
 
 /** Lightweight, public-safe view of the current camp for the registration section. */
 export type LandingCamp = {
+  id: string;
   name: string;
   startDate: string | null;
   registrationOpen: boolean;
@@ -75,6 +76,7 @@ export async function getLandingCamp(): Promise<LandingCamp | null> {
   if (campRes.error || !camp) return null;
 
   return {
+    id: currentCampId,
     name: camp.name,
     startDate: camp.start_date,
     registrationOpen: camp.registration_open,

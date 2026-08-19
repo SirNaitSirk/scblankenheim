@@ -8,17 +8,17 @@
 -- Camps
 -- ---------------------------------------------------------------------------
 insert into public.camps
-  (id, name, location, start_date, end_date, capacity, base_price, room_capacity,
+  (id, name, location, start_date, end_date, capacity, base_price,
    registration_open, registration_opens_at, registration_closes_at, payment_due_date,
    tagline, description)
 values
   ('11111111-1111-1111-1111-111111111126', 'Sommercamp 2026', 'Blankenheim, Eifel',
-   '2026-07-12', '2026-07-19', 120, 195, 60,
+   '2026-07-12', '2026-07-19', 120, 195,
    true, '2026-01-15 08:00:00+01', '2026-06-15 23:59:00+02', '2026-06-30',
    'Eine Woche Berge, Gemeinschaft und Glaube.',
    'Das FCG Blankenheim Sommercamp bringt jedes Jahr Jugendliche in der Eifel zusammen — mit Programm, Andachten, Sport und viel gemeinsamer Zeit.'),
   ('11111111-1111-1111-1111-111111111125', 'Sommercamp 2025', 'Blankenheim, Eifel',
-   '2025-07-13', '2025-07-20', 120, 180, 60,
+   '2025-07-13', '2025-07-20', 120, 180,
    false, '2025-01-15 08:00:00+01', '2025-06-15 23:59:00+02', '2025-06-30',
    null, null)
 on conflict (id) do nothing;
@@ -49,7 +49,8 @@ values
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
--- Form fields (2026). `accommodation` (zimmer/zelt) drives the future room counter.
+-- Form fields (2026). `accommodation` (zimmer/zelt) is the capacity-limited
+-- option — the seat limit lives in that field's `config.capacity`.
 -- ---------------------------------------------------------------------------
 insert into public.camp_form_fields (id, camp_id, key, label, field_type, required, options, sort_order)
 values
