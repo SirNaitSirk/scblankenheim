@@ -21,10 +21,18 @@
   --canvas: #ececee;
 
   /* --- primitive: amber accent (sunset) --- */
+  --amber-700: #a4571a;
   --amber-600: #c56e1f;
   --amber-500: #e8933a;
   --amber-400: #f2a85a;
+  --amber-300: #f7c48a;
   --amber-100: #fbe9d4;
+
+  /* --- primitive: warm sand neutrals (golden daylight) --- */
+  --sand-50: #fbf7f0;
+  --sand-100: #f4ecdf;
+  --sand-200: #ebdcc6;
+  --sand-900: #2a2018;
 
   /* --- primitive: status --- */
   --success: #2e7d57;
@@ -52,6 +60,8 @@
   /* --- scale: elevation (tinted to ink, never pure black) --- */
   --shadow-card: 0 1px 2px rgba(20, 20, 22, 0.04), 0 8px 24px -12px rgba(20, 20, 22, 0.12);
   --shadow-pop: 0 2px 4px rgba(20, 20, 22, 0.06), 0 16px 40px -16px rgba(20, 20, 22, 0.22);
+  /* warm elevation for sand surfaces — shadow tinted to golden amber, not grey */
+  --shadow-warm: 0 2px 6px rgba(120, 74, 20, 0.06), 0 22px 48px -20px rgba(120, 74, 20, 0.28);
 
   /* --- scale: motion --- */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -119,10 +129,17 @@ html[data-admin-theme="dark"] .admin-theme-scope {
   --color-paper: var(--paper);
   --color-canvas: var(--canvas);
 
+  --color-amber-700: var(--amber-700);
   --color-amber-600: var(--amber-600);
   --color-amber-500: var(--amber-500);
   --color-amber-400: var(--amber-400);
+  --color-amber-300: var(--amber-300);
   --color-amber-100: var(--amber-100);
+
+  --color-sand-50: var(--sand-50);
+  --color-sand-100: var(--sand-100);
+  --color-sand-200: var(--sand-200);
+  --color-sand-900: var(--sand-900);
 
   --color-success: var(--success);
   --color-danger: var(--danger);
@@ -146,6 +163,7 @@ html[data-admin-theme="dark"] .admin-theme-scope {
 
   --shadow-card: var(--shadow-card);
   --shadow-pop: var(--shadow-pop);
+  --shadow-warm: var(--shadow-warm);
 
   --font-display: var(--font-archivo);
   --font-sans: var(--font-geist-sans);
@@ -185,6 +203,21 @@ body {
 
   .animate-rise {
     animation: rise-in 0.8s var(--ease-out-expo) both;
+  }
+
+  /* Ken-burns — very slow, continuous drift/zoom on hero + feature photography.
+     Applied to the image element; the parallax wrapper handles scroll offset. */
+  @keyframes ken-burns {
+    from {
+      transform: scale(1.04) translate3d(0, 0, 0);
+    }
+    to {
+      transform: scale(1.14) translate3d(-1.5%, -1.5%, 0);
+    }
+  }
+
+  .animate-ken-burns {
+    animation: ken-burns 22s var(--ease-out-expo) alternate infinite;
   }
 
   /* Modal entrance — scrim fades, panel rises from an already-near-final state. */

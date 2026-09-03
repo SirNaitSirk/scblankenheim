@@ -41,7 +41,7 @@ export function PackingTeaser() {
             {items.map((item) => (
               <li
                 key={item}
-                className="rounded-pill border border-border bg-canvas px-4 py-2 text-sm font-medium text-foreground"
+                className="cursor-default rounded-pill border border-border bg-sand-50 px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:border-amber-300 hover:bg-amber-100 hover:text-amber-700"
               >
                 {item}
               </li>

@@ -51,10 +51,10 @@ export async function RegistrationSection() {
       : {};
 
   return (
-    <section id="anmelden" className="border-t border-border bg-canvas">
+    <section id="anmelden" className="border-t border-border bg-sand-50">
       <div className="mx-auto max-w-[1400px] px-6 py-24 md:px-10 lg:py-32">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <span className="eyebrow text-accent-strong">{heading.eyebrow}</span>
+          <span className="eyebrow text-amber-600">{heading.eyebrow}</span>
           <h2 className="mt-4 font-display text-4xl font-black leading-[1.02] tracking-tight text-foreground md:text-5xl">
             {heading.heading}
           </h2>

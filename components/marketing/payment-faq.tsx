@@ -1,3 +1,4 @@
+import { ShieldCheck } from "@phosphor-icons/react/dist/ssr";
 import { Reveal } from "@/components/marketing/reveal";
 
 const methods = ["Karte", "Apple Pay", "Google Pay", "PayPal"];
@@ -11,6 +12,9 @@ export function PaymentFaq() {
     <section className="border-t border-border bg-surface">
       <div className="mx-auto max-w-[52rem] px-6 py-24 text-center md:px-10 lg:py-32">
         <Reveal>
+          <span className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-pill bg-amber-100 text-amber-700">
+            <ShieldCheck size={26} weight="duotone" />
+          </span>
           <h2 className="mx-auto max-w-[22ch] font-display text-4xl font-black leading-[1.04] tracking-tight text-foreground md:text-5xl">
             Sicher bezahlen, direkt bei der Anmeldung
           </h2>
@@ -26,7 +30,7 @@ export function PaymentFaq() {
             {methods.map((method) => (
               <li
                 key={method}
-                className="rounded-pill border border-border bg-canvas px-5 py-2 text-sm font-medium text-foreground"
+                className="rounded-pill border border-amber-100 bg-sand-50 px-5 py-2 text-sm font-medium text-foreground"
               >
                 {method}
               </li>

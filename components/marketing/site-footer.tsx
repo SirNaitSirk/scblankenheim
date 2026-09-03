@@ -7,7 +7,7 @@ const links = [
 /** Minimal marketing footer. */
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border bg-canvas">
+    <footer className="border-t border-border bg-sand-50">
       <div className="mx-auto flex max-w-[1400px] flex-col gap-6 px-6 py-12 md:flex-row md:items-center md:justify-between md:px-10">
         <div>
           <span className="font-display text-lg font-extrabold tracking-tight text-foreground">
