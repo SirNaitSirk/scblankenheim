@@ -3,6 +3,7 @@
 -- Mirrors the former lib/admin/mock-data.ts so the admin dashboard renders real
 -- rows. Uses fixed UUIDs + ON CONFLICT DO NOTHING so it is safe to re-run.
 -- NOT applied automatically — run manually after 0001_init_schema.sql.
+-- All names and email addresses below are fictional (@example.com).
 
 -- ---------------------------------------------------------------------------
 -- Camps
@@ -65,25 +66,25 @@ values
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
--- Registrations (2026)
+-- Registrations (2026) — fictional sample attendees
 -- ---------------------------------------------------------------------------
 insert into public.registrations
   (id, reference, camp_id, price_tier_id, first_name, last_name, email, city,
    form_data, status, payment_status, amount_due, amount_paid, deleted, registered_at)
 values
-  ('44444444-0000-0000-0000-000000003471', 'A-3471', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Lena',   'Fischer',    'lena.fischer@example.com',        'Köln',            '{"accommodation":"zimmer","tshirt_size":"M"}'::jsonb, 'confirmed', 'paid',    195, 195, false, '2026-03-04'),
-  ('44444444-0000-0000-0000-000000003472', 'A-3472', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Jonas',  'Weber',      'jonas.weber@example.com',         'Aachen',          '{"accommodation":"zelt","tshirt_size":"L"}'::jsonb,  'confirmed', 'unpaid',  195, 0,   false, '2026-03-05'),
-  ('44444444-0000-0000-0000-000000003473', 'A-3473', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220002', 'Mia',    'Schulz',     'mia.schulz@example.com',       'Bonn',            '{"accommodation":"zimmer","tshirt_size":"S"}'::jsonb, 'confirmed', 'paid',    165, 165, false, '2026-02-11'),
-  ('44444444-0000-0000-0000-000000003474', 'A-3474', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220003', 'Elias',  'Braun',      'elias.braun@example.com',         'Düren',           '{"accommodation":"zimmer","tshirt_size":"M"}'::jsonb, 'confirmed', 'partial', 150, 75,  false, '2026-02-11'),
-  ('44444444-0000-0000-0000-000000003475', 'A-3475', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Emilia', 'Wagner',     'emilia.wagner@example.com',    'Euskirchen',      '{"accommodation":"zelt"}'::jsonb,                     'pending',   'unpaid',  195, 0,   false, '2026-03-18'),
+  ('44444444-0000-0000-0000-000000003471', 'A-3471', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Lena',   'Fischer',    'lena.fischer@example.com',    'Köln',            '{"accommodation":"zimmer","tshirt_size":"M"}'::jsonb, 'confirmed', 'paid',    195, 195, false, '2026-03-04'),
+  ('44444444-0000-0000-0000-000000003472', 'A-3472', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Jonas',  'Weber',      'jonas.weber@example.com',     'Aachen',          '{"accommodation":"zelt","tshirt_size":"L"}'::jsonb,  'confirmed', 'unpaid',  195, 0,   false, '2026-03-05'),
+  ('44444444-0000-0000-0000-000000003473', 'A-3473', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220002', 'Mia',    'Schulz',     'mia.schulz@example.com',      'Bonn',            '{"accommodation":"zimmer","tshirt_size":"S"}'::jsonb, 'confirmed', 'paid',    165, 165, false, '2026-02-11'),
+  ('44444444-0000-0000-0000-000000003474', 'A-3474', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220003', 'Elias',  'Braun',      'elias.braun@example.com',     'Düren',           '{"accommodation":"zimmer","tshirt_size":"M"}'::jsonb, 'confirmed', 'partial', 150, 75,  false, '2026-02-11'),
+  ('44444444-0000-0000-0000-000000003475', 'A-3475', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Emilia', 'Wagner',     'emilia.wagner@example.com',   'Euskirchen',      '{"accommodation":"zelt"}'::jsonb,                     'pending',   'unpaid',  195, 0,   false, '2026-03-18'),
   ('44444444-0000-0000-0000-000000003476', 'A-3476', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Noah',   'Hoffmann',   'noah.hoffmann@example.com',   'Mechernich',      '{"accommodation":"zimmer","tshirt_size":"L"}'::jsonb, 'confirmed', 'paid',    195, 195, false, '2026-03-19'),
-  ('44444444-0000-0000-0000-000000003477', 'A-3477', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220002', 'Sophie', 'Koch',       'sophie.koch@example.com',        'Blankenheim',     '{"accommodation":"zimmer","tshirt_size":"S"}'::jsonb, 'confirmed', 'paid',    165, 165, false, '2026-02-02'),
-  ('44444444-0000-0000-0000-000000003478', 'A-3478', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Ben',    'Richter',    'ben.richter@example.com',         'Schleiden',       '{"accommodation":"zelt"}'::jsonb,                     'confirmed', 'unpaid',  195, 0,   false, '2026-04-01'),
+  ('44444444-0000-0000-0000-000000003477', 'A-3477', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220002', 'Sophie', 'Koch',       'sophie.koch@example.com',     'Blankenheim',     '{"accommodation":"zimmer","tshirt_size":"S"}'::jsonb, 'confirmed', 'paid',    165, 165, false, '2026-02-02'),
+  ('44444444-0000-0000-0000-000000003478', 'A-3478', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Ben',    'Richter',    'ben.richter@example.com',     'Schleiden',       '{"accommodation":"zelt"}'::jsonb,                     'confirmed', 'unpaid',  195, 0,   false, '2026-04-01'),
   ('44444444-0000-0000-0000-000000003479', 'A-3479', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220003', 'Marie',  'Klein',      'marie.klein@example.com',     'Kall',            '{"accommodation":"zimmer","tshirt_size":"M"}'::jsonb, 'confirmed', 'partial', 150, 75,  false, '2026-02-24'),
-  ('44444444-0000-0000-0000-000000003480', 'A-3480', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220004', 'Paul',   'Wolf',       'paul.wolf@example.com',        'Bad Münstereifel','{"accommodation":"zelt","tshirt_size":"XL"}'::jsonb, 'confirmed', 'paid',     95, 95,  false, '2026-01-28'),
-  ('44444444-0000-0000-0000-000000003481', 'A-3481', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Hannah', 'Neumann',    'hannah.neumann@example.com',      'Zülpich',         '{"accommodation":"zimmer"}'::jsonb,                   'pending',   'unpaid',  195, 0,   false, '2026-04-06'),
-  ('44444444-0000-0000-0000-000000003482', 'A-3482', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Luca',   'Schwarz',    'luca.schwarz@example.com',        'Nettersheim',     '{"accommodation":"zelt","tshirt_size":"M"}'::jsonb, 'confirmed', 'paid',    195, 195, false, '2026-04-09'),
-  ('44444444-0000-0000-0000-000000003483', 'A-3483', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220002', 'Clara',  'Zimmermann', 'clara.zimmermann@example.com', 'Köln',            '{"accommodation":"zimmer"}'::jsonb,                   'cancelled', 'unpaid',  165, 0,   true,  '2026-02-15'),
+  ('44444444-0000-0000-0000-000000003480', 'A-3480', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220004', 'Paul',   'Wolf',       'paul.wolf@example.com',       'Bad Münstereifel','{"accommodation":"zelt","tshirt_size":"XL"}'::jsonb, 'confirmed', 'paid',     95, 95,  false, '2026-01-28'),
+  ('44444444-0000-0000-0000-000000003481', 'A-3481', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Hannah', 'Neumann',    'hannah.neumann@example.com',  'Zülpich',         '{"accommodation":"zimmer"}'::jsonb,                   'pending',   'unpaid',  195, 0,   false, '2026-04-06'),
+  ('44444444-0000-0000-0000-000000003482', 'A-3482', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Luca',   'Schwarz',    'luca.schwarz@example.com',    'Nettersheim',     '{"accommodation":"zelt","tshirt_size":"M"}'::jsonb, 'confirmed', 'paid',    195, 195, false, '2026-04-09'),
+  ('44444444-0000-0000-0000-000000003483', 'A-3483', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220002', 'Clara',  'Zimmermann', 'clara.zimmermann@example.com','Köln',            '{"accommodation":"zimmer"}'::jsonb,                   'cancelled', 'unpaid',  165, 0,   true,  '2026-02-15'),
   ('44444444-0000-0000-0000-000000003484', 'A-3484', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Finn',   'Krüger',     'finn.krueger@example.com',    'Hellenthal',      '{"accommodation":"zimmer","tshirt_size":"L"}'::jsonb, 'confirmed', 'partial', 195, 98,  false, '2026-04-12')
 on conflict (id) do nothing;
 
