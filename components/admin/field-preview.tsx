@@ -5,6 +5,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { de } from "@/lib/admin/messages";
 import type { CampFormField } from "@/lib/admin/types";
+import { LONG_STEP_HINT, buildSteps, questionFields } from "@/lib/register/steps";
 
 // `options`/`config` arrive as `unknown`/`Record<string, unknown>` from the row;
 // read them defensively so a malformed value never breaks the preview.
@@ -85,16 +86,35 @@ function inputTypeFor(fieldType: string): string {
 }
 
 export function FieldPreview({ fields }: { fields: CampFormField[] }) {
-  if (fields.length === 0) {
+  if (questionFields(fields).length === 0) {
     return (
       <p className="text-sm text-muted-foreground">{de.fields.preview.empty}</p>
     );
   }
+  const steps = buildSteps(fields);
   return (
-    <div className="flex flex-col gap-4">
-      {fields.map((field) => (
-        <PreviewField key={field.id} field={field} />
+    <ol className="flex flex-col gap-6">
+      {steps.map((step, index) => (
+        <li key={step.id} className="flex flex-col gap-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-xs font-semibold tabular-nums text-accent-strong">
+              {index + 1}
+            </span>
+            <h3 className="text-sm font-semibold text-foreground">{step.title}</h3>
+          </div>
+          {step.subtitle && (
+            <p className="-mt-2 text-xs text-muted-foreground">{step.subtitle}</p>
+          )}
+          <div className="flex flex-col gap-4 border-l border-border pl-4">
+            {step.fields.map((field) => (
+              <PreviewField key={field.id} field={field} />
+            ))}
+          </div>
+          {step.fields.length > LONG_STEP_HINT && (
+            <p className="text-xs text-muted-foreground">{de.fields.longStep}</p>
+          )}
+        </li>
       ))}
-    </div>
+    </ol>
   );
 }

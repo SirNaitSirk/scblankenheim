@@ -8,6 +8,7 @@ import {
   ListPlus,
   PencilSimple,
   Plus,
+  Rows,
   Trash,
 } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
@@ -27,7 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
-import { FIELD_TYPES } from "@/lib/admin/field-types";
+import { FIELD_TYPES, isQuestionType, type FieldType } from "@/lib/admin/field-types";
 import { de } from "@/lib/admin/messages";
 import type {
   ActionResult,
@@ -35,7 +36,12 @@ import type {
   FieldFormValues,
 } from "@/lib/admin/types";
 
-type DialogState = { mode: "create" | "edit"; field: CampFormField | null } | null;
+type DialogState = {
+  mode: "create" | "edit";
+  field: CampFormField | null;
+  /** Type preset for a new entry. */
+  type?: FieldType;
+} | null;
 
 function typeLabel(fieldType: string): string {
   return FIELD_TYPES.includes(fieldType as (typeof FIELD_TYPES)[number])
@@ -159,6 +165,16 @@ export function FieldsManager({
             </Button>
             {canWrite && (
               <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDialog({ mode: "create", field: null, type: "step" })}
+              >
+                <Rows size={16} weight="bold" />
+                {de.fields.addStep}
+              </Button>
+            )}
+            {canWrite && (
+              <Button
                 size="sm"
                 onClick={() => setDialog({ mode: "create", field: null })}
               >
@@ -226,6 +242,8 @@ export function FieldsManager({
                 onDragEnd={canWrite ? endDrag : undefined}
                 className={cn(
                   "flex items-center gap-3 p-4 transition-colors duration-150",
+                  !isQuestionType(field.fieldType) &&
+                    "mt-3 border-dashed border-ink-200 bg-sand-50 first:mt-0",
                   draggingIndex === index
                     ? "opacity-50"
                     : overIndex === index && draggingIndex !== null
@@ -264,16 +282,30 @@ export function FieldsManager({
                   </div>
                 )}
 
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="truncate font-medium text-foreground">{field.label}</span>
-                    <Badge tone="neutral">{typeLabel(field.fieldType)}</Badge>
-                    {field.required && <Badge tone="pending">{de.fields.requiredShort}</Badge>}
+                {isQuestionType(field.fieldType) ? (
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="truncate font-medium text-foreground">{field.label}</span>
+                      <Badge tone="neutral">{typeLabel(field.fieldType)}</Badge>
+                      {field.required && <Badge tone="pending">{de.fields.requiredShort}</Badge>}
+                    </div>
+                    <span className="truncate font-mono text-xs text-muted-foreground">
+                      {field.key}
+                    </span>
                   </div>
-                  <span className="truncate font-mono text-xs text-muted-foreground">
-                    {field.key}
-                  </span>
-                </div>
+                ) : (
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone="neutral">{de.fields.stepBadge}</Badge>
+                      <span className="truncate font-semibold text-foreground">{field.label}</span>
+                    </div>
+                    {typeof field.config.helpText === "string" && field.config.helpText !== "" && (
+                      <span className="truncate text-xs text-muted-foreground">
+                        {field.config.helpText}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {canWrite && (
                   <div className="flex shrink-0 items-center gap-1">
@@ -314,9 +346,10 @@ export function FieldsManager({
       </div>
 
       <FieldFormDialog
-        key={dialog ? `${dialog.mode}-${dialog.field?.id ?? "new"}` : "closed"}
+        key={dialog ? `${dialog.mode}-${dialog.field?.id ?? dialog.type ?? "new"}` : "closed"}
         open={dialog !== null}
         mode={dialog?.mode ?? "create"}
+        initialType={dialog?.type}
         field={dialog?.field ?? null}
         onClose={() => setDialog(null)}
         onSubmit={submitField}

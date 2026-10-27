@@ -7,7 +7,13 @@ import { Field, Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { FIELD_TYPES, isChoiceType } from "@/lib/admin/field-types";
+import {
+  FIELD_TYPES,
+  isChoiceType,
+  isQuestionType,
+  slugifyKey,
+  type FieldType,
+} from "@/lib/admin/field-types";
 import { de } from "@/lib/admin/messages";
 import type {
   ActionResult,
@@ -28,20 +34,6 @@ const EMPTY: FieldFormValues = {
   capacityOption: "",
   capacityLimit: "",
 };
-
-// German-aware slug: transliterate umlauts, lowercase, non-alphanumerics → `_`.
-function slugify(label: string): string {
-  return label
-    .trim()
-    .toLowerCase()
-    .replace(/ä/g, "ae")
-    .replace(/ö/g, "oe")
-    .replace(/ü/g, "ue")
-    .replace(/ß/g, "ss")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .replace(/^([0-9])/, "feld_$1");
-}
 
 function readOptionLines(value: unknown): string {
   return Array.isArray(value)
@@ -100,7 +92,8 @@ function fromField(field: CampFormField): FieldFormValues {
   };
 }
 
-const TYPE_OPTIONS = FIELD_TYPES.map((type) => ({
+// Step breaks are added through their own button, never by changing a question's type.
+const TYPE_OPTIONS = FIELD_TYPES.filter(isQuestionType).map((type) => ({
   value: type,
   label: de.fields.types[type],
 }));
@@ -112,6 +105,7 @@ export function FieldFormDialog({
   onClose,
   onSubmit,
   onSuccess,
+  initialType = "text",
 }: {
   open: boolean;
   mode: Mode;
@@ -119,11 +113,13 @@ export function FieldFormDialog({
   onClose: () => void;
   onSubmit: (values: FieldFormValues) => Promise<ActionResult>;
   onSuccess: () => void;
+  /** Type of a newly created entry; `step` opens the step break variant. */
+  initialType?: FieldType;
 }) {
   // Initialised from props at mount; the parent remounts this via `key` on each
   // open, so state is always fresh without a setState-in-effect reset.
   const [values, setValues] = useState<FieldFormValues>(() =>
-    mode === "edit" && field ? fromField(field) : EMPTY,
+    mode === "edit" && field ? fromField(field) : { ...EMPTY, fieldType: initialType },
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -139,7 +135,7 @@ export function FieldFormDialog({
     setValues((prev) => ({
       ...prev,
       label,
-      key: mode === "create" && !keyTouched ? slugify(label) : prev.key,
+      key: mode === "create" && !keyTouched ? slugifyKey(label) : prev.key,
     }));
   };
 
@@ -158,6 +154,14 @@ export function FieldFormDialog({
   }
 
   const showOptions = isChoiceType(values.fieldType);
+  const isStep = !isQuestionType(values.fieldType);
+  const s = de.fields.step;
+  const title = isStep
+    ? mode === "edit" ? s.editTitle : s.createTitle
+    : mode === "edit" ? t.editTitle : t.createTitle;
+  const description = isStep
+    ? mode === "edit" ? s.editDescription : s.createDescription
+    : mode === "edit" ? t.editDescription : t.createDescription;
 
   // Choices offered as the limited option — the current options, plus the saved
   // one if the admin has since removed it from the list (so it stays visible).
@@ -171,8 +175,8 @@ export function FieldFormDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title={mode === "edit" ? t.editTitle : t.createTitle}
-      description={mode === "edit" ? t.editDescription : t.createDescription}
+      title={title}
+      description={description}
       closeLabel={t.close}
       footer={
         <>
@@ -185,137 +189,170 @@ export function FieldFormDialog({
         </>
       }
     >
-      <form id="field-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Field label={t.label} htmlFor="field-label" error={errors.label}>
-          <Input
-            id="field-label"
-            value={values.label}
-            onChange={(e) => onLabelChange(e.target.value)}
-            placeholder={t.labelPlaceholder}
-            aria-invalid={Boolean(errors.label)}
-            autoComplete="off"
-            autoFocus
-          />
-        </Field>
-
-        <Field
-          label={t.key}
-          htmlFor="field-key"
-          error={errors.key}
-          hint={mode === "edit" ? t.keyWarning : t.keyHint}
-        >
-          <Input
-            id="field-key"
-            value={values.key}
-            onChange={(e) => {
-              setKeyTouched(true);
-              set("key", e.target.value);
-            }}
-            placeholder={t.keyPlaceholder}
-            aria-invalid={Boolean(errors.key)}
-            autoComplete="off"
-            spellCheck={false}
-            className="font-mono"
-          />
-        </Field>
-
-        <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
-          <Field label={t.type} htmlFor="field-type">
-            <Select
-              id="field-type"
-              value={values.fieldType}
-              onChange={(e) => set("fieldType", e.target.value as FieldFormValues["fieldType"])}
-              options={TYPE_OPTIONS}
+      {isStep ? (
+        <form id="field-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <Field label={s.title} htmlFor="field-label" error={errors.label}>
+            <Input
+              id="field-label"
+              value={values.label}
+              onChange={(e) => set("label", e.target.value)}
+              placeholder={s.titlePlaceholder}
+              aria-invalid={Boolean(errors.label)}
+              maxLength={60}
+              autoComplete="off"
+              autoFocus
             />
           </Field>
-          <div className="flex h-10 items-center sm:mt-[26px]">
-            <Switch
-              id="field-required"
-              checked={values.required}
-              onCheckedChange={(checked) => set("required", checked)}
-              label={t.requiredToggle}
+          <Field
+            label={s.subtitle}
+            htmlFor="field-help"
+            hint={s.subtitleHint}
+            error={errors.helpText}
+          >
+            <Input
+              id="field-help"
+              value={values.helpText}
+              onChange={(e) => set("helpText", e.target.value)}
+              placeholder={s.subtitlePlaceholder}
+              aria-invalid={Boolean(errors.helpText)}
+              maxLength={140}
+              autoComplete="off"
             />
-          </div>
-        </div>
+          </Field>
+        </form>
+      ) : (
+        <form id="field-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <Field label={t.label} htmlFor="field-label" error={errors.label}>
+            <Input
+              id="field-label"
+              value={values.label}
+              onChange={(e) => onLabelChange(e.target.value)}
+              placeholder={t.labelPlaceholder}
+              aria-invalid={Boolean(errors.label)}
+              autoComplete="off"
+              autoFocus
+            />
+          </Field>
 
-        {showOptions && (
-          <>
-            <Field
-              label={t.options}
-              htmlFor="field-options"
-              error={errors.options}
-              hint={t.optionsHint}
-            >
-              <Textarea
-                id="field-options"
-                value={values.options}
-                onChange={(e) => set("options", e.target.value)}
-                placeholder={t.optionsPlaceholder}
-                aria-invalid={Boolean(errors.options)}
-              />
-            </Field>
+          <Field
+            label={t.key}
+            htmlFor="field-key"
+            error={errors.key}
+            hint={mode === "edit" ? t.keyWarning : t.keyHint}
+          >
+            <Input
+              id="field-key"
+              value={values.key}
+              onChange={(e) => {
+                setKeyTouched(true);
+                set("key", e.target.value);
+              }}
+              placeholder={t.keyPlaceholder}
+              aria-invalid={Boolean(errors.key)}
+              autoComplete="off"
+              spellCheck={false}
+              className="font-mono"
+            />
+          </Field>
 
-            <Field
-              label={t.capacityOption}
-              htmlFor="field-capacity-option"
-              hint={t.capacityOptionHint}
-              error={errors.capacityOption}
-            >
+          <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
+            <Field label={t.type} htmlFor="field-type">
               <Select
-                id="field-capacity-option"
-                value={values.capacityOption}
-                onChange={(e) => set("capacityOption", e.target.value)}
-                aria-invalid={Boolean(errors.capacityOption)}
-                options={[
-                  { value: "", label: t.capacityOptionNone },
-                  ...capacityOptions.map((opt) => ({ value: opt, label: opt })),
-                ]}
+                id="field-type"
+                value={values.fieldType}
+                onChange={(e) => set("fieldType", e.target.value as FieldFormValues["fieldType"])}
+                options={TYPE_OPTIONS}
               />
             </Field>
+            <div className="flex h-10 items-center sm:mt-[26px]">
+              <Switch
+                id="field-required"
+                checked={values.required}
+                onCheckedChange={(checked) => set("required", checked)}
+                label={t.requiredToggle}
+              />
+            </div>
+          </div>
 
-            {values.capacityOption !== "" && (
+          {showOptions && (
+            <>
               <Field
-                label={t.capacityLimit}
-                htmlFor="field-capacity-limit"
-                error={errors.capacityLimit}
+                label={t.options}
+                htmlFor="field-options"
+                error={errors.options}
+                hint={t.optionsHint}
               >
-                <Input
-                  id="field-capacity-limit"
-                  type="number"
-                  min={1}
-                  step={1}
-                  inputMode="numeric"
-                  value={values.capacityLimit}
-                  onChange={(e) => set("capacityLimit", e.target.value)}
-                  placeholder={t.capacityLimitPlaceholder}
-                  aria-invalid={Boolean(errors.capacityLimit)}
-                  autoComplete="off"
+                <Textarea
+                  id="field-options"
+                  value={values.options}
+                  onChange={(e) => set("options", e.target.value)}
+                  placeholder={t.optionsPlaceholder}
+                  aria-invalid={Boolean(errors.options)}
                 />
               </Field>
-            )}
-          </>
-        )}
 
-        <Field label={t.placeholder} htmlFor="field-placeholder">
-          <Input
-            id="field-placeholder"
-            value={values.placeholder}
-            onChange={(e) => set("placeholder", e.target.value)}
-            placeholder={t.placeholderPlaceholder}
-            autoComplete="off"
-          />
-        </Field>
+              <Field
+                label={t.capacityOption}
+                htmlFor="field-capacity-option"
+                hint={t.capacityOptionHint}
+                error={errors.capacityOption}
+              >
+                <Select
+                  id="field-capacity-option"
+                  value={values.capacityOption}
+                  onChange={(e) => set("capacityOption", e.target.value)}
+                  aria-invalid={Boolean(errors.capacityOption)}
+                  options={[
+                    { value: "", label: t.capacityOptionNone },
+                    ...capacityOptions.map((opt) => ({ value: opt, label: opt })),
+                  ]}
+                />
+              </Field>
 
-        <Field label={t.helpText} htmlFor="field-help">
-          <Input
-            id="field-help"
-            value={values.helpText}
-            onChange={(e) => set("helpText", e.target.value)}
-            placeholder={t.helpTextPlaceholder}
-            autoComplete="off"
-          />
-        </Field>
-      </form>
+              {values.capacityOption !== "" && (
+                <Field
+                  label={t.capacityLimit}
+                  htmlFor="field-capacity-limit"
+                  error={errors.capacityLimit}
+                >
+                  <Input
+                    id="field-capacity-limit"
+                    type="number"
+                    min={1}
+                    step={1}
+                    inputMode="numeric"
+                    value={values.capacityLimit}
+                    onChange={(e) => set("capacityLimit", e.target.value)}
+                    placeholder={t.capacityLimitPlaceholder}
+                    aria-invalid={Boolean(errors.capacityLimit)}
+                    autoComplete="off"
+                  />
+                </Field>
+              )}
+            </>
+          )}
+
+          <Field label={t.placeholder} htmlFor="field-placeholder">
+            <Input
+              id="field-placeholder"
+              value={values.placeholder}
+              onChange={(e) => set("placeholder", e.target.value)}
+              placeholder={t.placeholderPlaceholder}
+              autoComplete="off"
+            />
+          </Field>
+
+          <Field label={t.helpText} htmlFor="field-help">
+            <Input
+              id="field-help"
+              value={values.helpText}
+              onChange={(e) => set("helpText", e.target.value)}
+              placeholder={t.helpTextPlaceholder}
+              autoComplete="off"
+            />
+          </Field>
+        </form>
+      )}
     </Dialog>
   );
 }

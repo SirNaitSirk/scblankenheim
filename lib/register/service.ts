@@ -7,6 +7,7 @@ import {
   readFieldCapacity,
 } from "@/lib/marketing/availability";
 import { findValidTier } from "@/lib/register/invitation";
+import { questionFields } from "@/lib/register/steps";
 import { registerMessages } from "@/lib/register/messages";
 import {
   getRegistrationState,
@@ -291,7 +292,8 @@ export async function submitRegistration(
   if (state === "full") return { ok: false, reason: "camp_full" };
   if (state !== "open") return { ok: false, reason: "closed" };
 
-  const dynamicFields = await loadDynamicFields(camp.id);
+  // Step breaks only structure the public form; they never carry an answer.
+  const dynamicFields = questionFields(await loadDynamicFields(camp.id));
   const fields = mergeFields(dynamicFields);
 
   const fieldErrors = validateFields(fields, payload.values);

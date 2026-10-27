@@ -12,6 +12,7 @@ export const FIELD_TYPES = [
   "date",
   "select",
   "checkbox",
+  "step",
 ] as const;
 
 export type FieldType = (typeof FIELD_TYPES)[number];
@@ -19,4 +20,26 @@ export type FieldType = (typeof FIELD_TYPES)[number];
 /** Whether a given field type stores a list of choices (`options`). */
 export function isChoiceType(type: FieldType): boolean {
   return type === "select";
+}
+
+/**
+ * `step` rows only mark where a new form step begins; every other type is a
+ * question that collects an answer.
+ */
+export function isQuestionType(type: string): boolean {
+  return type !== "step";
+}
+
+// German aware slug: transliterate umlauts, lowercase, non alphanumerics → `_`.
+export function slugifyKey(label: string): string {
+  return label
+    .trim()
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/^([0-9])/, "feld_$1");
 }

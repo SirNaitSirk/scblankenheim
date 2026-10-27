@@ -276,6 +276,21 @@ export const de = {
       `Lege fest, welche Felder Teilnehmende bei der Anmeldung für „${camp}“ ausfüllen.`,
     back: "Zurück zu Camps",
     add: "Feld hinzufügen",
+    addStep: "Schrittwechsel",
+    stepBadge: "Schritt",
+    longStep: "Langer Schritt: Überleg, ihn zu teilen.",
+    step: {
+      createTitle: "Schrittwechsel hinzufügen",
+      editTitle: "Schrittwechsel bearbeiten",
+      createDescription:
+        "Ab hier beginnt im Anmeldeformular ein neuer Schritt. Alle Felder darunter gehören dazu, bis zum nächsten Schrittwechsel.",
+      editDescription: "Passe Titel und Untertitel dieses Schritts an.",
+      title: "Titel",
+      titlePlaceholder: "z. B. Gesundheit",
+      subtitle: "Untertitel",
+      subtitlePlaceholder: "z. B. Damit wir gut für dich sorgen können",
+      subtitleHint: "Optional, erscheint unter dem Titel.",
+    },
     edit: "Bearbeiten",
     delete: "Löschen",
     actions: "Aktionen",
@@ -294,6 +309,7 @@ export const de = {
       date: "Datum",
       select: "Auswahl",
       checkbox: "Checkbox",
+      step: "Schrittwechsel",
     },
     empty: {
       title: "Noch keine Felder",
@@ -356,6 +372,8 @@ export const de = {
     },
     errors: {
       labelRequired: "Bitte gib eine Bezeichnung ein.",
+      stepTitleTooLong: "Höchstens 60 Zeichen.",
+      stepSubtitleTooLong: "Höchstens 140 Zeichen.",
       keyRequired: "Bitte gib einen Schlüssel ein.",
       keyInvalid:
         "Nur Kleinbuchstaben, Ziffern und Unterstriche; Beginn mit einem Buchstaben.",

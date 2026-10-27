@@ -14,6 +14,7 @@ import {
 import { AuthError, requireAdmin } from "@/lib/admin/guard";
 import { de } from "@/lib/admin/messages";
 import type { ActionResult } from "@/lib/admin/types";
+import { questionFields } from "@/lib/register/steps";
 
 /**
  * Self-service: persists the caller's own dashboard metric selection. Any admin
@@ -34,7 +35,7 @@ export async function updateDashboardMetrics(
     // Validate against the current camp's catalog so stale/unknown references
     // are dropped and the selection is capped before it is stored.
     const camp = await getCurrentCamp();
-    const fields = camp ? await getCampFormFields(camp.id) : [];
+    const fields = camp ? questionFields(await getCampFormFields(camp.id)) : [];
     const sanitized = sanitizeSelection(parsed.data, buildMetricCatalog(fields));
 
     await updateProfileDashboardMetrics(admin.id, sanitized);

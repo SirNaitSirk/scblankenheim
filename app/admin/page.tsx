@@ -20,6 +20,7 @@ import {
 } from "@/lib/admin/data";
 import { de } from "@/lib/admin/messages";
 import { updateDashboardMetrics } from "./dashboard-actions";
+import { questionFields } from "@/lib/register/steps";
 
 export default async function DashboardPage() {
   // Dashboard is always visible; only its registration actions are permission-gated.
@@ -33,7 +34,8 @@ export default async function DashboardPage() {
   ]);
 
   // The registration dialog is built from the current camp's dynamic fields.
-  const formFields = camp ? await getCampFormFields(camp.id) : [];
+  // Step breaks only structure the public form: no column, CSV entry or metric.
+  const formFields = camp ? questionFields(await getCampFormFields(camp.id)) : [];
 
   const canWriteRegistrations = profile
     ? canUseSection(profile, "registrations")

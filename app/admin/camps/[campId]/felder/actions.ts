@@ -11,7 +11,12 @@ import {
   updateFormField,
   writeLog,
 } from "@/lib/admin/data";
-import { FIELD_TYPES, isChoiceType } from "@/lib/admin/field-types";
+import {
+  FIELD_TYPES,
+  isChoiceType,
+  isQuestionType,
+  slugifyKey,
+} from "@/lib/admin/field-types";
 import { AuthError, requirePermission } from "@/lib/admin/guard";
 import { de } from "@/lib/admin/messages";
 import type {
@@ -24,6 +29,8 @@ import type {
 // --- validation -------------------------------------------------------------
 
 const KEY_PATTERN = /^[a-z][a-z0-9_]*$/;
+const STEP_TITLE_MAX = 60;
+const STEP_SUBTITLE_MAX = 140;
 
 function nullify(value: string): string | null {
   const trimmed = value.trim();
@@ -56,6 +63,20 @@ const fieldSchema = z
   .superRefine((values, ctx) => {
     if (values.label.trim() === "") {
       ctx.addIssue({ code: "custom", path: ["label"], message: de.fields.errors.labelRequired });
+    }
+    // A step break only carries a title and a subtitle; its key is generated.
+    if (!isQuestionType(values.fieldType)) {
+      if (values.label.trim().length > STEP_TITLE_MAX) {
+        ctx.addIssue({ code: "custom", path: ["label"], message: de.fields.errors.stepTitleTooLong });
+      }
+      if (values.helpText.trim().length > STEP_SUBTITLE_MAX) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["helpText"],
+          message: de.fields.errors.stepSubtitleTooLong,
+        });
+      }
+      return;
     }
     const key = values.key.trim();
     if (key === "") {
@@ -91,6 +112,16 @@ const fieldSchema = z
     }
   })
   .transform((values): FieldInput => {
+    if (!isQuestionType(values.fieldType)) {
+      return {
+        key: values.key.trim(),
+        label: values.label.trim(),
+        fieldType: values.fieldType,
+        required: false,
+        options: null,
+        config: { placeholder: null, helpText: nullify(values.helpText), capacity: null },
+      };
+    }
     const isSelect = isChoiceType(values.fieldType);
     const capacityOption = values.capacityOption.trim();
     const limit = parseLimit(values.capacityLimit);
@@ -182,6 +213,15 @@ async function keyTaken(
   return fields.some((f) => f.key === key && f.id !== ignoreId);
 }
 
+// First free `schritt_<slug>` key in the camp; step keys are never shown.
+async function freeStepKey(campId: string, label: string): Promise<string> {
+  const taken = new Set((await getCampFormFields(campId)).map((f) => f.key));
+  const base = `schritt_${slugifyKey(label) || "neu"}`;
+  let key = base;
+  for (let n = 2; taken.has(key); n++) key = `${base}_${n}`;
+  return key;
+}
+
 function keyTakenResult(): ActionResult {
   return {
     ok: false,
@@ -200,14 +240,17 @@ export async function createFieldAction(
     const parsed = fieldSchema.safeParse(values);
     if (!parsed.success) return fieldErrorResult(parsed.error);
 
-    if (await keyTaken(campId, parsed.data.key)) return keyTakenResult();
+    const input = isQuestionType(parsed.data.fieldType)
+      ? parsed.data
+      : { ...parsed.data, key: await freeStepKey(campId, parsed.data.label) };
+    if (await keyTaken(campId, input.key)) return keyTakenResult();
 
     try {
-      const id = await createFormField(campId, parsed.data);
+      const id = await createFormField(campId, input);
       await writeLog({
         actor: actorLabel(admin),
         action: "field.create",
-        message: `${parsed.data.label} (${parsed.data.key})`,
+        message: `${input.label} (${input.key})`,
       });
       revalidateFields(campId);
       return { ok: true, id };

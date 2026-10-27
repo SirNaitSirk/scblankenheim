@@ -1,17 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  ReviewList,
+  STEP_DURATION,
+  STEP_EASE,
+  StepProgress,
+} from "@/components/marketing/registration-steps";
 import { cn } from "@/lib/cn";
 import { registerMessages } from "@/lib/register/messages";
-import {
-  mergeFields,
-  validateField,
-  type FieldValue,
-} from "@/lib/register/validation";
+import { buildSteps, stepIndexOf, type FormStep } from "@/lib/register/steps";
+import { validateField, type FieldValue } from "@/lib/register/validation";
 import type { CampFormField } from "@/lib/admin/types";
 import type { FieldAvailability } from "@/lib/marketing/availability";
 
@@ -49,6 +54,52 @@ function initialValue(field: CampFormField): FieldValue {
   return field.fieldType === "checkbox" ? false : "";
 }
 
+function emptyValues(fields: CampFormField[]): Record<string, FieldValue> {
+  return Object.fromEntries(fields.map((f) => [f.key, initialValue(f)]));
+}
+
+/** Per key messages for the given fields; empty when all are valid. */
+function validateStep(
+  fields: CampFormField[],
+  values: Record<string, FieldValue>,
+): Record<string, string> {
+  const errors: Record<string, string> = {};
+  for (const field of fields) {
+    const message = validateField(field, values[field.key]);
+    if (message) errors[field.key] = message;
+  }
+  return errors;
+}
+
+/** Lowest step holding one of the keys, with the first such key in form order. */
+function firstErrorTarget(
+  steps: FormStep[],
+  keys: string[],
+): { index: number; key: string } | null {
+  for (let index = 0; index < steps.length; index++) {
+    const field = steps[index].fields.find((f) => keys.includes(f.key));
+    if (field) return { index, key: field.key };
+  }
+  const known = keys.find((key) => stepIndexOf(steps, key) >= 0);
+  return known ? { index: stepIndexOf(steps, known), key: known } : null;
+}
+
+/** Tracks the rendered height of an element so its wrapper can ease to it. */
+function useMeasuredHeight<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null);
+  const [height, setHeight] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setHeight(entry.borderBoxSize?.[0]?.blockSize ?? node.offsetHeight);
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, height] as const;
+}
+
 export function RegistrationForm({
   fields,
   availability = {},
@@ -59,22 +110,75 @@ export function RegistrationForm({
   /** Already validated on the server; kept across "Noch jemanden anmelden". */
   invitationToken?: string;
 }) {
-  const allFields = mergeFields(fields);
+  const steps = useMemo(() => buildSteps(fields), [fields]);
+  const allFields = useMemo(() => steps.flatMap((step) => step.fields), [steps]);
+  const reviewIndex = steps.length;
+  const titles = useMemo(
+    () => [...steps.map((step) => step.title), copy.steps.reviewTitle],
+    [steps],
+  );
+
   const [values, setValues] = useState<Record<string, FieldValue>>(() =>
-    Object.fromEntries(allFields.map((f) => [f.key, initialValue(f)])),
+    emptyValues(allFields),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [reference, setReference] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const [stepIndex, setStepIndex] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const [returnToReview, setReturnToReview] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
+
+  const reduceMotion = useReducedMotion();
+  const formRef = useRef<HTMLFormElement>(null);
+  const navigated = useRef(false);
+  const focusKey = useRef<string | null>(null);
+  const [bodyRef, bodyHeight] = useMeasuredHeight<HTMLDivElement>();
+
+  const isReview = stepIndex === reviewIndex;
+  const step = isReview ? null : steps[stepIndex];
+
+  // After a step change: keep the card in view, then focus the first invalid
+  // field (when one was requested) or the step heading (research R5).
+  useEffect(() => {
+    if (!navigated.current) return;
+    const form = formRef.current;
+    if (form && form.getBoundingClientRect().top < 0) {
+      form.scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });
+    }
+    const key = focusKey.current;
+    focusKey.current = null;
+    // The leaving step is still mounted during its exit, so target the new one.
+    const target = key
+      ? document.getElementById(`reg-${key}`)
+      : form?.querySelector<HTMLElement>(`[data-step="${stepIndex}"] h3`);
+    target?.focus({ preventScroll: true });
+  }, [stepIndex, reduceMotion]);
+
+  function goTo(index: number, nextDirection: 1 | -1, fieldKey?: string) {
+    navigated.current = true;
+    focusKey.current = fieldKey ?? null;
+    setDirection(nextDirection);
+    setStepIndex(index);
+    setAnnouncement(copy.steps.announce(index + 1, titles.length, titles[index]));
+  }
+
+  function focusField(key: string) {
+    document.getElementById(`reg-${key}`)?.focus();
+  }
+
   function resetForm() {
-    setValues(
-      Object.fromEntries(allFields.map((f) => [f.key, initialValue(f)])),
-    );
+    setValues(emptyValues(allFields));
     setErrors({});
     setServerError(null);
     setReference(null);
+    navigated.current = false;
+    setStepIndex(0);
+    setDirection(1);
+    setReturnToReview(false);
+    setAnnouncement("");
   }
 
   function setValue(key: string, value: FieldValue) {
@@ -88,17 +192,43 @@ export function RegistrationForm({
     });
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (submitting) return;
+  function goBack() {
+    setReturnToReview(false);
+    setServerError(null);
+    goTo(stepIndex - 1, -1);
+  }
 
-    const nextErrors: Record<string, string> = {};
-    for (const field of allFields) {
-      const message = validateField(field, values[field.key]);
-      if (message) nextErrors[field.key] = message;
+  function editStep(index: number) {
+    setReturnToReview(true);
+    setServerError(null);
+    goTo(index, -1);
+  }
+
+  // Next on a question step: validate only this step, then move on.
+  function advance(current: FormStep) {
+    const stepErrors = validateStep(current.fields, values);
+    const invalid = current.fields.find((f) => stepErrors[f.key]);
+    if (invalid) {
+      setErrors((prev) => ({ ...prev, ...stepErrors }));
+      focusField(invalid.key);
+      return;
     }
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    if (returnToReview) {
+      setReturnToReview(false);
+      goTo(reviewIndex, 1);
+    } else {
+      goTo(stepIndex + 1, 1);
+    }
+  }
+
+  async function submit() {
+    const allErrors = validateStep(allFields, values);
+    const target = firstErrorTarget(steps, Object.keys(allErrors));
+    if (target) {
+      setErrors(allErrors);
+      goTo(target.index, -1, target.key);
+      return;
+    }
 
     setSubmitting(true);
     setServerError(null);
@@ -120,15 +250,29 @@ export function RegistrationForm({
         setReference(data.reference);
         return;
       }
+      setServerError(data.error ?? copy.api.generic);
+      // Field errors send the person to the step that holds the field (FR-008).
       if (data.fieldErrors && Object.keys(data.fieldErrors).length > 0) {
         setErrors(data.fieldErrors);
+        const fieldTarget = firstErrorTarget(steps, Object.keys(data.fieldErrors));
+        if (fieldTarget) {
+          setReturnToReview(true);
+          goTo(fieldTarget.index, -1, fieldTarget.key);
+        }
       }
-      setServerError(data.error ?? copy.api.generic);
     } catch {
       setServerError(copy.api.generic);
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // One <form>: Enter in a single line input runs Next, only the review sends.
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting) return;
+    if (step) advance(step);
+    else void submit();
   }
 
   if (reference) {
@@ -151,29 +295,97 @@ export function RegistrationForm({
     );
   }
 
+  const slide = reduceMotion ? 0 : 24;
+  const variants = {
+    enter: (d: 1 | -1) => ({ opacity: 0, x: slide * d }),
+    center: { opacity: 1, x: 0 },
+    exit: (d: 1 | -1) => ({ opacity: 0, x: -slide * d }),
+  };
+  const transition = reduceMotion
+    ? { duration: 0.15, ease: "easeOut" as const }
+    : { duration: STEP_DURATION, ease: STEP_EASE };
+
+  const primaryLabel = isReview
+    ? submitting
+      ? copy.form.submitting
+      : copy.steps.submit
+    : returnToReview
+      ? copy.steps.backToReview
+      : copy.steps.next;
+
   return (
     <form
+      ref={formRef}
       noValidate
       onSubmit={handleSubmit}
-      className="rounded-card border border-border bg-surface p-6 shadow-card sm:p-8"
+      className="scroll-mt-24 rounded-card border border-border bg-surface p-6 shadow-card sm:p-8"
     >
-      {invitationToken && (
-        <p className="mb-6 rounded-input border border-border bg-sand-50 px-4 py-3 text-sm text-muted-foreground">
-          {copy.invitationHint}
-        </p>
-      )}
-      <div className="flex flex-col gap-5">
-        {allFields.map((field) => (
-          <FormField
-            key={field.id}
-            field={field}
-            value={values[field.key]}
-            error={errors[field.key]}
-            availability={availability[field.key]}
-            onChange={(value) => setValue(field.key, value)}
-          />
-        ))}
-      </div>
+      <StepProgress titles={titles} current={stepIndex} />
+
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
+
+      <motion.div
+        initial={false}
+        animate={{ height: bodyHeight ?? "auto" }}
+        transition={reduceMotion ? { duration: 0 } : transition}
+        className="-mx-1 overflow-hidden px-1"
+      >
+        <div ref={bodyRef} className="relative pt-7">
+          <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+            <motion.div
+              key={stepIndex}
+              data-step={stepIndex}
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={transition}
+              className="pb-1"
+            >
+              <h3
+                tabIndex={-1}
+                className="font-display text-2xl font-extrabold tracking-tight text-foreground outline-none"
+              >
+                {step ? step.title : copy.steps.reviewTitle}
+              </h3>
+              {(step ? step.subtitle : copy.steps.reviewIntro) && (
+                <p className="mt-1.5 max-w-[52ch] text-sm leading-relaxed text-muted-foreground">
+                  {step ? step.subtitle : copy.steps.reviewIntro}
+                </p>
+              )}
+
+              {step && stepIndex === 0 && invitationToken && (
+                <p className="mt-5 rounded-input border border-border bg-sand-50 px-4 py-3 text-sm text-muted-foreground">
+                  {copy.invitationHint}
+                </p>
+              )}
+
+              <div className="mt-6">
+                {step ? (
+                  <div className="flex flex-col gap-5">
+                    {step.fields.map((field) => (
+                      <FormField
+                        key={field.id}
+                        field={field}
+                        value={values[field.key]}
+                        error={errors[field.key]}
+                        availability={availability[field.key]}
+                        onChange={(value) => setValue(field.key, value)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <ReviewList steps={steps} values={values} onEdit={editStep} />
+                )}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </motion.div>
+
       {serverError && (
         <p
           role="alert"
@@ -182,14 +394,36 @@ export function RegistrationForm({
           {serverError}
         </p>
       )}
-      <Button
-        type="submit"
-        size="lg"
-        disabled={submitting}
-        className="mt-7 w-full sm:w-auto"
+
+      <div
+        className={cn(
+          "mt-8 flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center",
+          stepIndex > 0 ? "sm:justify-between" : "sm:justify-end",
+        )}
       >
-        {submitting ? copy.form.submitting : copy.form.submit}
-      </Button>
+        {stepIndex > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
+            onClick={goBack}
+            disabled={submitting}
+            className="w-full sm:w-auto"
+          >
+            <ArrowLeft size={18} weight="bold" aria-hidden />
+            {copy.steps.back}
+          </Button>
+        )}
+        <Button
+          type="submit"
+          size="lg"
+          disabled={submitting}
+          className="w-full sm:w-auto"
+        >
+          {primaryLabel}
+          {!isReview && <ArrowRight size={18} weight="bold" aria-hidden />}
+        </Button>
+      </div>
     </form>
   );
 }
