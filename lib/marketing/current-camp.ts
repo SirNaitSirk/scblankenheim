@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getPublicClient } from "@/lib/supabase/public";
 import type { Tables } from "@/lib/database.types";
 import type { CampFormField } from "@/lib/admin/types";
@@ -19,6 +20,8 @@ export type LandingCamp = RegistrationWindow & {
   id: string;
   name: string;
   startDate: string | null;
+  /** Public base price in whole euros. Hidden tier prices never appear here. */
+  basePrice: number;
   fields: CampFormField[];
 };
 
@@ -45,8 +48,11 @@ function mapFormField(row: Tables<"camp_form_fields">): CampFormField {
 /**
  * Reads the current camp (from `camp_settings.current_camp_id`) plus its form
  * fields. Returns `null` when there is no current camp or on any query error.
+ * Wrapped in React `cache` so several sections of one request share one read.
  */
-export async function getLandingCamp(): Promise<LandingCamp | null> {
+export const getLandingCamp = cache(loadLandingCamp);
+
+async function loadLandingCamp(): Promise<LandingCamp | null> {
   const supabase = getPublicClient();
 
   const { data: settings, error: settingsError } = await supabase
@@ -61,7 +67,7 @@ export async function getLandingCamp(): Promise<LandingCamp | null> {
     supabase
       .from("camps")
       .select(
-        "name, start_date, registration_open, registration_opens_at, registration_closes_at, capacity",
+        "name, start_date, base_price, registration_open, registration_opens_at, registration_closes_at, capacity",
       )
       .eq("id", currentCampId)
       .maybeSingle(),
@@ -79,6 +85,7 @@ export async function getLandingCamp(): Promise<LandingCamp | null> {
     id: currentCampId,
     name: camp.name,
     startDate: camp.start_date,
+    basePrice: camp.base_price,
     registrationOpen: camp.registration_open,
     opensAt: camp.registration_opens_at,
     closesAt: camp.registration_closes_at,

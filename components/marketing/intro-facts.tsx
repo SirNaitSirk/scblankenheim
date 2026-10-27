@@ -1,8 +1,21 @@
 import { CalendarBlank, MapPin, Ticket } from "@phosphor-icons/react/dist/ssr";
 import { Reveal } from "@/components/marketing/reveal";
+import { formatCurrency } from "@/lib/format";
+import { getLandingCamp } from "@/lib/marketing/current-camp";
 
-/* Placeholder values — real Termin/Ort/Beitrag come from camps/camp_settings later. */
-const facts = [
+type Fact = {
+  label: string;
+  value: string;
+  note: string;
+  Icon: typeof Ticket;
+};
+
+/*
+ * "Wann" and "Wo" are still placeholders (replaced by spec 002). The fee comes
+ * from the current camp's public base price so no hidden tier price can ever
+ * show up here (constitution VI); without a camp the tile is left out.
+ */
+const staticFacts: Fact[] = [
   {
     label: "Wann",
     value: "Sommer 2027",
@@ -15,19 +28,25 @@ const facts = [
     note: "Check-in ab 16 Uhr, Bahnhofstraße 18",
     Icon: MapPin,
   },
-  {
-    label: "Beitrag",
-    value: "ab 150 €",
-    note: "Übernachtung & Verpflegung inklusive",
-    Icon: Ticket,
-  },
 ];
 
+function feeFact(basePrice: number): Fact {
+  return {
+    label: "Beitrag",
+    value: formatCurrency(basePrice),
+    note: "Übernachtung & Verpflegung inklusive",
+    Icon: Ticket,
+  };
+}
+
 /**
- * Intro section (Persuade): asymmetric split — narrative lead on the left,
- * three key-fact tiles stacked on the right. Anchored as `#camp`.
+ * Intro section (Persuade): asymmetric split with the narrative lead on the left,
+ * three fact tiles stacked on the right. Anchored as `#camp`.
  */
-export function IntroFacts() {
+export async function IntroFacts() {
+  const camp = await getLandingCamp();
+  const facts = camp ? [...staticFacts, feeFact(camp.basePrice)] : staticFacts;
+
   return (
     <section id="camp" className="border-t border-border bg-sand-50">
       <div className="mx-auto grid max-w-[1400px] gap-12 px-6 py-24 md:grid-cols-[1.1fr_0.9fr] md:px-10 lg:py-32">
