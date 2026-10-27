@@ -134,22 +134,28 @@ function Cell({
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
-          {canWrite ? (
-            <div className="w-36">
-              <Select
-                aria-label={de.registrations.payment}
-                value={row.payment}
-                onChange={(e) =>
-                  onPaymentChange(row.id, e.target.value as PaymentStatus)
-                }
-                options={PAYMENT_OPTIONS}
-              />
-            </div>
-          ) : (
-            <Badge tone={paymentTone[row.payment]}>
-              {PAYMENT_STATUS_LABELS[row.payment]}
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {canWrite ? (
+              <div className="w-36">
+                <Select
+                  aria-label={de.registrations.payment}
+                  value={row.payment}
+                  onChange={(e) =>
+                    onPaymentChange(row.id, e.target.value as PaymentStatus)
+                  }
+                  options={PAYMENT_OPTIONS}
+                />
+              </div>
+            ) : (
+              <Badge tone={paymentTone[row.payment]}>
+                {PAYMENT_STATUS_LABELS[row.payment]}
+              </Badge>
+            )}
+            {/* E.g. two Stripe sessions paid; an admin refunds the rest in Stripe. */}
+            {row.amountPaid > row.amountDue && (
+              <Badge tone="danger">{de.registrations.overpaid}</Badge>
+            )}
+          </div>
         </td>
       );
     case "status":

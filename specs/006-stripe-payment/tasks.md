@@ -66,10 +66,10 @@ Format: `[ID] [P?] [Story] Description`. `[P]` = can run in parallel (different 
 
 **Independent Test**: quickstart scenarios 5, 6, 7, 8.
 
-- [ ] T027 [P] [US3] Update `app/admin/actions.ts`: both Zod enums become `z.enum(["unpaid", "processing", "partial", "paid", "refunded"])` (depends on T006)
-- [ ] T028 [P] [US3] (tone map already done to keep the build green; overpaid badge open) Update `components/admin/registrations-table.tsx`: `paymentTone` adds `processing: "pending"`, `refunded: "neutral"`; show an "Überzahlt" badge when `amountPaid > amountDue` (depends on T006)
-- [ ] T029 [P] [US3] Check `components/admin/registrations-filters.tsx`, `components/admin/registration-form-dialog.tsx` and `components/admin/registrations-manager.tsx` pick up the new labels through `PAYMENT_STATUS_LABELS` and compile; adjust only if a hardcoded list exists (depends on T006)
-- [ ] T030 [US3] Verify `getFinanceSummary` in `lib/admin/data.ts` and `lib/admin/dashboard-metrics.ts` stay correct: collected sums `amount_paid` (processing contributes 0), "Offen" counts everything not `paid`; change nothing unless a check fails (depends on T006)
+- [x] T027 [P] [US3] Update `app/admin/actions.ts`: both Zod enums become `z.enum(["unpaid", "processing", "partial", "paid", "refunded"])` (depends on T006)
+- [x] T028 [P] [US3] Update `components/admin/registrations-table.tsx`: `paymentTone` adds `processing: "pending"`, `refunded: "neutral"`; show an "Überzahlt" badge when `amountPaid > amountDue` (depends on T006)
+- [x] T029 [P] [US3] Check `components/admin/registrations-filters.tsx`, `components/admin/registration-form-dialog.tsx` and `components/admin/registrations-manager.tsx` pick up the new labels through `PAYMENT_STATUS_LABELS` and compile; adjust only if a hardcoded list exists (depends on T006). Checked: all derive from `PAYMENT_STATUS_LABELS`, no change needed
+- [x] T030 [US3] Verify `getFinanceSummary` in `lib/admin/data.ts` and `lib/admin/dashboard-metrics.ts` stay correct: collected sums `amount_paid` (processing contributes 0), "Offen" counts everything not `paid`; change nothing unless a check fails (depends on T006). Checked: correct as is, no change
 
 **Checkpoint**: SEPA shows "In Bearbeitung", refunds show "Teilweise" or "Erstattet", resent events change nothing.
 

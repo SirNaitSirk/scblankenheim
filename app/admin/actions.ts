@@ -49,7 +49,7 @@ const registrationSchema = z
     email: z.string(),
     priceTierId: z.string(),
     status: z.enum(["confirmed", "pending", "cancelled"]),
-    payment: z.enum(["paid", "partial", "unpaid"]),
+    payment: z.enum(["unpaid", "processing", "partial", "paid", "refunded"]),
     amountDue: z.string(),
     amountPaid: z.string(),
     formData: z.record(z.string(), z.union([z.string(), z.boolean()])),
@@ -188,7 +188,7 @@ export async function updateRegistrationAction(
   });
 }
 
-const paymentSchema = z.enum(["paid", "partial", "unpaid"]);
+const paymentSchema = z.enum(["unpaid", "processing", "partial", "paid", "refunded"]);
 
 export async function setRegistrationPaymentAction(
   reference: string,
