@@ -1,60 +1,44 @@
 import "server-only";
 
 import { getServiceClient } from "@/lib/supabase/server";
-import { createRegistration, writeLog } from "@/lib/admin/data";
+import { generateReference, writeLog } from "@/lib/admin/data";
 import {
-  getCampAvailability,
+  getActiveRegistrationCount,
   readFieldCapacity,
 } from "@/lib/marketing/availability";
-import type { CampFormField, RegistrationInput } from "@/lib/admin/types";
+import { registerMessages } from "@/lib/register/messages";
+import {
+  getRegistrationState,
+  type RegistrationWindow,
+} from "@/lib/register/registration-state";
+import {
+  isCoreKey,
+  mergeFields,
+  validateFields,
+  type CoreKey,
+  type FieldValue,
+} from "@/lib/register/validation";
+import type { Json } from "@/lib/database.types";
+import type { CampFormField } from "@/lib/admin/types";
 
 /**
- * Public registration service. All work runs server-side with the service-role
- * client — the public route handler ([app/api/register]) is the only caller.
- * The server is the gate: it re-loads the current camp, re-validates every field
- * against `camp_form_fields`, enforces the open/closed state, resolves the
- * amount (base price or a hidden price-tier via invitation token), and throttles
- * abuse. Client-side validation is never trusted.
+ * Public registration service. All work runs on the server with the service
+ * role client; the public route handler ([app/api/register]) is the only caller.
+ * The server is the gate: it reloads the current camp, validates every field
+ * again against `camp_form_fields` with the shared rules, enforces the open or
+ * closed state, resolves the amount (base price or a hidden price tier via
+ * invitation token), throttles abuse, and inserts through
+ * `create_public_registration`, which enforces camp and option capacity
+ * atomically. Validation in the browser is never trusted.
  */
 
 // --- constants --------------------------------------------------------------
 
 const THROTTLE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 const THROTTLE_MAX_ATTEMPTS = 5; // per email OR ip within the window
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// German validation copy — mirrors the client form so inline errors match.
-const MESSAGES = {
-  required: "Pflichtfeld",
-  email: "Bitte gib eine gültige E-Mail-Adresse ein",
-  number: "Bitte gib eine Zahl ein",
-  checkbox: "Bitte bestätige dieses Feld",
-  full: "Leider sind alle Plätze für diese Option belegt.",
-} as const;
-
-// Fixed identity fields backed by dedicated `registrations` columns. Mirrors
-// the client's CORE_FIELDS so server validation is identical.
-const CORE_KEYS = ["first_name", "last_name", "email"] as const;
-type CoreKey = (typeof CORE_KEYS)[number];
-
-const CORE_FIELDS: CampFormField[] = [
-  { key: "first_name", label: "Vorname", fieldType: "text" },
-  { key: "last_name", label: "Nachname", fieldType: "text" },
-  { key: "email", label: "E-Mail", fieldType: "email" },
-].map((f) => ({
-  ...f,
-  id: `core-${f.key}`,
-  campId: "",
-  required: true,
-  options: null,
-  sortOrder: -1,
-  config: {},
-}));
+const REFERENCE_ATTEMPTS = 5; // retries on the rare reference collision
 
 // --- types ------------------------------------------------------------------
-
-type FieldValue = string | boolean;
 
 export type RegistrationPayload = {
   values: Record<string, FieldValue>;
@@ -65,20 +49,34 @@ export type RegistrationPayload = {
 export type RegistrationResult =
   | { ok: true; reference: string }
   | { ok: false; reason: "closed" }
+  | { ok: false; reason: "camp_full" }
   | { ok: false; reason: "throttled" }
   | { ok: false; reason: "invalid"; fieldErrors: Record<string, string> }
   | { ok: false; reason: "full"; fieldErrors: Record<string, string> }
   | { ok: false; reason: "error" };
 
-type CurrentCamp = {
+type CurrentCamp = RegistrationWindow & {
   id: string;
   basePrice: number;
-  isOpen: boolean;
+};
+
+type OptionLimit = { key: string; option: string; limit: number };
+
+type InsertOutcome =
+  | { status: "ok"; reference: string }
+  | { status: "camp_full" }
+  | { status: "option_full"; keys: string[] };
+
+type NewRegistration = {
+  core: Record<CoreKey, string>;
+  formData: Record<string, FieldValue>;
+  amountDue: number;
+  priceTierId: string | null;
 };
 
 // --- helpers ----------------------------------------------------------------
 
-/** Current camp id + base price + whether registration is open (server-side). */
+/** Current camp id, base price and registration window settings. */
 async function loadCurrentCamp(): Promise<CurrentCamp | null> {
   const supabase = getServiceClient();
 
@@ -92,7 +90,9 @@ async function loadCurrentCamp(): Promise<CurrentCamp | null> {
 
   const { data: camp, error } = await supabase
     .from("camps")
-    .select("id, base_price, registration_open")
+    .select(
+      "id, base_price, registration_open, registration_opens_at, registration_closes_at, capacity",
+    )
     .eq("id", currentCampId)
     .maybeSingle();
 
@@ -101,7 +101,10 @@ async function loadCurrentCamp(): Promise<CurrentCamp | null> {
   return {
     id: camp.id,
     basePrice: camp.base_price,
-    isOpen: camp.registration_open,
+    registrationOpen: camp.registration_open,
+    opensAt: camp.registration_opens_at,
+    closesAt: camp.registration_closes_at,
+    capacity: camp.capacity,
   };
 }
 
@@ -130,73 +133,22 @@ async function loadDynamicFields(campId: string): Promise<CampFormField[]> {
   }));
 }
 
-/** Core identity fields first, then dynamic fields (deduped by key). */
-function mergeFields(dynamic: CampFormField[]): CampFormField[] {
-  const coreKeys = new Set<string>(CORE_KEYS);
-  return [...CORE_FIELDS, ...dynamic.filter((f) => !coreKeys.has(f.key))];
-}
-
-/** Validates one field's value; returns a German message or `null` if valid. */
-function validateField(field: CampFormField, value: FieldValue): string | null {
-  if (field.fieldType === "checkbox") {
-    if (field.required && value !== true) return MESSAGES.checkbox;
-    return null;
-  }
-
-  const text = typeof value === "string" ? value.trim() : "";
-
-  if (field.required && text === "") return MESSAGES.required;
-  if (text === "") return null; // empty optional value passes
-
-  if (field.fieldType === "email" && !EMAIL_RE.test(text)) return MESSAGES.email;
-  if (field.fieldType === "number" && Number.isNaN(Number(text)))
-    return MESSAGES.number;
-
-  return null;
-}
-
-/** Validates all fields; returns per-key German errors (empty when all valid). */
-function validateFields(
-  fields: CampFormField[],
-  values: Record<string, FieldValue>,
-): Record<string, string> {
-  const errors: Record<string, string> = {};
-  for (const field of fields) {
-    const message = validateField(field, values[field.key] ?? "");
-    if (message) errors[field.key] = message;
-  }
-  return errors;
-}
-
 /**
- * Enforces per-option seat limits (the authoritative gate — the public form's
- * counter is only advisory). For each capacity-limited field whose submitted
- * value is the limited option, rejects when no seats remain. Returns per-field
- * German errors (empty when nothing is full).
+ * Seat limits the submission actually claims: fields with a capacity whose
+ * submitted value is the limited option. The RPC checks only these.
  */
-async function checkCapacity(
-  campId: string,
+function selectedOptionLimits(
   fields: CampFormField[],
   formData: Record<string, FieldValue>,
-): Promise<Record<string, string>> {
-  const limited = fields.filter((field) => readFieldCapacity(field) !== null);
-  if (limited.length === 0) return {};
-
-  const availability = await getCampAvailability(campId, limited);
-  const errors: Record<string, string> = {};
-
-  for (const field of limited) {
+): OptionLimit[] {
+  const limits: OptionLimit[] = [];
+  for (const field of fields) {
     const capacity = readFieldCapacity(field);
-    if (!capacity) continue;
-    if (
-      formData[field.key] === capacity.option &&
-      (availability[field.key]?.remaining ?? 0) <= 0
-    ) {
-      errors[field.key] = MESSAGES.full;
+    if (capacity && formData[field.key] === capacity.option) {
+      limits.push({ key: field.key, ...capacity });
     }
   }
-
-  return errors;
+  return limits;
 }
 
 /**
@@ -262,25 +214,74 @@ function splitValues(
   fields: CampFormField[],
   values: Record<string, FieldValue>,
 ): { core: Record<CoreKey, string>; formData: Record<string, FieldValue> } {
-  const core = { first_name: "", last_name: "", email: "" } as Record<
-    CoreKey,
-    string
-  >;
+  const core: Record<CoreKey, string> = { first_name: "", last_name: "", email: "" };
   const formData: Record<string, FieldValue> = {};
-  const coreKeys = new Set<string>(CORE_KEYS);
 
   for (const field of fields) {
     const value = values[field.key];
-    if (coreKeys.has(field.key)) {
-      core[field.key as CoreKey] =
-        typeof value === "string" ? value.trim() : "";
+    if (isCoreKey(field.key)) {
+      core[field.key] = typeof value === "string" ? value.trim() : "";
     } else if (value !== undefined) {
-      formData[field.key] =
-        typeof value === "string" ? value.trim() : value;
+      formData[field.key] = typeof value === "string" ? value.trim() : value;
     }
   }
 
   return { core, formData };
+}
+
+/** Narrows the RPC's jsonb answer; unknown shapes are treated as errors. */
+function readRpcResult(data: Json): { status: string; keys: string[] } {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("create_public_registration returned an unexpected value");
+  }
+  const status = typeof data.status === "string" ? data.status : "";
+  const keys = Array.isArray(data.keys)
+    ? data.keys.filter((k): k is string => typeof k === "string")
+    : [];
+  return { status, keys };
+}
+
+/**
+ * Inserts through the RPC, which holds an advisory lock and checks capacity in
+ * the same transaction. Retries with a fresh reference on the rare collision.
+ */
+async function insertPublicRegistration(
+  campId: string,
+  registration: NewRegistration,
+  optionLimits: OptionLimit[],
+): Promise<InsertOutcome> {
+  const supabase = getServiceClient();
+
+  for (let attempt = 0; attempt < REFERENCE_ATTEMPTS; attempt += 1) {
+    const reference = generateReference();
+    const { data, error } = await supabase.rpc("create_public_registration", {
+      p_camp_id: campId,
+      p_reference: reference,
+      p_first_name: registration.core.first_name,
+      p_last_name: registration.core.last_name,
+      p_email: registration.core.email,
+      p_form_data: registration.formData,
+      p_amount_due: registration.amountDue,
+      p_price_tier_id: registration.priceTierId,
+      p_option_limits: optionLimits,
+    });
+    if (error) throw error;
+
+    const result = readRpcResult(data);
+    switch (result.status) {
+      case "ok":
+        return { status: "ok", reference };
+      case "camp_full":
+        return { status: "camp_full" };
+      case "option_full":
+        return { status: "option_full", keys: result.keys };
+      case "duplicate_reference":
+        continue;
+      default:
+        throw new Error(`unknown registration status: ${result.status}`);
+    }
+  }
+  throw new Error("could not generate a unique registration reference");
 }
 
 // --- entry point ------------------------------------------------------------
@@ -289,7 +290,19 @@ export async function submitRegistration(
   payload: RegistrationPayload,
 ): Promise<RegistrationResult> {
   const camp = await loadCurrentCamp();
-  if (!camp || !camp.isOpen) return { ok: false, reason: "closed" };
+  if (!camp) return { ok: false, reason: "closed" };
+
+  // Fast answer with the shared rule; the RPC below stays authoritative for
+  // capacity under concurrency.
+  let activeCount = 0;
+  try {
+    if (camp.capacity !== null) activeCount = await getActiveRegistrationCount(camp.id);
+  } catch {
+    return { ok: false, reason: "error" };
+  }
+  const state = getRegistrationState(camp, new Date(), activeCount);
+  if (state === "full") return { ok: false, reason: "camp_full" };
+  if (state !== "open") return { ok: false, reason: "closed" };
 
   const dynamicFields = await loadDynamicFields(camp.id);
   const fields = mergeFields(dynamicFields);
@@ -300,10 +313,6 @@ export async function submitRegistration(
 
   const { core, formData } = splitValues(fields, payload.values);
 
-  const capacityErrors = await checkCapacity(camp.id, dynamicFields, formData);
-  if (Object.keys(capacityErrors).length > 0)
-    return { ok: false, reason: "full", fieldErrors: capacityErrors };
-
   if (await isThrottled(camp.id, core.email, payload.ip))
     return { ok: false, reason: "throttled" };
 
@@ -312,25 +321,26 @@ export async function submitRegistration(
     payload.priceTierToken,
   );
 
-  const input: RegistrationInput = {
-    firstName: core.first_name,
-    lastName: core.last_name,
-    email: core.email,
-    priceTierId,
-    status: "pending",
-    payment: "unpaid",
-    amountDue,
-    amountPaid: 0,
-    formData,
-  };
-
   try {
-    const reference = await createRegistration(camp.id, input);
+    const outcome = await insertPublicRegistration(
+      camp.id,
+      { core, formData, amountDue, priceTierId },
+      selectedOptionLimits(dynamicFields, formData),
+    );
+
+    if (outcome.status === "camp_full") return { ok: false, reason: "camp_full" };
+    if (outcome.status === "option_full") {
+      const optionErrors = Object.fromEntries(
+        outcome.keys.map((key) => [key, registerMessages.validation.optionFull]),
+      );
+      return { ok: false, reason: "full", fieldErrors: optionErrors };
+    }
+
     await writeLog({
       action: "registration.created",
-      message: `${reference} · ${core.email}`,
+      message: `${outcome.reference} · ${core.email}`,
     });
-    return { ok: true, reference };
+    return { ok: true, reference: outcome.reference };
   } catch {
     return { ok: false, reason: "error" };
   }

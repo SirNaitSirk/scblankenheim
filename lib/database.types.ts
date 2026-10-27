@@ -1,5 +1,5 @@
 /**
- * Hand-written database types mirroring supabase/migrations/0001_init_schema.sql.
+ * Hand-written database types mirroring supabase/migrations/ (0001 to 0005).
  *
  * No Supabase CLI is available locally to generate these; keep this file in sync
  * by hand whenever the schema changes. Shape follows the supabase-js `Database`
@@ -277,7 +277,23 @@ export type Database = {
       };
     };
     Views: Record<never, never>;
-    Functions: Record<never, never>;
+    Functions: {
+      // supabase/migrations/0005_public_registration_capacity.sql
+      create_public_registration: {
+        Args: {
+          p_camp_id: string;
+          p_reference: string;
+          p_first_name: string;
+          p_last_name: string;
+          p_email: string;
+          p_form_data: Json;
+          p_amount_due: number;
+          p_price_tier_id: string | null;
+          p_option_limits: Json;
+        };
+        Returns: Json;
+      };
+    };
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;
   };

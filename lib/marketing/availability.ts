@@ -36,7 +36,24 @@ export function readFieldCapacity(field: CampFormField): FieldCapacity | null {
 }
 
 /**
- * For each capacity-limited field, counts non-deleted registrations of the camp
+ * Active registrations of a camp: not deleted and not cancelled, regardless of
+ * payment status. Same definition as `create_public_registration`.
+ */
+export async function getActiveRegistrationCount(campId: string): Promise<number> {
+  const supabase = getServiceClient();
+  const { count, error } = await supabase
+    .from("registrations")
+    .select("id", { count: "exact", head: true })
+    .eq("camp_id", campId)
+    .eq("deleted", false)
+    .neq("status", "cancelled");
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
+ * For each field with a seat limit, counts active registrations of the camp
  * holding the limited option and returns the remaining seats (clamped at 0).
  * Registrations are tallied in JS to avoid brittle `form_data->>key` filters.
  */
@@ -58,7 +75,8 @@ export async function getCampAvailability(
     .from("registrations")
     .select("form_data")
     .eq("camp_id", campId)
-    .eq("deleted", false);
+    .eq("deleted", false)
+    .neq("status", "cancelled");
 
   if (error || !data) return {};
 

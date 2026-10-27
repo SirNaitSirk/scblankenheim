@@ -1,19 +1,10 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+import { registerMessages } from "@/lib/register/messages";
 
-const copy = {
-  reopenHint: "Anmeldung öffnet am",
-  reachedTitle: "Es geht los!",
-  reachedBody:
-    "Die Anmeldung sollte jetzt geöffnet sein. Lade die Seite neu, um zum Formular zu gelangen.",
-  units: {
-    days: "Tage",
-    hours: "Std.",
-    minutes: "Min.",
-    seconds: "Sek.",
-  },
-} as const;
+const copy = registerMessages.countdown;
 
 const dateFormatter = new Intl.DateTimeFormat("de-DE", {
   day: "numeric",
@@ -59,8 +50,19 @@ export function CountdownPanel({ target }: { target: string }) {
 
   const ready = nowSecond !== 0;
   const remaining = ready ? remainingFrom(targetMs, nowSecond * 1000) : null;
+  const reached = ready && remaining === null;
 
-  if (ready && remaining === null) {
+  // At zero the server opens registration automatically (research R1/R7):
+  // refresh once so the server renders the form instead of the countdown.
+  const router = useRouter();
+  const refreshed = useRef(false);
+  useEffect(() => {
+    if (!reached || refreshed.current) return;
+    refreshed.current = true;
+    router.refresh();
+  }, [reached, router]);
+
+  if (reached) {
     return (
       <div className="rounded-card border border-border bg-surface p-8 text-center shadow-card">
         <p className="font-display text-2xl font-extrabold tracking-tight text-accent-strong">

@@ -279,7 +279,7 @@ function mapRegistrationInputToRow(input: RegistrationInput) {
 
 // Human-readable, collision-resistant reference (the unique index is the real
 // guarantee; `createRegistration` retries on the rare clash).
-function generateReference(): string {
+export function generateReference(): string {
   const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
   return `REG-${suffix}`;
 }

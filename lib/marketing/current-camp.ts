@@ -1,6 +1,7 @@
 import { getPublicClient } from "@/lib/supabase/public";
 import type { Tables } from "@/lib/database.types";
 import type { CampFormField } from "@/lib/admin/types";
+import type { RegistrationWindow } from "@/lib/register/registration-state";
 
 /**
  * Public (anon) read layer for the landing page. Uses the anon Supabase client
@@ -9,18 +10,17 @@ import type { CampFormField } from "@/lib/admin/types";
  * route. Failures degrade to `null` so the landing page never crashes.
  */
 
-/** Lightweight, public-safe view of the current camp for the registration section. */
-export type LandingCamp = {
+/**
+ * Lightweight view of the current camp for the registration section, safe for
+ * the public page. Carries the window settings so it can be passed straight to
+ * `getRegistrationState` (lib/register/registration-state.ts).
+ */
+export type LandingCamp = RegistrationWindow & {
   id: string;
   name: string;
   startDate: string | null;
-  registrationOpen: boolean;
-  registrationOpensAt: string | null;
   fields: CampFormField[];
 };
-
-/** Which registration UI the landing page shows for the current camp. */
-export type RegistrationState = "open" | "countdown" | "closed";
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -61,7 +61,7 @@ export async function getLandingCamp(): Promise<LandingCamp | null> {
     supabase
       .from("camps")
       .select(
-        "name, start_date, registration_open, registration_opens_at",
+        "name, start_date, registration_open, registration_opens_at, registration_closes_at, capacity",
       )
       .eq("id", currentCampId)
       .maybeSingle(),
@@ -80,32 +80,20 @@ export async function getLandingCamp(): Promise<LandingCamp | null> {
     name: camp.name,
     startDate: camp.start_date,
     registrationOpen: camp.registration_open,
-    registrationOpensAt: camp.registration_opens_at,
+    opensAt: camp.registration_opens_at,
+    closesAt: camp.registration_closes_at,
+    capacity: camp.capacity,
     fields: (fieldsRes.data ?? []).map(mapFormField),
   };
 }
 
 /**
- * State precedence:
- * - `registrationOpen` is the master switch → `open`.
- * - otherwise, if the opening moment (`registrationOpensAt`, falling back to
- *   `startDate`) parses to a future instant → `countdown`.
- * - otherwise → `closed`.
+ * The instant the countdown targets: the opening time only. The camp start date
+ * is deliberately not a fallback, because reaching it would open registration
+ * automatically on the first camp day (research R1).
  */
-export function getRegistrationState(camp: LandingCamp | null): RegistrationState {
-  if (!camp) return "closed";
-  if (camp.registrationOpen) return "open";
-
-  const target = getCountdownTarget(camp);
-  if (target && target.getTime() > Date.now()) return "countdown";
-
-  return "closed";
-}
-
-/** The instant the countdown targets: `registrationOpensAt` else `startDate`. */
 export function getCountdownTarget(camp: LandingCamp): Date | null {
-  const raw = camp.registrationOpensAt ?? camp.startDate;
-  if (!raw) return null;
-  const date = new Date(raw);
+  if (!camp.opensAt) return null;
+  const date = new Date(camp.opensAt);
   return Number.isNaN(date.getTime()) ? null : date;
 }

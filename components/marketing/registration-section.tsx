@@ -2,46 +2,39 @@ import { ButtonLink } from "@/components/ui/button";
 import { Reveal } from "@/components/marketing/reveal";
 import { CountdownPanel } from "@/components/marketing/countdown-panel";
 import { RegistrationForm } from "@/components/marketing/registration-form";
-import { getCampAvailability } from "@/lib/marketing/availability";
 import {
-  getCountdownTarget,
-  getLandingCamp,
+  getActiveRegistrationCount,
+  getCampAvailability,
+} from "@/lib/marketing/availability";
+import { getCountdownTarget, getLandingCamp } from "@/lib/marketing/current-camp";
+import { registerMessages } from "@/lib/register/messages";
+import {
   getRegistrationState,
-} from "@/lib/marketing/current-camp";
+  type RegistrationState,
+} from "@/lib/register/registration-state";
 
-const copy = {
-  open: {
-    eyebrow: "Anmeldung",
-    heading: "Sichere dir deinen Platz",
-    intro:
-      "Fülle das Formular aus und sei beim Summercamp dabei. Wir freuen uns auf dich.",
-  },
-  countdown: {
-    eyebrow: "Bald geht's los",
-    heading: "Die Anmeldung öffnet in Kürze",
-    intro:
-      "Merk dir den Termin vor — sobald der Countdown abgelaufen ist, kannst du dich hier anmelden.",
-  },
-  closed: {
-    eyebrow: "Anmeldung",
-    heading: "Die Anmeldung ist derzeit geschlossen",
-    intro:
-      "Aktuell nehmen wir keine Anmeldungen entgegen. Bei Fragen zum nächsten Camp melde dich gern bei uns.",
-    contact: "Schreib uns",
-    contactHref: "mailto:info@fcg-blankenheim.de",
-  },
-} as const;
+const copy = registerMessages.section;
+
+/** Active count only matters when a capacity is set; failures count as zero. */
+async function loadActiveCount(campId: string, capacity: number | null): Promise<number> {
+  if (capacity === null) return 0;
+  try {
+    return await getActiveRegistrationCount(campId);
+  } catch {
+    return 0;
+  }
+}
 
 /**
- * The `#anmelden` moment. Server Component: reads the current camp via the anon
- * client, decides the state (open / countdown / closed), and renders the
+ * The `#anmelden` moment. Server Component: reads the current camp, decides the
+ * state with the shared rule (open, countdown, closed, full) and renders the
  * matching UI. Only the countdown and the form are client components.
  */
 export async function RegistrationSection() {
   const camp = await getLandingCamp();
-  const state = getRegistrationState(camp);
-  const heading =
-    state === "open" ? copy.open : state === "countdown" ? copy.countdown : copy.closed;
+  const activeCount = camp ? await loadActiveCount(camp.id, camp.capacity) : 0;
+  const state: RegistrationState = getRegistrationState(camp, new Date(), activeCount);
+  const heading = copy[state];
 
   const target = camp && state === "countdown" ? getCountdownTarget(camp) : null;
 
@@ -70,8 +63,8 @@ export async function RegistrationSection() {
             <CountdownPanel target={target.toISOString()} />
           ) : (
             <div className="flex justify-center">
-              <ButtonLink href={copy.closed.contactHref} size="lg" variant="outline">
-                {copy.closed.contact}
+              <ButtonLink href={copy.contactHref} size="lg" variant="outline">
+                {copy.contact}
               </ButtonLink>
             </div>
           )}

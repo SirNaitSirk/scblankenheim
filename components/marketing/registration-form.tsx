@@ -1,65 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/cn";
+import { registerMessages } from "@/lib/register/messages";
+import {
+  mergeFields,
+  validateField,
+  type FieldValue,
+} from "@/lib/register/validation";
 import type { CampFormField } from "@/lib/admin/types";
 import type { FieldAvailability } from "@/lib/marketing/availability";
 
-const copy = {
-  submit: "Anmeldung absenden",
-  submitting: "Wird gesendet …",
-  required: "Pflichtfeld",
-  email: "Bitte gib eine gültige E-Mail-Adresse ein",
-  number: "Bitte gib eine Zahl ein",
-  checkbox: "Bitte bestätige dieses Feld",
-  selectPlaceholder: "Bitte wählen",
-  checkboxFallback: "Zustimmung",
-  soldOut: "ausgebucht",
-  seatsLeft: (remaining: number, limit: number, option: string) =>
-    `„${option}“: noch ${remaining} von ${limit} Plätzen frei`,
-  seatsSoldOut: (option: string) => `„${option}“: ausgebucht`,
-  successTitle: "Anmeldung eingegangen!",
-  successBody:
-    "Wir haben deine Anmeldung erhalten. Deine Referenznummer lautet {reference} — bewahre sie gut auf. Zur Bezahlung melden wir uns in Kürze bei dir.",
-  registerAnother: "Noch jemanden anmelden",
-  errorTitle: "Das hat nicht geklappt",
-  errorGeneric: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
-} as const;
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-type FieldValue = string | boolean;
-
-/**
- * Fixed identity fields backed by dedicated `registrations` columns
- * (`first_name`, `last_name`, `email`) rather than `form_data`. Always rendered,
- * above the camp's dynamic fields. Synthetic `CampFormField`s so the existing
- * renderer and validation apply unchanged.
- */
-const CORE_FIELDS: CampFormField[] = [
-  { key: "first_name", label: "Vorname", fieldType: "text", required: true },
-  { key: "last_name", label: "Nachname", fieldType: "text", required: true },
-  { key: "email", label: "E-Mail", fieldType: "email", required: true },
-].map((f) => ({
-  ...f,
-  id: `core-${f.key}`,
-  campId: "",
-  options: null,
-  sortOrder: -1,
-  config: {},
-}));
-
-const CORE_KEYS = new Set(CORE_FIELDS.map((f) => f.key));
-
-/** Core identity fields first, then the camp's dynamic fields (deduped by key). */
-function mergeFields(dynamic: CampFormField[]): CampFormField[] {
-  return [...CORE_FIELDS, ...dynamic.filter((f) => !CORE_KEYS.has(f.key))];
-}
+const copy = registerMessages;
 
 /** Reads the field's config extras defensively (config is `Record<string, unknown>`). */
 function readString(config: Record<string, unknown>, key: string): string | undefined {
@@ -73,7 +29,7 @@ function readOptions(value: unknown): string[] {
     : [];
 }
 
-// Maps a field type to the native <input> type. Non-input types handled separately.
+// Maps a field type to the native <input> type. Other types are handled separately.
 function inputTypeFor(fieldType: string): string {
   switch (fieldType) {
     case "email":
@@ -87,38 +43,6 @@ function inputTypeFor(fieldType: string): string {
     default:
       return "text";
   }
-}
-
-/** Dynamically-built per-field Zod schema. Empty non-required values pass. */
-function fieldSchema(field: CampFormField): z.ZodTypeAny {
-  switch (field.fieldType) {
-    case "checkbox":
-      return field.required
-        ? z.boolean().refine((v) => v === true, copy.checkbox)
-        : z.boolean();
-    case "email":
-      return z
-        .string()
-        .refine((v) => !field.required || v.trim() !== "", copy.required)
-        .refine((v) => v.trim() === "" || EMAIL_RE.test(v.trim()), copy.email);
-    case "number":
-      return z
-        .string()
-        .refine((v) => !field.required || v.trim() !== "", copy.required)
-        .refine(
-          (v) => v.trim() === "" || !Number.isNaN(Number(v)),
-          copy.number,
-        );
-    default:
-      return z
-        .string()
-        .refine((v) => !field.required || v.trim() !== "", copy.required);
-  }
-}
-
-function validate(field: CampFormField, value: FieldValue): string | null {
-  const result = fieldSchema(field).safeParse(value);
-  return result.success ? null : result.error.issues[0]?.message ?? copy.required;
 }
 
 function initialValue(field: CampFormField): FieldValue {
@@ -167,7 +91,7 @@ export function RegistrationForm({
 
     const nextErrors: Record<string, string> = {};
     for (const field of allFields) {
-      const message = validate(field, values[field.key]);
+      const message = validateField(field, values[field.key]);
       if (message) nextErrors[field.key] = message;
     }
     setErrors(nextErrors);
@@ -194,9 +118,9 @@ export function RegistrationForm({
       if (data.fieldErrors && Object.keys(data.fieldErrors).length > 0) {
         setErrors(data.fieldErrors);
       }
-      setServerError(data.error ?? copy.errorGeneric);
+      setServerError(data.error ?? copy.api.generic);
     } catch {
-      setServerError(copy.errorGeneric);
+      setServerError(copy.api.generic);
     } finally {
       setSubmitting(false);
     }
@@ -206,8 +130,8 @@ export function RegistrationForm({
     return (
       <Notice
         tone="success"
-        title={copy.successTitle}
-        body={copy.successBody.replace("{reference}", reference)}
+        title={copy.form.successTitle}
+        body={copy.form.successBody(reference)}
       >
         <Button
           type="button"
@@ -216,7 +140,7 @@ export function RegistrationForm({
           onClick={resetForm}
           className="mt-6"
         >
-          {copy.registerAnother}
+          {copy.form.registerAnother}
         </Button>
       </Notice>
     );
@@ -254,7 +178,7 @@ export function RegistrationForm({
         disabled={submitting}
         className="mt-7 w-full sm:w-auto"
       >
-        {submitting ? copy.submitting : copy.submit}
+        {submitting ? copy.form.submitting : copy.form.submit}
       </Button>
     </form>
   );
@@ -293,7 +217,7 @@ function FormField({
             className="mt-0.5 h-4 w-4 rounded-sm border-ink-200 accent-accent"
           />
           <span>
-            {field.label || copy.checkboxFallback}
+            {field.label || copy.fields.checkboxFallback}
             {required && <span className="text-danger"> *</span>}
           </span>
         </label>
@@ -336,13 +260,13 @@ function FormField({
             onChange={(e) => onChange(e.target.value)}
             className={cn(error && "border-danger focus-visible:border-danger")}
             options={[
-              { value: "", label: placeholder ?? copy.selectPlaceholder },
+              { value: "", label: placeholder ?? copy.fields.selectPlaceholder },
               ...readOptions(field.options).map((opt) => {
                 const soldOut =
                   availability?.option === opt && availability.remaining <= 0;
                 return {
                   value: opt,
-                  label: soldOut ? `${opt} — ${copy.soldOut}` : opt,
+                  label: soldOut ? copy.seats.soldOutOption(opt) : opt,
                   disabled: soldOut,
                 };
               }),
@@ -366,7 +290,7 @@ function FormField({
   );
 }
 
-/** Small live-seat indicator under a capacity-limited select. */
+/** Small live seat indicator under a select with a seat limit. */
 function SeatNote({ availability }: { availability: FieldAvailability }) {
   const { option, limit, remaining } = availability;
   const soldOut = remaining <= 0;
@@ -384,9 +308,7 @@ function SeatNote({ availability }: { availability: FieldAvailability }) {
           soldOut ? "bg-danger" : "bg-accent",
         )}
       />
-      {soldOut
-        ? copy.seatsSoldOut(option)
-        : copy.seatsLeft(remaining, limit, option)}
+      {soldOut ? copy.seats.soldOut(option) : copy.seats.left(remaining, limit, option)}
     </span>
   );
 }
