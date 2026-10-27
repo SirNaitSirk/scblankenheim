@@ -2,11 +2,17 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { registerMessages } from "@/lib/register/messages";
 import { submitRegistration } from "@/lib/register/service";
+import {
+  createCheckoutForRegistration,
+  resolveOrigin,
+} from "@/lib/payment/checkout";
 
 export const runtime = "nodejs";
 
 // Public endpoint (see proxy.ts; only /admin is protected). All authorization,
-// validation and abuse protection happen in the service layer.
+// validation and abuse protection happen in the service layer. After a paid
+// registration the response carries a Stripe Checkout URL; a Stripe failure
+// never fails the registration (tolerant fallback, constitution VI).
 
 const payloadSchema = z.object({
   values: z.record(z.string(), z.union([z.string(), z.boolean()])),
@@ -41,7 +47,19 @@ export async function POST(request: Request) {
   });
 
   if (result.ok) {
-    return NextResponse.json({ reference: result.reference }, { status: 200 });
+    const free = result.amountDue === 0;
+    const checkout =
+      free || !result.registrationId
+        ? null
+        : await createCheckoutForRegistration(result.registrationId, resolveOrigin(request));
+    return NextResponse.json(
+      {
+        reference: result.reference,
+        free,
+        checkoutUrl: checkout?.ok ? checkout.url : null,
+      },
+      { status: 200 },
+    );
   }
 
   switch (result.reason) {

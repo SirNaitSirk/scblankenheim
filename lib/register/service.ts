@@ -49,7 +49,7 @@ export type RegistrationPayload = {
 };
 
 export type RegistrationResult =
-  | { ok: true; reference: string }
+  | { ok: true; reference: string; registrationId: string | null; amountDue: number }
   | { ok: false; reason: "closed" }
   | { ok: false; reason: "camp_full" }
   | { ok: false; reason: "throttled" }
@@ -185,6 +185,7 @@ async function isThrottled(
   const { count } = await supabase
     .from("submission_attempts")
     .select("id", { count: "exact", head: true })
+    .eq("kind", "registration")
     .gte("created_at", since)
     .or(`email.eq.${email},ip.eq.${ip ?? "__none__"}`);
 
@@ -192,7 +193,7 @@ async function isThrottled(
 
   await supabase
     .from("submission_attempts")
-    .insert({ email, ip, camp_id: campId });
+    .insert({ email, ip, camp_id: campId, kind: "registration" });
 
   return throttled;
 }
@@ -272,6 +273,32 @@ async function insertPublicRegistration(
   throw new Error("could not generate a unique registration reference");
 }
 
+/**
+ * Looks up the id of the row the RPC just inserted. A free registration has
+ * nothing to pay, so it counts as paid right away (FR-016). Never throws: the
+ * registration already exists, so a failure here only skips the checkout.
+ */
+async function settleNewRegistration(
+  reference: string,
+  amountDue: number,
+): Promise<string | null> {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("registrations")
+    .select("id")
+    .eq("reference", reference)
+    .maybeSingle();
+  if (error || !data) return null;
+
+  if (amountDue === 0) {
+    await supabase
+      .from("registrations")
+      .update({ payment_status: "paid", updated_at: new Date().toISOString() })
+      .eq("id", data.id);
+  }
+  return data.id;
+}
+
 // --- entry point ------------------------------------------------------------
 
 export async function submitRegistration(
@@ -325,11 +352,13 @@ export async function submitRegistration(
       return { ok: false, reason: "full", fieldErrors: optionErrors };
     }
 
+    const registrationId = await settleNewRegistration(outcome.reference, amountDue);
+
     await writeLog({
       action: "registration.created",
       message: `${outcome.reference} · ${core.email}`,
     });
-    return { ok: true, reference: outcome.reference };
+    return { ok: true, reference: outcome.reference, registrationId, amountDue };
   } catch {
     return { ok: false, reason: "error" };
   }

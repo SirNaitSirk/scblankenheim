@@ -29,9 +29,11 @@ const statusTone: Record<RegistrationStatus, "paid" | "pending" | "danger"> = {
 };
 
 const paymentTone: Record<PaymentStatus, "paid" | "pending" | "neutral"> = {
-  paid: "paid",
-  partial: "pending",
   unpaid: "neutral",
+  processing: "pending",
+  partial: "pending",
+  paid: "paid",
+  refunded: "neutral",
 };
 
 const PAYMENT_OPTIONS = (

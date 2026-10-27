@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -123,6 +123,8 @@ export function RegistrationForm({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [reference, setReference] = useState<string | null>(null);
+  const [free, setFree] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -174,6 +176,8 @@ export function RegistrationForm({
     setErrors({});
     setServerError(null);
     setReference(null);
+    setFree(false);
+    setRedirecting(false);
     navigated.current = false;
     setStepIndex(0);
     setDirection(1);
@@ -242,11 +246,20 @@ export function RegistrationForm({
       });
       const data = (await response.json().catch(() => ({}))) as {
         reference?: string;
+        free?: boolean;
+        checkoutUrl?: string | null;
         error?: string;
         fieldErrors?: Record<string, string>;
       };
 
       if (response.ok && data.reference) {
+        // Straight on to Stripe; without a URL (free, or Stripe unavailable)
+        // the success notice offers paying later (constitution VI).
+        if (data.checkoutUrl) {
+          setRedirecting(true);
+          window.location.assign(data.checkoutUrl);
+        }
+        setFree(data.free === true);
         setReference(data.reference);
         return;
       }
@@ -275,13 +288,32 @@ export function RegistrationForm({
     else void submit();
   }
 
+  if (reference && redirecting) {
+    return (
+      <Notice
+        tone="muted"
+        title={copy.form.redirectingTitle}
+        body={copy.form.redirectingBody}
+      />
+    );
+  }
+
   if (reference) {
     return (
       <Notice
         tone="success"
         title={copy.form.successTitle}
-        body={copy.form.successBody(reference)}
+        body={free ? copy.form.successFree(reference) : copy.form.successBody(reference)}
       >
+        {!free && (
+          <ButtonLink
+            href={`/bezahlen?ref=${encodeURIComponent(reference)}`}
+            size="lg"
+            className="mt-6 mr-3"
+          >
+            {copy.form.payNow}
+          </ButtonLink>
+        )}
         <Button
           type="button"
           size="lg"

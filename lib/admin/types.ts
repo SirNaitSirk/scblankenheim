@@ -7,7 +7,12 @@
 import type { FieldType } from "./field-types";
 
 export type RegistrationStatus = "confirmed" | "pending" | "cancelled";
-export type PaymentStatus = "paid" | "partial" | "unpaid";
+export type PaymentStatus =
+  | "unpaid"
+  | "processing"
+  | "partial"
+  | "paid"
+  | "refunded";
 export type UserRole = "superadmin" | "admin";
 export type LogLevel = "info" | "warning" | "error";
 

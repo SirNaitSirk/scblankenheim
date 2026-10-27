@@ -101,6 +101,7 @@ export const de = {
     searchPlaceholder: "Name, E-Mail oder Ort …",
     status: "Status",
     payment: "Zahlung",
+    overpaid: "Überzahlt",
     tier: "Preistufe",
     showDeleted: "Gelöschte anzeigen",
     addFilter: "Filter hinzufügen",
@@ -559,9 +560,11 @@ export const REGISTRATION_STATUS_LABELS: Record<RegistrationStatus, string> = {
 };
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
-  paid: "Bezahlt",
-  partial: "Teilweise",
   unpaid: "Offen",
+  processing: "In Bearbeitung",
+  partial: "Teilweise",
+  paid: "Bezahlt",
+  refunded: "Erstattet",
 };
 
 export const ROLE_LABELS: Record<UserRole, string> = {

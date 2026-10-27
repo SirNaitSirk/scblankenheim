@@ -70,7 +70,13 @@ export const registerMessages = {
     submitting: "Wird gesendet …",
     successTitle: "Anmeldung eingegangen!",
     successBody: (reference: string) =>
-      `Wir haben deine Anmeldung erhalten. Deine Referenznummer lautet ${reference}. Bewahre sie gut auf. Zur Bezahlung melden wir uns in Kürze bei dir.`,
+      `Wir haben deine Anmeldung erhalten. Deine Referenznummer lautet ${reference}. Bewahre sie gut auf. Mit ihr kannst du jederzeit online bezahlen.`,
+    successFree: (reference: string) =>
+      `Für dich fällt kein Beitrag an. Du bist dabei! Deine Referenznummer lautet ${reference}.`,
+    payNow: "Jetzt bezahlen",
+    redirectingTitle: "Weiter zur Bezahlung …",
+    redirectingBody:
+      "Deine Anmeldung ist gespeichert. Du wirst gleich zur sicheren Bezahlseite weitergeleitet.",
     registerAnother: "Noch jemanden anmelden",
   },
   steps: {

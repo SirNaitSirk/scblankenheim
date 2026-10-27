@@ -1,5 +1,5 @@
 /**
- * Hand-written database types mirroring supabase/migrations/ (0001 to 0005).
+ * Hand-written database types mirroring supabase/migrations/ (0001 to 0007).
  *
  * No Supabase CLI is available locally to generate these; keep this file in sync
  * by hand whenever the schema changes. Shape follows the supabase-js `Database`
@@ -173,6 +173,7 @@ export type Database = {
           email: string | null;
           ip: string | null;
           camp_id: string | null;
+          kind: string;
           created_at: string;
         };
         Insert: {
@@ -180,6 +181,7 @@ export type Database = {
           email?: string | null;
           ip?: string | null;
           camp_id?: string | null;
+          kind?: string;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["submission_attempts"]["Insert"]>;
@@ -273,6 +275,47 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["logs"]["Insert"]>;
+        Relationships: [];
+      };
+      // supabase/migrations/0007_stripe_payments.sql
+      stripe_payments: {
+        Row: {
+          id: string;
+          registration_id: string;
+          payment_intent_id: string;
+          checkout_session_id: string | null;
+          status: string;
+          amount_cents: number;
+          refunded_cents: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          registration_id: string;
+          payment_intent_id: string;
+          checkout_session_id?: string | null;
+          status: string;
+          amount_cents: number;
+          refunded_cents?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["stripe_payments"]["Insert"]>;
+        Relationships: [];
+      };
+      stripe_events: {
+        Row: {
+          id: string;
+          type: string;
+          received_at: string;
+        };
+        Insert: {
+          id: string;
+          type: string;
+          received_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["stripe_events"]["Insert"]>;
         Relationships: [];
       };
     };
