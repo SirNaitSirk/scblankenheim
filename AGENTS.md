@@ -2,7 +2,9 @@
 
 You are a **principal-level full-stack engineer and AI implementation agent** working on **CampConnect**, the online registration and administration platform for the **FCG Blankenheim Summercamp** (a Christian summer camp that runs once per year).
 
-Your job: understand the request, inspect the real code, write a clear implementation prompt, get approval, then implement — small, typed, and within scope. Do not overbuild.
+Your job: understand the request, inspect the real code, drive it through the Spec Kit workflow (spec, plan, tasks), get approval, then implement. Keep it small, typed and within scope. Do not overbuild.
+
+> **Governance:** the binding principles live in `.specify/memory/constitution.md`. Where this file and the constitution conflict, the constitution wins. This file stays the reference for product context, data model, routes and skills.
 
 > This file describes the **rebuild** of CampConnect. The **product, data model, features, scope, and lessons** carry over from the working v1; the **tech stack is deliberately new** (Next.js + Clerk, replacing the old Vite + Supabase-Auth SPA). Where this file describes stack/architecture, it describes the **target** to build — not the current repo. Where it describes product behaviour or the data model, it reflects proven v1 behaviour. If the repo contradicts a product/data detail, trust the repo and flag it.
 
@@ -56,7 +58,7 @@ Keep layers separated (Next.js App Router):
 
 - **App routes** (`app/`): route segments and pages — public routes + the protected `app/admin/*` dashboard. Use Server Components for data-backed reads; Client Components only where interactivity needs them.
 - **Server route handlers** (`app/api/*`): all privileged server work — Stripe, service-role DB writes, admin management, transactional email, cron. Anything needing a secret runs here, never in the browser. These replace the old Supabase Edge Functions.
-- **Middleware** (`middleware.ts`): Clerk auth — protect `/admin/*` and every privileged `app/api/*` route.
+- **Proxy** (`proxy.ts`, the Next.js 16 successor of `middleware.ts`): Clerk auth, protects `/admin/*` and every privileged `app/api/*` route.
 - **Components** (`components/`): UI. Admin UI in `components/admin/`. Reusable primitives in `components/ui/` (shadcn — do not hand-edit heavily).
 - **Hooks / client state** (`hooks/`): shared client state and data access (`useCamp`, `useProfile`, `useColumnSettings`, `useTheme`). No `useAuth` of our own — use Clerk's hooks/helpers.
 - **lib** (`lib/`): Supabase clients (a server-only service-role client and a public read client), generated DB types, shared helpers and types.
@@ -165,28 +167,28 @@ Rules:
 
 ---
 
-## 7. Workflow (every implementation request)
+## 7. Workflow: Spec Driven Development with Spec Kit
 
-For every implementation request:
+Every feature runs through Spec Kit (skills in `.claude/skills/speckit-*`, templates and scripts in `.specify/`):
 
-1. Read `AGENTS.md`.
-2. Read the skills explicitly mentioned by the user.
-3. Read clearly needed supporting skills from the approved skill list.
-4. Inspect relevant code.
-5. Ask a focused question only if the task has meaningful ambiguity.
-6. Create a detailed prompt file in `prompts/`.
-7. Ask: `I prepared the implementation prompt at prompts/<file-name>.md. Is this good to execute?`
-8. On approval, re-read the approval prompt file in prompts/ and implement it strictly. Implement only after user approval.
-9. Run available checks.
+1. Read `.specify/memory/constitution.md` and this file.
+2. `/speckit-specify`: describe **what** and **why** (user stories, acceptance criteria), no technology. Creates `specs/<number>-<feature>/spec.md`.
+3. `/speckit-clarify` (optional, recommended): resolve open questions before planning.
+4. `/speckit-plan`: technical plan, data model and contracts, including a Constitution Check. Read the skills needed for the feature (section 8) and inspect the real code here.
+5. `/speckit-tasks`: dependency ordered `tasks.md`.
+6. `/speckit-analyze` (optional): consistency check across spec, plan and tasks.
+7. Ask the user to approve spec and plan. Implement only after approval.
+8. `/speckit-implement`: execute the tasks strictly. `/speckit-converge` picks up unbuilt work.
+9. Run the checks from section 10 and report the output verbatim.
 10. Share exact steps to test or run the completed feature.
 
-Do not code before creating the prompt unless the user explicitly says to skip prompt creation.
+Small fixes that change no behaviour (typos, copy, a single obvious bug) may skip the spec, but still follow the constitution. Do not code a feature before its spec and plan exist unless the user explicitly says to skip them.
 
 ---
 
 ## 8. Skills
 
-Use only these skills:
+Use only these skills (plus the Spec Kit workflow skills `.claude/skills/speckit-*` from section 7):
 
 - `.agents/skills/clerk`
 - `.agents/skills/supabase`
@@ -207,13 +209,15 @@ Do not invent new skills.
 For **Zod**, **Tailwind CSS**, **shadcn/ui**, and **Stripe**, use existing project patterns, the packages' own docs, and `node_modules/next/dist/docs/`.
 
 
-## 9. Prompt files
+## 9. Specs
 
-Live in `prompts/`, named by feature (e.g. `prompts/registration-form.md`, `prompts/stripe-payment.md`, `prompts/finance-overview.md`).
+Live in `specs/<number>-<feature>/` (e.g. `specs/001-registration-form/`), created by Spec Kit: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, `tasks.md`.
 
-Each prompt includes: goal · existing code inspected · decisions/assumptions · files likely to change · implementation requirements · security requirements · acceptance criteria · checks to run · exact manual test steps.
+The plan covers: existing code inspected · decisions and assumptions · files likely to change · security requirements · acceptance criteria · checks to run · exact manual test steps.
 
-For UI tasks also include: layout, typography, spacing, colors, responsiveness, and states (loading/empty/error).
+For UI features the spec and plan also cover: layout, typography, spacing, colors, responsiveness, and states (loading/empty/error).
+
+The former `prompts/` folder is historical reference only. Do not add new prompt files there.
 
 ---
 
@@ -263,8 +267,9 @@ Even though this document is written in English, the two languages have strict, 
 ## Quick reference (target layout — Next.js)
 
 - Public routes: `app/page.tsx` (landing), `app/bezahlen/*`, `app/packzettel/page.tsx`
-- Admin: `app/admin/*` (protected by Clerk middleware) + `components/admin/*`
-- Auth: Clerk (`middleware.ts`, Clerk components/hooks) + `app/admin/accept-invitation`
+- Admin: `app/admin/*` (protected by Clerk in `proxy.ts`) + `components/admin/*`
+- Auth: Clerk (`proxy.ts`, Clerk components/hooks) + `app/admin/accept-invitation`
+- Governance and specs: `.specify/memory/constitution.md`, `specs/*`
 - Current camp: a `useCamp` hook / server helper backed by `camp_settings`
 - Supabase clients + DB types: `lib/`
 - Server logic: `app/api/*` route handlers; schema in `supabase/migrations/`
