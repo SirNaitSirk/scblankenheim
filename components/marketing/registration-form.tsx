@@ -52,9 +52,12 @@ function initialValue(field: CampFormField): FieldValue {
 export function RegistrationForm({
   fields,
   availability = {},
+  invitationToken,
 }: {
   fields: CampFormField[];
   availability?: Record<string, FieldAvailability>;
+  /** Already validated on the server; kept across "Noch jemanden anmelden". */
+  invitationToken?: string;
 }) {
   const allFields = mergeFields(fields);
   const [values, setValues] = useState<Record<string, FieldValue>>(() =>
@@ -103,7 +106,9 @@ export function RegistrationForm({
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ values }),
+        body: JSON.stringify(
+          invitationToken ? { values, priceTierToken: invitationToken } : { values },
+        ),
       });
       const data = (await response.json().catch(() => ({}))) as {
         reference?: string;
@@ -152,6 +157,11 @@ export function RegistrationForm({
       onSubmit={handleSubmit}
       className="rounded-card border border-border bg-surface p-6 shadow-card sm:p-8"
     >
+      {invitationToken && (
+        <p className="mb-6 rounded-input border border-border bg-sand-50 px-4 py-3 text-sm text-muted-foreground">
+          {copy.invitationHint}
+        </p>
+      )}
       <div className="flex flex-col gap-5">
         {allFields.map((field) => (
           <FormField

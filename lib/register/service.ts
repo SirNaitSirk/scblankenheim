@@ -6,6 +6,7 @@ import {
   getActiveRegistrationCount,
   readFieldCapacity,
 } from "@/lib/marketing/availability";
+import { findValidTier } from "@/lib/register/invitation";
 import { registerMessages } from "@/lib/register/messages";
 import {
   getRegistrationState,
@@ -108,7 +109,7 @@ async function loadCurrentCamp(): Promise<CurrentCamp | null> {
   };
 }
 
-/** Camp's dynamic fields, ordered — the same set the public form renders. */
+/** Camp's dynamic fields, ordered: the same set the public form renders. */
 async function loadDynamicFields(campId: string): Promise<CampFormField[]> {
   const supabase = getServiceClient();
   const { data } = await supabase
@@ -155,7 +156,7 @@ function selectedOptionLimits(
  * Resolves the amount due. A valid invitation token → that tier's price + id;
  * otherwise the camp's base price with no tier. The tier must belong to the
  * camp and be within its validity window. Hidden prices are only ever returned
- * as the caller's own `amountDue` — never listed.
+ * as the caller's own `amountDue`, never listed.
  */
 async function resolveAmount(
   camp: CurrentCamp,
@@ -164,22 +165,8 @@ async function resolveAmount(
   const fallback = { amountDue: camp.basePrice, priceTierId: null };
   if (!priceTierToken) return fallback;
 
-  const supabase = getServiceClient();
-  const { data: tier } = await supabase
-    .from("price_tiers")
-    .select("id, price, camp_id, valid_from, valid_until")
-    .eq("invitation_token", priceTierToken)
-    .maybeSingle();
-
-  if (!tier || tier.camp_id !== camp.id) return fallback;
-
-  const now = Date.now();
-  if (tier.valid_from && new Date(tier.valid_from).getTime() > now)
-    return fallback;
-  if (tier.valid_until && new Date(tier.valid_until).getTime() < now)
-    return fallback;
-
-  return { amountDue: tier.price, priceTierId: tier.id };
+  const tier = await findValidTier(camp.id, priceTierToken);
+  return tier ? { amountDue: tier.price, priceTierId: tier.id } : fallback;
 }
 
 /**

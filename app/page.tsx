@@ -19,7 +19,19 @@ export const metadata: Metadata = {
     "Eine unvergessliche Woche voller Gemeinschaft, Abenteuer und Glaube. Melde dich jetzt für das FCG Blankenheim Summercamp an.",
 };
 
-export default function Home() {
+type HomeProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+/** Personal invitation code from `?einladung=`; first value wins, empty is ignored. */
+function readInvitationToken(value: string | string[] | undefined): string | undefined {
+  const token = (Array.isArray(value) ? value[0] : value)?.trim();
+  return token ? token : undefined;
+}
+
+export default async function Home({ searchParams }: HomeProps) {
+  const invitationToken = readInvitationToken((await searchParams).einladung);
+
   return (
     <main id="start">
       <MountainHero />
@@ -29,7 +41,7 @@ export default function Home() {
       <ArrivalCommunity />
       <PaymentFaq />
       <ClosingCta />
-      <RegistrationSection />
+      <RegistrationSection invitationToken={invitationToken} />
       <SiteFooter />
     </main>
   );

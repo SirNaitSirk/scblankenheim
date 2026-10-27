@@ -7,6 +7,7 @@ import {
   getCampAvailability,
 } from "@/lib/marketing/availability";
 import { getCountdownTarget, getLandingCamp } from "@/lib/marketing/current-camp";
+import { resolveInvitation } from "@/lib/register/invitation";
 import { registerMessages } from "@/lib/register/messages";
 import {
   getRegistrationState,
@@ -30,7 +31,11 @@ async function loadActiveCount(campId: string, capacity: number | null): Promise
  * state with the shared rule (open, countdown, closed, full) and renders the
  * matching UI. Only the countdown and the form are client components.
  */
-export async function RegistrationSection() {
+export async function RegistrationSection({
+  invitationToken,
+}: {
+  invitationToken?: string;
+}) {
   const camp = await getLandingCamp();
   const activeCount = camp ? await loadActiveCount(camp.id, camp.capacity) : 0;
   const state: RegistrationState = getRegistrationState(camp, new Date(), activeCount);
@@ -42,6 +47,14 @@ export async function RegistrationSection() {
     camp && state === "open"
       ? await getCampAvailability(camp.id, camp.fields)
       : {};
+
+  // Only a valid token reaches the client; an invalid one behaves like none.
+  const validToken =
+    camp && state === "open" && invitationToken
+      ? (await resolveInvitation(camp.id, invitationToken)).valid
+        ? invitationToken
+        : undefined
+      : undefined;
 
   return (
     <section id="anmelden" className="border-t border-border bg-sand-50">
@@ -58,7 +71,11 @@ export async function RegistrationSection() {
 
         <Reveal delay={120} className="mx-auto mt-12 max-w-2xl">
           {state === "open" && camp ? (
-            <RegistrationForm fields={camp.fields} availability={availability} />
+            <RegistrationForm
+              fields={camp.fields}
+              availability={availability}
+              invitationToken={validToken}
+            />
           ) : state === "countdown" && target ? (
             <CountdownPanel target={target.toISOString()} />
           ) : (

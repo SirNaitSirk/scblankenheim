@@ -129,7 +129,7 @@ Keep schema in `supabase/migrations/` and regenerate the DB types in `lib/` afte
 
 Core tables:
 
-- `camps` — one row per yearly camp.
+- `camps` — one row per yearly camp. Registration window (specs/001-registration-form, research R1): registration opens automatically at `registration_opens_at`, closes at `registration_closes_at`, and shows "ausgebucht" once active registrations reach `capacity`. Once the opening time lies in the past, switching `registration_open` off no longer closes registration; to close early, set `registration_closes_at` to now or clear the opening time.
 - `camp_settings` — global/per-camp settings incl. which camp is *current* and base price.
 - `camp_form_fields` — dynamic registration form definition per camp (drives the public form).
 - `registrations` — attendee registrations (main entity). Avoid rigid value CHECK constraints on free-form fields (v1 hit repeated migration pain from over-strict constraints — prefer app/Zod validation).

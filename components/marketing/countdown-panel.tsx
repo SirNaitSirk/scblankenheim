@@ -26,7 +26,7 @@ function remainingFrom(targetMs: number, nowMs: number): Remaining | null {
   };
 }
 
-// A 1s ticker via useSyncExternalStore — no setState-in-effect, clean hydration.
+// A 1s ticker via useSyncExternalStore: no setState inside an effect, clean hydration.
 // The snapshot is quantized to whole seconds so it stays stable between ticks.
 function subscribe(onChange: () => void): () => void {
   const id = setInterval(onChange, 1000);

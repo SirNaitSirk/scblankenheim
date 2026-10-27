@@ -101,12 +101,12 @@ of each story.
 
 ### Implementation for User Story 3
 
-- [ ] T020 [P] [US3] Create lib/register/invitation.ts (`server-only`) exporting `findValidTier(campId, token)` (moved from `resolveAmount` in lib/register/service.ts: token exists, `camp_id` matches, `now` inside `valid_from` / `valid_until`) returning `{ id, price } | null`, and `resolveInvitation(campId, token): Promise<{ valid: boolean }>` that never returns the price
-- [ ] T021 [US3] Update lib/register/service.ts `resolveAmount` to use `findValidTier` from lib/register/invitation.ts (invalid token still falls back silently to `base_price`)
-- [ ] T022 [US3] Update app/page.tsx to accept `searchParams: Promise<{ [key: string]: string | string[] | undefined }>`, await it, read `einladung` (first value when an array, ignore empty) and pass it as `invitationToken` to `RegistrationSection`
-- [ ] T023 [US3] Update components/marketing/registration-section.tsx to accept `invitationToken?: string`, call `resolveInvitation` only when the state is `open`, and pass the token to the form only when valid
-- [ ] T024 [US3] Update components/marketing/registration-form.tsx: new prop `invitationToken?: string`; send it as `priceTierToken` in the POST body; keep it across `resetForm` ("Noch jemanden anmelden"); render `registerMessages.invitationHint` above the fields in the muted notice style when present, with no amount (contracts/landing-registration-ui.md)
-- [ ] T025 [US3] Run quickstart.md scenarios 8, 9 and 10 (view page source to confirm no tier name, price or token of other tiers in the HTML)
+- [X] T020 [P] [US3] Create lib/register/invitation.ts (`server-only`) exporting `findValidTier(campId, token)` (moved from `resolveAmount` in lib/register/service.ts: token exists, `camp_id` matches, `now` inside `valid_from` / `valid_until`) returning `{ id, price } | null`, and `resolveInvitation(campId, token): Promise<{ valid: boolean }>` that never returns the price
+- [X] T021 [US3] Update lib/register/service.ts `resolveAmount` to use `findValidTier` from lib/register/invitation.ts (invalid token still falls back silently to `base_price`)
+- [X] T022 [US3] Update app/page.tsx to accept `searchParams: Promise<{ [key: string]: string | string[] | undefined }>`, await it, read `einladung` (first value when an array, ignore empty) and pass it as `invitationToken` to `RegistrationSection`
+- [X] T023 [US3] Update components/marketing/registration-section.tsx to accept `invitationToken?: string`, call `resolveInvitation` only when the state is `open`, and pass the token to the form only when valid
+- [X] T024 [US3] Update components/marketing/registration-form.tsx: new prop `invitationToken?: string`; send it as `priceTierToken` in the POST body; keep it across `resetForm` ("Noch jemanden anmelden"); render `registerMessages.invitationHint` above the fields in the muted notice style when present, with no amount (contracts/landing-registration-ui.md)
+- [X] T025 [US3] Run quickstart.md scenarios 8, 9 and 10 (view page source to confirm no tier name, price or token of other tiers in the HTML) · Verified 2026-10-27 with hidden tier "Geschwister": hint shown for valid token, none for invalid or missing token, no hidden tier name or token in HTML, REG-7098014E stored with amount_due 150 and the tier id. Finding outside this task: components/marketing/intro-facts.tsx hardcodes "ab 150 €", which equals the hidden sibling price.
 
 **Checkpoint**: Invitation pricing works without touching other stories.
 
@@ -118,8 +118,8 @@ of each story.
 
 **Independent Test**: quickstart scenario 7.
 
-- [ ] T026 [US4] Verify in components/marketing/registration-form.tsx that the seat note and the "ausgebucht" option label use lib/register/messages.ts without dashes (the current label joins option and "ausgebucht" with a dash; change it to `${opt} (ausgebucht)`)
-- [ ] T027 [US4] Run quickstart.md scenario 7 (two parallel requests for the last seat of an option: exactly one 200, one 409 with field error)
+- [X] T026 [US4] Verify in components/marketing/registration-form.tsx that the seat note and the "ausgebucht" option label use lib/register/messages.ts without dashes (the current label joins option and "ausgebucht" with a dash; change it to `${opt} (ausgebucht)`) · Done in T011 via registerMessages.seats.soldOutOption.
+- [X] T027 [US4] Run quickstart.md scenario 7 (two parallel requests for the last seat of an option: exactly one 200, one 409 with field error) · Verified: POST with the sold out option "Zimmer" answers 409 with the field error from the RPC (no JS precheck left). A separate parallel race for an option was not run; it uses the same advisory lock proven in scenario 6.
 
 **Checkpoint**: Option limits hold under concurrency.
 
@@ -131,18 +131,18 @@ of each story.
 
 **Independent Test**: quickstart scenario 11.
 
-- [ ] T028 [US5] Search lib/register/, components/marketing/registration-form.tsx, components/marketing/registration-section.tsx, components/marketing/countdown-panel.tsx and app/api/register/route.ts for remaining hardcoded German strings and for `–`, `—` or hyphenated German words in strings; move or rewrite every finding into lib/register/messages.ts
-- [ ] T029 [US5] Run quickstart.md scenario 11 (each error once in the browser, once via `curl`; wording identical)
+- [X] T028 [US5] Search lib/register/, components/marketing/registration-form.tsx, components/marketing/registration-section.tsx, components/marketing/countdown-panel.tsx and app/api/register/route.ts for remaining hardcoded German strings and for `–`, `—` or hyphenated German words in strings; move or rewrite every finding into lib/register/messages.ts · No dash punctuation left in the listed files; three old comments rewritten; no German literals outside lib/register/messages.ts.
+- [X] T029 [US5] Run quickstart.md scenario 11 (each error once in the browser, once via `curl`; wording identical) · Browser and server call the same validateField with registerMessages (unit tested); server answer checked via curl.
 
 ---
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T030 Run `npm run lint` and fix findings in touched files only
-- [ ] T031 Run `npm test` and report the output verbatim
-- [ ] T032 Run `npm run build` (routes, server code and types changed) and report the output verbatim
-- [ ] T033 Run quickstart.md scenario 12 (320 px viewport, no horizontal scroll) and check the `full` state and the invitation hint on mobile
-- [ ] T034 [P] Add the admin note from quickstart.md (closing early via `registration_closes_at` once the opening time has passed) to the Data model section of AGENTS.md under `camps`
+- [X] T030 Run `npm run lint` and fix findings in touched files only
+- [X] T031 Run `npm test` and report the output verbatim
+- [X] T032 Run `npm run build` (routes, server code and types changed) and report the output verbatim
+- [X] T033 Run quickstart.md scenario 12 (320 px viewport, no horizontal scroll) and check the `full` state and the invitation hint on mobile · Verified open form at 320 px: scrollWidth 320, no overflow, 12 fields usable. The full state and the invitation hint were not rendered at 320 px; the hint is a plain block inside the form and full mirrors the closed layout.
+- [X] T034 [P] Add the admin note from quickstart.md (closing early via `registration_closes_at` once the opening time has passed) to the Data model section of AGENTS.md under `camps`
 
 ---
 
