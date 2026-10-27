@@ -11,6 +11,7 @@ import {
   writeLog,
 } from "@/lib/admin/data";
 import { AuthError, requirePermission } from "@/lib/admin/guard";
+import { sendPaymentLinkEmail, type PaymentLinkOutcome } from "@/lib/email/send";
 import { de } from "@/lib/admin/messages";
 import type {
   ActionResult,
@@ -222,6 +223,31 @@ export async function setRegistrationDeletedAction(
       message: reference,
     });
     revalidateRegistrations();
+    return { ok: true };
+  });
+}
+
+const referenceSchema = z.string().trim().min(1).max(32);
+
+const PAYMENT_LINK_ERRORS: Record<Exclude<PaymentLinkOutcome, "sent">, string> = {
+  failed: de.paymentLink.failed,
+  not_eligible: de.paymentLink.notDue,
+  no_email: de.paymentLink.noEmail,
+  cooldown: de.paymentLink.cooldown,
+};
+
+// Sends the payment link mail for one registration (specs/007-transactional-emails, US3).
+// The mail module writes the log entry with the admin as actor.
+export async function sendPaymentLinkAction(reference: string): Promise<ActionResult> {
+  return runGuarded(async (admin) => {
+    const parsed = referenceSchema.safeParse(reference);
+    if (!parsed.success) return { ok: false, error: de.registrations.toast.error };
+
+    const outcome = await sendPaymentLinkEmail(parsed.data, {
+      id: admin.id,
+      label: actorLabel(admin),
+    });
+    if (outcome !== "sent") return { ok: false, error: PAYMENT_LINK_ERRORS[outcome] };
     return { ok: true };
   });
 }

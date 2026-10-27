@@ -89,7 +89,7 @@ Rules:
 - Registration via a `register` route handler → row in `registrations` (+ `submission_attempts` for abuse/rate tracking).
 - Stripe payment: route handlers for creating checkout / payment links, plus a `stripe-webhook` route to reconcile payment status.
 - Price tiers with hidden invitation links (`price_tiers`).
-- Automatic payment reminders via a **Vercel Cron** route (protected by `CRON_SECRET`).
+- Automatic payment reminders via a **Vercel Cron** route `app/api/cron/payment-reminders` (protected by `CRON_SECRET`, schedule in `vercel.json`, specs/007-transactional-emails).
 - Tolerant fallback: registered-but-unpaid is allowed; no auto-cancellation.
 
 **Admin dashboard** (`app/admin/*`, protected by Clerk)
@@ -112,6 +112,7 @@ Rules:
 
 - Code-defined templates only (confirmation, payment link, reminder). Sent from server route handlers via the email provider. (Password reset is handled by Clerk.)
 - **No** in-app email template editor and **no** `email_templates` table.
+- A read only admin tab "Mail" (`/admin/mail`) previews every template with sample data, rendered by the same template functions; no editing, no test send (specs/007-transactional-emails).
 
 ### Out of scope (explicitly dropped from v1 — do not build)
 

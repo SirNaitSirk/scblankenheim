@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
 import {
   createRegistrationAction,
+  sendPaymentLinkAction,
   setRegistrationDeletedAction,
   setRegistrationPaymentAction,
   updateRegistrationAction,
@@ -154,12 +155,14 @@ export function RegistrationsManager({
   formFields,
   canWrite,
   userId,
+  appUrl,
 }: {
   initialRegistrations: Registration[];
   priceTiers: PriceTier[];
   formFields: CampFormField[];
   canWrite: boolean;
   userId: string | null;
+  appUrl: string | null;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -500,6 +503,8 @@ export function RegistrationsManager({
           onSuccess={onFormSuccess}
           onDelete={onDeleteFromDialog}
           onRestore={onRestoreFromDialog}
+          appUrl={appUrl}
+          onSendPaymentLink={sendPaymentLinkAction}
         />
       )}
 

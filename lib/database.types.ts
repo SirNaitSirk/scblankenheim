@@ -318,6 +318,35 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["stripe_events"]["Insert"]>;
         Relationships: [];
       };
+      // supabase/migrations/0008_email_deliveries.sql
+      email_deliveries: {
+        Row: {
+          id: string;
+          registration_id: string;
+          kind: string;
+          status: string;
+          trigger: string;
+          actor: string | null;
+          provider_message_id: string | null;
+          error: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          registration_id: string;
+          kind: string;
+          status: string;
+          trigger: string;
+          actor?: string | null;
+          provider_message_id?: string | null;
+          error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["email_deliveries"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<never, never>;
     Functions: {

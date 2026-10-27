@@ -19,6 +19,7 @@ import {
   getRegistrations,
 } from "@/lib/admin/data";
 import { de } from "@/lib/admin/messages";
+import { appBaseUrl } from "@/lib/email/links";
 import { updateDashboardMetrics } from "./dashboard-actions";
 import { questionFields } from "@/lib/register/steps";
 
@@ -91,6 +92,7 @@ export default async function DashboardPage() {
         formFields={formFields}
         canWrite={canWriteRegistrations}
         userId={profile?.id ?? null}
+        appUrl={appBaseUrl()}
       />
     </PageBody>
   );

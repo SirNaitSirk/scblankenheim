@@ -30,6 +30,8 @@ export type Registration = {
   amountPaid: number; // whole euros
   deleted: boolean;
   formData: Record<string, unknown>; // dynamic answers keyed by CampFormField.key
+  reminderCount: number; // automatic payment reminders sent (specs/007)
+  lastReminderAt: string | null; // ISO date-time of the latest reminder
 };
 
 /**

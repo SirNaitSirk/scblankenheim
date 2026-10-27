@@ -22,6 +22,7 @@ import type {
   RegistrationFormValues,
   RegistrationStatus,
 } from "@/lib/admin/types";
+import { hasPaymentDue, PaymentLinkPanel } from "./payment-link-panel";
 import { CORE_FIELD_KEYS } from "./registration-columns";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -154,6 +155,8 @@ export function RegistrationFormDialog({
   onSuccess,
   onDelete,
   onRestore,
+  appUrl,
+  onSendPaymentLink,
 }: {
   open: boolean;
   mode: "create" | "edit";
@@ -165,6 +168,8 @@ export function RegistrationFormDialog({
   onSuccess: () => void;
   onDelete?: () => void;
   onRestore?: () => void;
+  appUrl?: string | null;
+  onSendPaymentLink?: (reference: string) => Promise<ActionResult>;
 }) {
   // Initialised from props at mount; the parent remounts via `key` on each open,
   // so state is always fresh without a setState-in-effect reset.
@@ -387,6 +392,14 @@ export function RegistrationFormDialog({
             </div>
           </div>
         </Section>
+
+        {mode === "edit" && registration && onSendPaymentLink && hasPaymentDue(registration) && (
+          <PaymentLinkPanel
+            registration={registration}
+            appUrl={appUrl ?? null}
+            onSend={onSendPaymentLink}
+          />
+        )}
 
         {dynamic.length > 0 && (
           <Section title={t.sectionCampFields}>

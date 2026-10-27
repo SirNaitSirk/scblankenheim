@@ -136,7 +136,12 @@ function mapCamp(
   };
 }
 
-function mapRegistration(row: Tables<"registrations">): Registration {
+type ReminderInfo = { count: number; lastAt: string | null };
+
+function mapRegistration(
+  row: Tables<"registrations">,
+  reminders?: ReminderInfo,
+): Registration {
   return {
     id: row.reference,
     firstName: row.first_name ?? "",
@@ -151,7 +156,39 @@ function mapRegistration(row: Tables<"registrations">): Registration {
     amountPaid: row.amount_paid,
     deleted: row.deleted,
     formData: asRecord(row.form_data),
+    reminderCount: reminders?.count ?? 0,
+    lastReminderAt: reminders?.lastAt ?? null,
   };
+}
+
+const REMINDER_KINDS = ["reminder_1", "reminder_2", "reminder_3"];
+
+/**
+ * Sent payment reminders per registration id (specs/007-transactional-emails).
+ * Best effort: a failure yields an empty map so the dashboard still renders.
+ */
+async function loadReminderInfo(registrationIds: string[]): Promise<Map<string, ReminderInfo>> {
+  const info = new Map<string, ReminderInfo>();
+  if (registrationIds.length === 0) return info;
+  try {
+    const { data, error } = await getServiceClient()
+      .from("email_deliveries")
+      .select("registration_id, kind, updated_at")
+      .eq("status", "sent")
+      .in("kind", REMINDER_KINDS);
+    if (error) return info;
+    const wanted = new Set(registrationIds);
+    for (const row of data ?? []) {
+      if (!wanted.has(row.registration_id)) continue;
+      const entry = info.get(row.registration_id) ?? { count: 0, lastAt: null };
+      entry.count += 1;
+      if (!entry.lastAt || row.updated_at > entry.lastAt) entry.lastAt = row.updated_at;
+      info.set(row.registration_id, entry);
+    }
+  } catch {
+    // Reminder info is decorative; never fail the page over it.
+  }
+  return info;
 }
 
 function mapFormField(row: Tables<"camp_form_fields">): CampFormField {
@@ -255,7 +292,9 @@ export async function getRegistrations(): Promise<Registration[]> {
       .select("*")
       .order("registered_at", { ascending: false });
     if (error) throw error;
-    return (data ?? []).map(mapRegistration);
+    const rows = data ?? [];
+    const reminders = await loadReminderInfo(rows.map((row) => row.id));
+    return rows.map((row) => mapRegistration(row, reminders.get(row.id)));
   });
 }
 

@@ -3,6 +3,7 @@
 import {
   ClipboardText,
   CurrencyEur,
+  EnvelopeSimple,
   type Icon,
   SquaresFour,
   Tent,
@@ -21,6 +22,7 @@ const NAV_ICONS: Record<string, Icon> = {
   "/admin/finanzen": CurrencyEur,
   "/admin/camps": Tent,
   "/admin/logs": ClipboardText,
+  "/admin/mail": EnvelopeSimple,
   "/admin/benutzer": Users,
   "/admin/profil": UserCircle,
 };

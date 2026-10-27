@@ -8,13 +8,14 @@ export type NavItem = {
 /**
  * In-scope admin navigation (labels + hrefs only, no icons) so this module stays
  * server-safe. Icons are attached in the client sidebar. v1's Hausplanung /
- * Backups / Mails are dropped.
+ * Backups are dropped; Mail is a read only template preview.
  */
 export const NAV_ITEMS: NavItem[] = [
   { label: de.nav.dashboard, href: "/admin" },
   { label: de.nav.finances, href: "/admin/finanzen" },
   { label: de.nav.camps, href: "/admin/camps" },
   { label: de.nav.logs, href: "/admin/logs" },
+  { label: de.nav.mail, href: "/admin/mail" },
   { label: de.nav.users, href: "/admin/benutzer" },
   { label: de.nav.profile, href: "/admin/profil" },
 ];

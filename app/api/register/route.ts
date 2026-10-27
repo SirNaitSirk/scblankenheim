@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
+import { writeLog } from "@/lib/admin/data";
+import { sendConfirmationEmail } from "@/lib/email/send";
 import { registerMessages } from "@/lib/register/messages";
 import { submitRegistration } from "@/lib/register/service";
 import {
@@ -12,7 +14,9 @@ export const runtime = "nodejs";
 // Public endpoint (see proxy.ts; only /admin is protected). All authorization,
 // validation and abuse protection happen in the service layer. After a paid
 // registration the response carries a Stripe Checkout URL; a Stripe failure
-// never fails the registration (tolerant fallback, constitution VI).
+// never fails the registration (tolerant fallback, constitution VI). The
+// confirmation mail is sent after the response (specs/007-transactional-emails),
+// so the redirect never waits for the mail provider.
 
 const payloadSchema = z.object({
   values: z.record(z.string(), z.union([z.string(), z.boolean()])),
@@ -52,6 +56,16 @@ export async function POST(request: Request) {
       free || !result.registrationId
         ? null
         : await createCheckoutForRegistration(result.registrationId, resolveOrigin(request));
+    const registrationId = result.registrationId;
+    after(() =>
+      registrationId
+        ? sendConfirmationEmail(registrationId)
+        : writeLog({
+            level: "warning",
+            action: "email.skipped",
+            message: `confirmation ${result.reference}: keine Anmeldungs ID`,
+          }),
+    );
     return NextResponse.json(
       {
         reference: result.reference,
