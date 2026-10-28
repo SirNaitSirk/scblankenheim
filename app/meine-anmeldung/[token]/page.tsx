@@ -9,6 +9,7 @@ import {
 } from "@/lib/participant/lookup";
 import { participantMessages as copy } from "@/lib/participant/messages";
 import { normalizeAccessToken } from "@/lib/participant/token";
+import { sendParticipantMessageAction } from "./actions";
 
 export const metadata: Metadata = {
   title: copy.title,
@@ -46,7 +47,7 @@ export default async function ParticipantPage({ params }: ParticipantPageProps) 
 
   return (
     <PaymentShell>
-      <ParticipantSummary view={view} />
+      <ParticipantSummary view={view} contactAction={sendParticipantMessageAction.bind(null, token)} />
     </PaymentShell>
   );
 }

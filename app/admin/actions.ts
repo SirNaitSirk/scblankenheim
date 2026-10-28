@@ -19,6 +19,12 @@ import { syncRoomAssignment } from "@/lib/admin/rooms-data";
 import { syncTentCircle } from "@/lib/admin/tent-circles-data";
 import { getMailHistoryByReference } from "@/lib/email/deliveries";
 import type { MailHistoryResult } from "@/lib/email/history";
+import {
+  applyParticipantChange,
+  closeParticipantMessage,
+  listParticipantMessages,
+  type ResolveOutcome,
+} from "@/lib/admin/participant-messages";
 import { participantPath, participantUrl } from "@/lib/email/links";
 import { sendPaymentLinkEmail, type PaymentLinkOutcome } from "@/lib/email/send";
 import { de } from "@/lib/admin/messages";
@@ -26,7 +32,9 @@ import type {
   ActionResult,
   AdminUser,
   ParticipantLinkResult,
+  ParticipantMessagesResult,
   RegistrationFormValues,
+  ResolveMessageResult,
   RegistrationInput,
 } from "@/lib/admin/types";
 
@@ -376,4 +384,91 @@ export async function renewParticipantLinkAction(reference: string): Promise<Par
     });
     return { ok: true, url: participantLink(result.token) };
   }, t.renewFailed);
+}
+
+// --- participant messages (specs/018-participant-messages) -------------------
+
+const resolveMessageSchema = z.object({
+  id: z.guid(),
+  action: z.enum(["done", "apply", "dismiss"]),
+  confirmOverwrite: z.boolean().default(false),
+});
+
+async function messagesAdmin(): Promise<AdminUser | string> {
+  try {
+    return await requirePermission("registrations");
+  } catch (error) {
+    if (error instanceof AuthError) return de.registrations.toast.unauthorized;
+    console.error("[registrations] auth check failed", error);
+    return de.participantMessages.errors.generic;
+  }
+}
+
+export async function getParticipantMessagesAction(reference: string): Promise<ParticipantMessagesResult> {
+  const t = de.participantMessages;
+  const admin = await messagesAdmin();
+  if (typeof admin === "string") return { ok: false, error: admin };
+  try {
+    const parsed = referenceSchema.safeParse(reference);
+    if (!parsed.success) return { ok: false, error: t.errors.notFound };
+    const items = await listParticipantMessages(parsed.data);
+    return items ? { ok: true, items } : { ok: false, error: t.errors.notFound };
+  } catch (error) {
+    console.error("[registrations] participant messages failed", error);
+    return { ok: false, error: t.loadFailed };
+  }
+}
+
+function resolveError(outcome: Exclude<ResolveOutcome, { ok: true }>): ResolveMessageResult {
+  const e = de.participantMessages.errors;
+  switch (outcome.reason) {
+    case "conflict":
+      return { ok: false, error: de.participantMessages.conflict(outcome.current), conflict: { current: outcome.current } };
+    case "invalid":
+      return { ok: false, error: e.invalid(outcome.message) };
+    case "field_gone":
+      return { ok: false, error: e.fieldGone };
+    case "not_open":
+      return { ok: false, error: e.notOpen };
+    default:
+      return { ok: false, error: e.notFound };
+  }
+}
+
+// Marks a message done, applies or dismisses a change request. Logs carry the
+// field key only, never values (they may be health data).
+export async function resolveParticipantMessageAction(
+  id: string,
+  input: { action: "done" | "apply" | "dismiss"; confirmOverwrite?: boolean },
+): Promise<ResolveMessageResult> {
+  const admin = await messagesAdmin();
+  if (typeof admin === "string") return { ok: false, error: admin };
+  try {
+    const parsed = resolveMessageSchema.safeParse({ id, ...input });
+    if (!parsed.success) return { ok: false, error: de.participantMessages.errors.notFound };
+    const { action, confirmOverwrite } = parsed.data;
+
+    const outcome =
+      action === "apply"
+        ? await applyParticipantChange(parsed.data.id, admin.id, confirmOverwrite)
+        : await closeParticipantMessage(parsed.data.id, admin.id, action);
+    if (!outcome.ok) return resolveError(outcome);
+
+    const logAction = {
+      done: "registration.message_done",
+      apply: "registration.change_applied",
+      dismiss: "registration.change_dismissed",
+    }[action];
+    await writeLog({
+      actor: actorLabel(admin),
+      action: logAction,
+      message: `${outcome.reference} ${outcome.fieldKey ?? ""}`.trim(),
+    });
+    revalidateRegistrations();
+    revalidatePath("/admin/finanzen");
+    return { ok: true };
+  } catch (error) {
+    console.error("[registrations] resolve participant message failed", error);
+    return { ok: false, error: de.participantMessages.errors.generic };
+  }
 }

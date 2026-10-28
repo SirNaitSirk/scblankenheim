@@ -7,6 +7,8 @@ import {
   createRegistrationAction,
   getRegistrationMailsAction,
   getParticipantLinkAction,
+  getParticipantMessagesAction,
+  resolveParticipantMessageAction,
   renewParticipantLinkAction,
   sendPaymentLinkAction,
   setReminderPauseAction,
@@ -524,6 +526,8 @@ export function RegistrationsManager({
           onLoadMails={getRegistrationMailsAction}
           onGetParticipantLink={getParticipantLinkAction}
           onRenewParticipantLink={renewParticipantLinkAction}
+          onLoadParticipantMessages={getParticipantMessagesAction}
+          onResolveParticipantMessage={resolveParticipantMessageAction}
         />
       )}
 

@@ -71,6 +71,25 @@ export async function claimTestDelivery(actorId: string): Promise<{ id: string }
   return { id: data.id };
 }
 
+/**
+ * Claims a team notification for a participant message (specs/018-participant-messages,
+ * research R5). Team mails may repeat per registration, so no unique check applies.
+ */
+export async function claimTeamDelivery(registrationId: string): Promise<{ id: string }> {
+  const { data, error } = await getServiceClient()
+    .from("email_deliveries")
+    .insert({
+      registration_id: registrationId,
+      kind: "team_message",
+      status: "sending",
+      trigger: "participant",
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return { id: data.id };
+}
+
 /** Whether this admin sent a test within the cooldown. */
 export async function testOnCooldown(actorId: string, now: Date = new Date()): Promise<boolean> {
   const since = new Date(now.getTime() - TEST_SEND_COOLDOWN_MS).toISOString();
@@ -212,6 +231,7 @@ export async function getMailHistory(registrationId: string): Promise<MailHistor
     .from("email_deliveries")
     .select("id, kind, status, trigger, actor, error, created_at, updated_at")
     .eq("registration_id", registrationId)
+    .neq("kind", "team_message") // mails to the team are not mails to the person
     .order("created_at", { ascending: false })
     .limit(MAIL_HISTORY_LIMIT);
   if (error) throw error;

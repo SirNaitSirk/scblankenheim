@@ -101,6 +101,9 @@ function Cell({
             {row.deleted && (
               <Badge tone="danger">{de.registrations.deletedBadge}</Badge>
             )}
+            {row.openMessages > 0 && (
+              <Badge tone="pending">{de.participantMessages.badge(row.openMessages)}</Badge>
+            )}
           </div>
         </td>
       );

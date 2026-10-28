@@ -85,6 +85,7 @@ Rules:
 - Packing list page (`/packzettel`).
 - Participant page (`/meine-anmeldung/<token>`): private, read only page per registration with status, amounts, pay button, own answers, camp facts and packing list link; reachable only through an unguessable link that every mail to the registration contains; admins copy and renew it in the registration dialog (specs/017-participant-page).
 - Calendar file (`/kalender/<campId>`): public iCalendar file with one all day event per camp plus a Google Calendar link, linked in the confirmation mail, the teaser info mail and on the participant page (specs/019-calendar-file).
+- Participant messages: from the participant page a person sends a message to the team or requests a change of one own field; items are stored, forwarded to the camp's team address by mail and handled in the registration dialog (mark done, apply, dismiss); no chat, no replies in the app (specs/018-participant-messages).
 
 **Registration & payment**
 
@@ -154,6 +155,7 @@ Core tables:
 - `tent_circles`: per camp tent circles with name, kind (`mixed` / `female` / `male`) and one leader registration.
 - `tent_circle_members`: one circle per registration and camp; leader exclusivity and kind match enforced on the server (specs/011-tent-circles).
 - `camp_mail_info`: per camp content and on/off switches for the four info mails (specs/012-info-mails), plus the mail settings of specs/016-mail-settings (reminder switch, nullable timing values, sender name, reply address, text blocks).
+- `participant_messages`: messages and change requests from the participant page with status and resolution (specs/018-participant-messages).
 - `registrations.reminders_paused`: no automatic payment reminders for this registration (specs/016-mail-settings).
 - `email_deliveries`: one row per send attempt; rows without `registration_id` and kind `test` are admin test sends that count against the daily quota.
 

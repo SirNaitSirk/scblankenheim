@@ -80,6 +80,7 @@ type ReminderInfo = { count: number; lastAt: string | null };
 function mapRegistration(
   row: Tables<"registrations">,
   reminders?: ReminderInfo,
+  openMessages = 0,
 ): Registration {
   return {
     id: row.reference,
@@ -99,6 +100,7 @@ function mapRegistration(
     reminderCount: reminders?.count ?? 0,
     lastReminderAt: reminders?.lastAt ?? null,
     remindersPaused: row.reminders_paused ?? false,
+    openMessages,
   };
 }
 
@@ -130,6 +132,27 @@ async function loadReminderInfo(registrationIds: string[]): Promise<Map<string, 
     // Reminder info is decorative; never fail the page over it.
   }
   return info;
+}
+
+/**
+ * Open participant messages per registration id (specs/018-participant-messages,
+ * research R8). Best effort like the reminder info: a failure yields zero counts.
+ */
+async function loadOpenMessageCounts(): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  try {
+    const { data, error } = await getServiceClient()
+      .from("participant_messages")
+      .select("registration_id")
+      .eq("status", "open");
+    if (error) return counts;
+    for (const row of data ?? []) {
+      counts.set(row.registration_id, (counts.get(row.registration_id) ?? 0) + 1);
+    }
+  } catch {
+    // The badge is a hint; never fail the page over it.
+  }
+  return counts;
 }
 
 function mapFormField(row: Tables<"camp_form_fields">): CampFormField {
@@ -237,8 +260,11 @@ export async function getRegistrations(): Promise<Registration[]> {
       .order("registered_at", { ascending: false });
     if (error) throw error;
     const rows = data ?? [];
-    const reminders = await loadReminderInfo(rows.map((row) => row.id));
-    return rows.map((row) => mapRegistration(row, reminders.get(row.id)));
+    const [reminders, openMessages] = await Promise.all([
+      loadReminderInfo(rows.map((row) => row.id)),
+      loadOpenMessageCounts(),
+    ]);
+    return rows.map((row) => mapRegistration(row, reminders.get(row.id), openMessages.get(row.id)));
   });
 }
 

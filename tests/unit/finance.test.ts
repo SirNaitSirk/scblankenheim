@@ -50,6 +50,7 @@ function registration(overrides: Partial<Registration> = {}): Registration {
     reminderCount: 2,
     lastReminderAt: "2026-06-01T08:00:00Z",
     remindersPaused: false,
+    openMessages: 0,
     ...overrides,
   };
 }

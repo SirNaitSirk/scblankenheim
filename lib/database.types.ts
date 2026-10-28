@@ -177,6 +177,43 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["registrations"]["Insert"]>;
         Relationships: [];
       };
+      // supabase/migrations/0014_participant_messages.sql
+      participant_messages: {
+        Row: {
+          id: string;
+          registration_id: string;
+          camp_id: string;
+          kind: string;
+          body: string;
+          field_key: string | null;
+          field_label: string | null;
+          previous_value: Json | null;
+          proposed_value: Json | null;
+          status: string;
+          resolution: string | null;
+          resolved_by: string | null;
+          resolved_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          registration_id: string;
+          camp_id: string;
+          kind: string;
+          body?: string;
+          field_key?: string | null;
+          field_label?: string | null;
+          previous_value?: Json | null;
+          proposed_value?: Json | null;
+          status?: string;
+          resolution?: string | null;
+          resolved_by?: string | null;
+          resolved_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["participant_messages"]["Insert"]>;
+        Relationships: [];
+      };
       submission_attempts: {
         Row: {
           id: string;

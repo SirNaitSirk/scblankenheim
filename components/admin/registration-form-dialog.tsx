@@ -18,6 +18,8 @@ import { splitCampFields } from "@/lib/admin/form-layout";
 import type {
   ActionResult,
   ParticipantLinkResult,
+  ParticipantMessagesResult,
+  ResolveMessageResult,
   CampFormField,
   Gender,
   PaymentStatus,
@@ -29,6 +31,7 @@ import type {
 import type { MailHistoryResult } from "@/lib/email/history";
 import { MailHistory } from "./mail-history";
 import { ParticipantLinkPanel } from "./participant-link-panel";
+import { ParticipantMessagesPanel } from "./participant-messages-panel";
 import { hasPaymentDue, PaymentLinkPanel } from "./payment-link-panel";
 import { CORE_FIELD_KEYS } from "./registration-columns";
 
@@ -180,6 +183,8 @@ export function RegistrationFormDialog({
   onLoadMails,
   onGetParticipantLink,
   onRenewParticipantLink,
+  onLoadParticipantMessages,
+  onResolveParticipantMessage,
 }: {
   open: boolean;
   mode: "create" | "edit";
@@ -197,6 +202,11 @@ export function RegistrationFormDialog({
   onLoadMails?: (reference: string) => Promise<MailHistoryResult>;
   onGetParticipantLink?: (reference: string) => Promise<ParticipantLinkResult>;
   onRenewParticipantLink?: (reference: string) => Promise<ParticipantLinkResult>;
+  onLoadParticipantMessages?: (reference: string) => Promise<ParticipantMessagesResult>;
+  onResolveParticipantMessage?: (
+    id: string,
+    input: { action: "done" | "apply" | "dismiss"; confirmOverwrite?: boolean },
+  ) => Promise<ResolveMessageResult>;
 }) {
   // Initialised from props at mount; the parent remounts via `key` on each open,
   // so state is always fresh without a setState-in-effect reset.
@@ -450,6 +460,14 @@ export function RegistrationFormDialog({
             registration={registration}
             onGetLink={onGetParticipantLink}
             onRenewLink={onRenewParticipantLink}
+          />
+        )}
+
+        {mode === "edit" && registration && onLoadParticipantMessages && onResolveParticipantMessage && (
+          <ParticipantMessagesPanel
+            reference={registration.id}
+            load={onLoadParticipantMessages}
+            resolve={onResolveParticipantMessage}
           />
         )}
 

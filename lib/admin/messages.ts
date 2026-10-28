@@ -115,6 +115,39 @@ export const de = {
     reminders: (count: number, date: string) =>
       `${count} ${count === 1 ? "Erinnerung" : "Erinnerungen"}, zuletzt am ${date}`,
   },
+  participantMessages: {
+    title: "Nachrichten",
+    hint: "Anliegen von der Teilnehmerseite. Antworten gehen per Mail an die Person.",
+    loading: "Nachrichten werden geladen …",
+    empty: "Keine Nachrichten",
+    loadFailed: "Nachrichten konnten nicht geladen werden.",
+    kinds: { message: "Nachricht", change_request: "Änderungswunsch" },
+    change: (label: string, previous: string, proposed: string) =>
+      `${label}: ${previous || "leer"} → ${proposed || "leer"}`,
+    reason: (text: string) => `Begründung: ${text}`,
+    markDone: "Als erledigt markieren",
+    apply: "Übernehmen",
+    dismiss: "Ablehnen",
+    applyAnyway: "Trotzdem übernehmen",
+    cancel: "Abbrechen",
+    conflict: (current: string) =>
+      `Der Wert wurde inzwischen geändert und lautet jetzt „${current || "leer"}“. Soll er überschrieben werden?`,
+    results: { done: "Erledigt", applied: "Übernommen", dismissed: "Abgelehnt" },
+    resolvedBy: (result: string, name: string | null, date: string) =>
+      name ? `${result} von ${name} am ${date}` : `${result} am ${date}`,
+    badge: (count: number) => `${count} offen`,
+    open: "offen",
+    applied: "Änderung übernommen.",
+    closed: "Erledigt.",
+    errors: {
+      notFound: "Dieses Anliegen wurde nicht gefunden.",
+      notOpen: "Dieses Anliegen ist schon erledigt.",
+      fieldGone: "Diese Angabe gibt es im Formular nicht mehr. Bitte von Hand klären.",
+      invalid: (message: string) =>
+        message ? `Der Wert passt nicht mehr zu den Regeln des Formulars: ${message}` : "Der Wert passt nicht mehr zu den Regeln des Formulars.",
+      generic: "Das hat nicht geklappt. Bitte später erneut versuchen.",
+    },
+  },
   participantLink: {
     title: "Teilnehmerseite",
     hint: "Private Seite, auf der die Person ihren Stand sieht. Nur an die angemeldete Person weitergeben.",

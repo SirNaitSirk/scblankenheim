@@ -1,18 +1,27 @@
 import { CalendarPlus } from "@phosphor-icons/react/dist/ssr";
 import type { ReactNode } from "react";
+import type { ContactState } from "@/app/meine-anmeldung/[token]/actions";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
 import { participantMessages as copy } from "@/lib/participant/messages";
 import type { ParticipantView, PayState } from "@/lib/participant/view";
+import { ParticipantContact } from "./participant-contact";
 import { formatGermanDate } from "@/lib/time/berlin";
 
 /**
  * Read only participant page body (specs/017-participant-page, plan "UI"):
  * status and amounts first, then camp facts, own answers and the packing list.
  */
-export function ParticipantSummary({ view }: { view: ParticipantView }) {
+export function ParticipantSummary({
+  view,
+  contactAction,
+}: {
+  view: ParticipantView;
+  /** Bound public action (specs/018-participant-messages); omitted in previews. */
+  contactAction?: (previous: ContactState, formData: FormData) => Promise<ContactState>;
+}) {
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -30,6 +39,13 @@ export function ParticipantSummary({ view }: { view: ParticipantView }) {
       <StatusCard view={view} />
       <CampCard view={view} />
       <AnswersCard view={view} />
+      {contactAction && (
+        <ParticipantContact
+          action={contactAction}
+          fields={view.editableFields}
+          messages={view.messages}
+        />
+      )}
       <PackingCard />
     </div>
   );

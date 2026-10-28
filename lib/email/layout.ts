@@ -103,6 +103,7 @@ export function renderLayout(input: {
   campName: string;
   title: string;
   bodyHtml: string;
+  footer?: string; // internal team mails replace the public footer
 }): string {
   return `<!doctype html>
 <html lang="de">
@@ -121,7 +122,7 @@ export function renderLayout(input: {
 <h1 style="margin:0 0 20px;font-size:24px;line-height:1.3;color:${COLORS.text};">${escapeHtml(input.title)}</h1>
 ${input.bodyHtml}
 </td></tr>
-<tr><td style="padding:20px 8px 0;font-size:12px;line-height:1.5;color:${COLORS.muted};">${escapeHtml(emailMessages.footer)}</td></tr>
+<tr><td style="padding:20px 8px 0;font-size:12px;line-height:1.5;color:${COLORS.muted};">${escapeHtml(input.footer ?? emailMessages.footer)}</td></tr>
 </table>
 </td></tr>
 </table>
@@ -130,6 +131,9 @@ ${input.bodyHtml}
 }
 
 /** Plain text version: blocks separated by blank lines. */
-export function renderText(blocks: ReadonlyArray<string>): string {
-  return `${blocks.filter((block) => block.trim() !== "").join("\n\n")}\n\n${emailMessages.footer}\n`;
+export function renderText(
+  blocks: ReadonlyArray<string>,
+  footer: string = emailMessages.footer,
+): string {
+  return `${blocks.filter((block) => block.trim() !== "").join("\n\n")}\n\n${footer}\n`;
 }

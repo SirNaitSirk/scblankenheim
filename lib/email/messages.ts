@@ -20,6 +20,32 @@ export const emailMessages = {
         ? `Bei Fragen erreichst du ${name}, antworte einfach auf diese Mail.`
         : `Bei Fragen erreichst du uns unter ${phone}.`,
 
+  team: {
+    subjectMessage: (name: string, reference: string) => `Nachricht von ${name} (${reference})`,
+    subjectChange: (name: string, reference: string) => `Änderungswunsch von ${name} (${reference})`,
+    preheader: "Neues Anliegen von der Teilnehmerseite",
+    titleMessage: "Neue Nachricht",
+    titleChange: "Neuer Änderungswunsch",
+    intro: "über die Teilnehmerseite ist ein neues Anliegen eingegangen.",
+    greeting: "Hallo Team,",
+    labels: {
+      name: "Name",
+      reference: "Referenznummer",
+      camp: "Camp",
+      field: "Angabe",
+      previous: "Bisher",
+      proposed: "Neu",
+      reason: "Begründung",
+    },
+    empty: "leer",
+    replyHint: (email: string) => `Antworte einfach auf diese Mail, die Antwort geht an ${email}.`,
+    noReply: "Für diese Anmeldung ist keine Mailadresse hinterlegt.",
+    changeHint: "Im Anmeldedialog kannst du die Änderung mit einem Klick übernehmen oder ablehnen.",
+    adminLink: "Im Admin Bereich öffnen",
+    unnamed: "Ohne Namen",
+    footer: "FCG Blankenheim Summercamp · Interne Mail aus CampConnect",
+  },
+
   calendar: {
     intro: "Trag dir das Camp gleich in den Kalender ein:",
     ics: "Apple oder Outlook",

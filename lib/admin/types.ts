@@ -35,6 +35,7 @@ export type Registration = {
   reminderCount: number; // automatic payment reminders sent (specs/007)
   lastReminderAt: string | null; // ISO date-time of the latest reminder
   remindersPaused: boolean; // no automatic payment reminders (specs/016)
+  openMessages: number; // open participant messages (specs/018)
 };
 
 /**
@@ -160,6 +161,30 @@ export type CampInput = {
 export type ActionResult =
   | { ok: true; id?: string; roomGender?: Gender; leaderMoved?: boolean }
   | { ok: false; error: string; fieldErrors?: Record<string, string> };
+
+/** Participant messages for the admin dialog (specs/018-participant-messages). */
+export type AdminParticipantMessage = {
+  id: string;
+  kind: "message" | "change_request";
+  createdAt: string;
+  text: string;
+  fieldKey: string | null;
+  fieldLabel: string | null;
+  previous: string | null;
+  proposed: string | null;
+  status: "open" | "done";
+  resolution: "done" | "applied" | "dismissed" | null;
+  resolvedByName: string | null;
+  resolvedAt: string | null;
+};
+
+export type ParticipantMessagesResult =
+  | { ok: true; items: AdminParticipantMessage[] }
+  | { ok: false; error: string };
+
+export type ResolveMessageResult =
+  | { ok: true }
+  | { ok: false; error: string; conflict?: { current: string } };
 
 /** Participant page link for the admin dialog (specs/017-participant-page). */
 export type ParticipantLinkResult = { ok: true; url: string } | { ok: false; error: string };
