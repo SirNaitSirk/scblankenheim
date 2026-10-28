@@ -1,5 +1,7 @@
 import "server-only";
 
+import { toCampEvent } from "@/lib/calendar/ics";
+import { appBaseUrl, calendarLinks } from "@/lib/email/links";
 import { getServiceClient } from "@/lib/supabase/server";
 import { PARTICIPANT_THROTTLE_MAX, PARTICIPANT_THROTTLE_WINDOW_MS } from "./limits";
 import { buildParticipantView, type ParticipantView } from "./view";
@@ -24,7 +26,7 @@ export async function findParticipantByToken(token: string): Promise<Participant
   const [{ data: camp }, { data: fields }] = await Promise.all([
     supabase
       .from("camps")
-      .select("name, start_date, end_date, location")
+      .select("id, name, start_date, end_date, location")
       .eq("id", registration.camp_id)
       .maybeSingle(),
     supabase
@@ -34,7 +36,9 @@ export async function findParticipantByToken(token: string): Promise<Participant
   ]);
   if (!camp) return null;
 
-  return buildParticipantView({ registration, camp, fields: fields ?? [] });
+  const base = appBaseUrl();
+  const calendar = calendarLinks(base ? toCampEvent(camp, base) : null);
+  return buildParticipantView({ registration, camp, fields: fields ?? [], calendar });
 }
 
 /** Whether this ip reached the miss limit within the window. Does not record. */

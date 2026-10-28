@@ -1,9 +1,11 @@
+import type { CalendarLinks } from "@/lib/calendar/ics";
 import { formatCurrency } from "@/lib/format";
 import { formatGermanDate } from "@/lib/time/berlin";
 import {
   renderButton,
   renderFacts,
   renderLayout,
+  renderLinkPair,
   renderParagraph,
   renderText,
   renderTextLink,
@@ -29,6 +31,7 @@ export type EmailContext = {
   paymentDueDate: string | null; // ISO date
   payUrl: string;
   participantUrl: string; // private participant page (specs/017-participant-page)
+  calendar: CalendarLinks | null; // camp calendar links, null without dates (specs/019-calendar-file)
   texts: MailTexts; // per camp text blocks (specs/016-mail-settings)
 };
 
@@ -61,6 +64,19 @@ function closingBlocks(ctx: EmailContext): string[] {
   if (contactName || contactPhone) blocks.push(m.contactLine(contactName, contactPhone));
   blocks.push(closing ?? m.closing);
   return blocks;
+}
+
+/** Calendar links of the camp, or null when the camp has no valid dates. */
+export function calendarBlock(ctx: EmailContext): { html: string; text: string } | null {
+  if (!ctx.calendar) return null;
+  const copy = m.calendar;
+  return {
+    html: renderLinkPair(copy.intro, [
+      { label: copy.ics, href: ctx.calendar.icsUrl },
+      { label: copy.google, href: ctx.calendar.googleUrl },
+    ]),
+    text: `${copy.intro}\n${copy.ics}: ${ctx.calendar.icsUrl}\n${copy.google}: ${ctx.calendar.googleUrl}`,
+  };
 }
 
 /** Link to the participant page, shared by every mail to a registration. */
@@ -146,10 +162,12 @@ export function confirmationEmail(ctx: EmailContext): RenderedEmail {
     : [m.confirmation.payIntro, `${m.payButton}: ${ctx.payUrl}`, m.confirmation.alreadyPaid];
 
   const participant = participantBlock(ctx);
+  const calendar = calendarBlock(ctx);
   const bodyHtml = [
     ...opening.map(renderParagraph),
     renderParagraph(intro),
     renderFacts(facts),
+    calendar?.html ?? "",
     payBlockHtml,
     renderParagraph(m.confirmation.keepReference),
     participant.html,
@@ -168,6 +186,7 @@ export function confirmationEmail(ctx: EmailContext): RenderedEmail {
       ...opening,
       intro,
       factsToText(facts),
+      calendar?.text ?? "",
       ...payBlockText,
       m.confirmation.keepReference,
       participant.text,

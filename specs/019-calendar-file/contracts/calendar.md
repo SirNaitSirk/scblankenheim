@@ -2,7 +2,7 @@
 
 ## `GET /kalender/[campId]`
 
-- `campId` must be a uuid, else 404.
+- `campId` must have the 8 4 4 4 12 hex shape (`z.guid()`), else 404. Base URL is `APP_URL`, or the request origin when it is empty.
 - Camp missing, dates missing or end before start → 404, body "Nicht gefunden", `text/plain`.
 - Success → 200, `Content-Type: text/calendar; charset=utf-8`,
   `Content-Disposition: attachment; filename="<slug of camp name>.ics"`, `Cache-Control: no-store`.

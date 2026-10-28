@@ -1,3 +1,4 @@
+import { CalendarPlus } from "@phosphor-icons/react/dist/ssr";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
@@ -127,6 +128,23 @@ function CampCard({ view }: { view: ParticipantView }) {
           )}
           {view.campLocation && <Fact label={copy.camp.location} value={view.campLocation} />}
         </dl>
+      )}
+      {view.calendar && (
+        <div className="mt-5 flex flex-wrap gap-2">
+          <ButtonLink href={view.calendar.icsUrl} variant="outline" size="sm">
+            <CalendarPlus size={16} aria-hidden />
+            {copy.camp.calendarIcs}
+          </ButtonLink>
+          <ButtonLink
+            href={view.calendar.googleUrl}
+            variant="outline"
+            size="sm"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {copy.camp.calendarGoogle}
+          </ButtonLink>
+        </div>
       )}
     </Card>
   );

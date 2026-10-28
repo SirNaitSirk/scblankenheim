@@ -81,6 +81,23 @@ export function renderTextLink(intro: string, label: string, href: string): stri
   );
 }
 
+/** Quiet block with one sentence and several links side by side (specs/019-calendar-file). */
+export function renderLinkPair(
+  intro: string,
+  links: ReadonlyArray<{ label: string; href: string }>,
+): string {
+  const anchors = links
+    .map(
+      (link) =>
+        `<a href="${escapeHtml(link.href)}" style="font-weight:600;color:${COLORS.accent};margin-right:16px;">${escapeHtml(link.label)}</a>`,
+    )
+    .join("");
+  return (
+    `<p style="margin:8px 0 16px;padding:16px;border:1px solid ${COLORS.border};border-radius:8px;font-size:15px;line-height:1.6;color:${COLORS.text};">` +
+    `${escapeHtml(intro)}<br>${anchors}</p>`
+  );
+}
+
 export function renderLayout(input: {
   preheader: string;
   campName: string;

@@ -1,4 +1,5 @@
 import type { PaymentStatus } from "@/lib/admin/types";
+import type { CalendarLinks } from "@/lib/calendar/ics";
 import { paymentPath } from "@/lib/email/links";
 import {
   checkoutEligibility,
@@ -24,6 +25,7 @@ export type ParticipantView = {
   campName: string;
   campDates: { start: string; end: string } | null;
   campLocation: string | null;
+  calendar: CalendarLinks | null; // specs/019-calendar-file
   status: "active" | "cancelled";
   amounts: { total: number; paid: number; outstanding: number };
   payState: PayState;
@@ -125,6 +127,7 @@ export function buildParticipantView(input: {
   registration: ParticipantRegistrationInput;
   camp: ParticipantCampInput;
   fields: ReadonlyArray<ParticipantFieldInput>;
+  calendar?: CalendarLinks | null;
 }): ParticipantView {
   const { registration, camp, fields } = input;
   const payable: PayableRegistration = {
@@ -142,6 +145,7 @@ export function buildParticipantView(input: {
     campDates:
       camp.start_date && camp.end_date ? { start: camp.start_date, end: camp.end_date } : null,
     campLocation: text(camp.location) || null,
+    calendar: input.calendar ?? null,
     status: registration.status === "cancelled" ? "cancelled" : "active",
     amounts: {
       total: registration.amount_due,

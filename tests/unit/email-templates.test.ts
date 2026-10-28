@@ -17,6 +17,10 @@ const ctx: EmailContext = {
   paymentDueDate: "2027-06-15",
   payUrl: "https://camp.example/bezahlen?ref=REG-1A2B3C4D",
   participantUrl: `https://camp.example/meine-anmeldung/${"a".repeat(64)}`,
+  calendar: {
+    icsUrl: "https://camp.example/kalender/11111111-2222-3333-4444-555555555555",
+    googleUrl: "https://calendar.google.com/calendar/render?action=TEMPLATE",
+  },
   texts: { greeting: null, closing: null, contactName: null, contactPhone: null },
 };
 
@@ -162,5 +166,20 @@ describe("camp text blocks (specs/016-mail-settings)", () => {
     const plain = confirmationEmail(ctx).text;
     expect(plain).toContain("Viele Grüße\nDein Summercamp Team");
     expect(plain).not.toContain("Bei Fragen erreichst du");
+  });
+});
+
+describe("calendar block", () => {
+  it("appears in both confirmation variants", () => {
+    for (const mail of [confirmationEmail(ctx), confirmationEmail({ ...ctx, amountDue: 0, outstanding: 0 })]) {
+      expect(mail.html).toContain(`href="${ctx.calendar!.icsUrl}"`);
+      expect(mail.text).toContain(`Apple oder Outlook: ${ctx.calendar!.icsUrl}`);
+      expect(mail.text).toContain("Google Kalender: ");
+    }
+  });
+
+  it("is left out without calendar links and in payment mails", () => {
+    expect(confirmationEmail({ ...ctx, calendar: null }).text).not.toContain("Kalender");
+    expect(paymentLinkEmail(ctx).text).not.toContain("Apple oder Outlook");
   });
 });

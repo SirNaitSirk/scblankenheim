@@ -51,7 +51,7 @@ export type InfoRunSummary = {
 
 type InfoCamp = CampRow & { id: string; tagline: string | null };
 
-const CAMP_COLUMNS = "id, name, start_date, end_date, payment_due_date, tagline";
+const CAMP_COLUMNS = "id, name, start_date, end_date, payment_due_date, location, tagline";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

@@ -20,6 +20,12 @@ export const emailMessages = {
         ? `Bei Fragen erreichst du ${name}, antworte einfach auf diese Mail.`
         : `Bei Fragen erreichst du uns unter ${phone}.`,
 
+  calendar: {
+    intro: "Trag dir das Camp gleich in den Kalender ein:",
+    ics: "Apple oder Outlook",
+    google: "Google Kalender",
+  },
+
   participant: {
     intro: "Deinen Anmeldestand, Zahlungen und Daten findest du jederzeit hier:",
     link: "Meine Anmeldung ansehen",

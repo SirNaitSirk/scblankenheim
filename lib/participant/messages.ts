@@ -31,6 +31,8 @@ export const participantMessages = {
     dates: "Zeitraum",
     location: "Ort",
     dateRange: (start: string, end: string) => `${start} bis ${end}`,
+    calendarIcs: "In den Kalender",
+    calendarGoogle: "Google Kalender",
   },
   answers: {
     heading: "Deine Angaben",

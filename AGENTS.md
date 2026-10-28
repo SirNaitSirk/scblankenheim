@@ -84,6 +84,7 @@ Rules:
 - Payment page (`/bezahlen`, `/bezahlen/danke`) — Stripe checkout + result.
 - Packing list page (`/packzettel`).
 - Participant page (`/meine-anmeldung/<token>`): private, read only page per registration with status, amounts, pay button, own answers, camp facts and packing list link; reachable only through an unguessable link that every mail to the registration contains; admins copy and renew it in the registration dialog (specs/017-participant-page).
+- Calendar file (`/kalender/<campId>`): public iCalendar file with one all day event per camp plus a Google Calendar link, linked in the confirmation mail, the teaser info mail and on the participant page (specs/019-calendar-file).
 
 **Registration & payment**
 
@@ -286,7 +287,7 @@ Even though this document is written in English, the two languages have strict, 
 
 ## Quick reference (target layout — Next.js)
 
-- Public routes: `app/page.tsx` (landing), `app/bezahlen/*`, `app/packzettel/page.tsx`, `app/meine-anmeldung/[token]/page.tsx`
+- Public routes: `app/page.tsx` (landing), `app/bezahlen/*`, `app/packzettel/page.tsx`, `app/meine-anmeldung/[token]/page.tsx`, `app/kalender/[campId]/route.ts`
 - Admin: `app/admin/*` (protected by Clerk in `proxy.ts`) + `components/admin/*`
 - Room planning and tent circles: `app/admin/zimmerplanung`, `app/admin/zeltkreise`, server data in `lib/admin/rooms-data.ts` and `lib/admin/tent-circles-data.ts`
 - Auth: Clerk (`proxy.ts`, Clerk components/hooks) + `app/admin/accept-invitation`

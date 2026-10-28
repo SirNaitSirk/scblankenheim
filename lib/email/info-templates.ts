@@ -13,7 +13,7 @@ import {
   renderText,
 } from "./layout";
 import { emailMessages } from "./messages";
-import { participantBlock, type EmailContext, type RenderedEmail } from "./templates";
+import { calendarBlock, participantBlock, type EmailContext, type RenderedEmail } from "./templates";
 
 /**
  * Code defined info mails (specs/012-info-mails, contracts/http-and-actions.md).
@@ -99,6 +99,7 @@ export function teaserInfoEmail(ctx: InfoMailContext): RenderedEmail {
     [
       paragraph(t.teaser.intro(ctx.campName)),
       facts(factRows),
+      calendarBlock(ctx),
       ctx.motto ? paragraph(t.teaser.motto(ctx.motto)) : null,
       highlights.length > 0 ? heading(t.teaser.highlightsTitle) : null,
       highlights.length > 0 ? list(highlights) : null,

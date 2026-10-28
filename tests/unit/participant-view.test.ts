@@ -130,6 +130,7 @@ describe("buildParticipantView privacy", () => {
     expect(Object.keys(view()).sort()).toEqual(
       [
         "amounts",
+        "calendar",
         "campDates",
         "campLocation",
         "campName",

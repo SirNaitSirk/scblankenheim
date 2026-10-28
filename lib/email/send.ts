@@ -30,7 +30,8 @@ import {
 import { emailMessages } from "./messages";
 import { renderTemplate, type TemplateId } from "./preview";
 import { nextReminder } from "./reminders";
-import { participantUrl, paymentUrl } from "./links";
+import { toCampEvent } from "@/lib/calendar/ics";
+import { appBaseUrl, calendarLinks, participantUrl, paymentUrl } from "./links";
 import { sendEmail } from "./provider";
 import type { CampMailSettings } from "./settings";
 import {
@@ -80,7 +81,9 @@ export type RegistrationRow = {
 };
 
 export type CampRow = {
+  id: string;
   name: string;
+  location: string | null;
   start_date: string | null;
   end_date: string | null;
   payment_due_date: string | null;
@@ -100,6 +103,8 @@ export function buildMailTarget(
   };
   const payUrl = paymentUrl(registration.reference);
   const ownPageUrl = participantUrl(registration.access_token);
+  const base = appBaseUrl();
+  const calendar = calendarLinks(base ? toCampEvent(camp, base) : null);
   const email = registration.email?.trim() || null;
 
   return {
@@ -121,6 +126,7 @@ export function buildMailTarget(
             paymentDueDate: camp.payment_due_date,
             payUrl,
             participantUrl: ownPageUrl,
+            calendar,
             texts: settings.texts,
           }
         : null,
@@ -139,7 +145,7 @@ export async function loadMailTarget(registrationId: string): Promise<MailTarget
 
   const { data: camp } = await supabase
     .from("camps")
-    .select("name, start_date, end_date, payment_due_date")
+    .select("id, name, start_date, end_date, payment_due_date, location")
     .eq("id", registration.camp_id)
     .maybeSingle();
   if (!camp) return null;
@@ -263,7 +269,7 @@ export async function runPaymentReminders(
   const { data: camp, error: campError } = campId
     ? await supabase
         .from("camps")
-        .select("name, start_date, end_date, payment_due_date")
+        .select("id, name, start_date, end_date, payment_due_date, location")
         .eq("id", campId)
         .maybeSingle()
     : { data: null, error: null };
@@ -396,6 +402,8 @@ export async function sendTestEmail(
   const rendered = renderTemplate(
     templateId,
     {
+      id: camp.id,
+      location: camp.location || null,
       name: camp.name,
       startDate: camp.startDate || null,
       endDate: camp.endDate || null,

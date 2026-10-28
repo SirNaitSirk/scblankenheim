@@ -113,6 +113,8 @@ export default async function MailPage() {
   }
 
   const previewCamp = {
+    id: camp.id,
+    location: camp.location || null,
     name: camp.name,
     startDate: camp.startDate || null,
     endDate: camp.endDate || null,
@@ -121,7 +123,7 @@ export default async function MailPage() {
     tagline: camp.tagline,
   };
   const [mailInfo, counts] = await Promise.all([getCampMailInfo(camp.id), infoMailCounts(camp.id)]);
-  const panelCamp = { id: camp.id, ...previewCamp };
+  const panelCamp = { ...previewCamp, id: camp.id };
 
   const settingsHref = `/admin/camps/${camp.id}/infomails`;
   const { timing, texts } = resolveMailSettings(mailInfo);

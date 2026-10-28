@@ -55,6 +55,13 @@ describe("buildMailPreviews", () => {
     for (const preview of buildMailPreviews(camp)) expect(preview.text).toContain(url);
   });
 
+  it("adds sample calendar links when the camp has an id", () => {
+    vi.stubEnv("APP_URL", "https://camp.example");
+    const id = "11111111-2222-3333-4444-555555555555";
+    expect(sampleContext({ ...camp, id }).calendar?.icsUrl).toBe(`https://camp.example/kalender/${id}`);
+    expect(sampleContext(camp).calendar).toBeNull();
+  });
+
   it("shows no pay button in the free variant", () => {
     const free = buildMailPreviews(camp)[1]!;
     expect(free.html).not.toContain("Jetzt bezahlen");

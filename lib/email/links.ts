@@ -1,3 +1,5 @@
+import { googleCalendarUrl, type CalendarLinks, type CampEvent } from "@/lib/calendar/ics";
+
 /**
  * Public payment link for a registration (research R8). Always built from
  * `APP_URL`, never from a request origin, because cron runs have none.
@@ -29,6 +31,18 @@ export function participantPath(token: string): string {
 export function participantUrl(token: string): string | null {
   const base = appBaseUrl();
   return base ? `${base}${participantPath(token)}` : null;
+}
+
+/** Path of the camp calendar file (specs/019-calendar-file). */
+export function calendarPath(campId: string): string {
+  return `/kalender/${encodeURIComponent(campId)}`;
+}
+
+/** Calendar file and Google links for an event, or null without `APP_URL`. */
+export function calendarLinks(event: CampEvent | null): CalendarLinks | null {
+  const base = appBaseUrl();
+  if (!base || !event) return null;
+  return { icsUrl: `${base}${calendarPath(event.campId)}`, googleUrl: googleCalendarUrl(event) };
 }
 
 /** Absolute link to the packing list (specs/012-info-mails), or null without `APP_URL`. */

@@ -36,6 +36,10 @@ const ctx: InfoMailContext = {
   paymentDueDate: "2027-06-15",
   payUrl: "https://camp.example/bezahlen?ref=REG-1A2B3C4D",
   participantUrl: `https://camp.example/meine-anmeldung/${"a".repeat(64)}`,
+  calendar: {
+    icsUrl: "https://camp.example/kalender/11111111-2222-3333-4444-555555555555",
+    googleUrl: "https://calendar.google.com/calendar/render?action=TEMPLATE",
+  },
   texts: { greeting: null, closing: null, contactName: null, contactPhone: null },
   mailInfo: filled,
   motto: "Mutig glauben",
@@ -161,5 +165,13 @@ describe("participant link in info mails", () => {
       expect(mail.html).toContain(`href="${ctx.participantUrl}"`);
       expect(mail.text).toContain(`Meine Anmeldung ansehen: ${ctx.participantUrl}`);
     }
+  });
+});
+
+describe("calendar block in info mails", () => {
+  it("appears only in the teaser", () => {
+    expect(teaserInfoEmail(ctx).text).toContain(`Apple oder Outlook: ${ctx.calendar!.icsUrl}`);
+    expect(teaserInfoEmail({ ...ctx, calendar: null }).text).not.toContain("Apple oder Outlook");
+    expect(packingInfoEmail(ctx).text).not.toContain("Apple oder Outlook");
   });
 });
