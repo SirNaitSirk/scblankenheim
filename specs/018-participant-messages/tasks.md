@@ -65,7 +65,7 @@ description: "Task list for Nachricht ans Team und Änderung anfragen"
 
 - [X] T022 (real participant page at 375px: card, both modes, type matched value input and current value checked; sending needs the migration) Check the participant card at 375px and desktop in the browser (sample page if no migration), keyboard and screen reader labels.
 - [X] T023 Run `npm run lint`, `npm test`, `npm run build`; report verbatim.
-- [ ] T024 (open: every scenario needs migration 0014 on the database and a team inbox) Walk through `specs/018-participant-messages/quickstart.md`; note steps that need the migration or a real inbox.
+- [X] T024 (checked with migration 0014 on the live database: message and change request sent from the page, own items listed, form cleared after sending and kept after a rejection, duplicate within 60 s not stored, unchanged value rejected, day limit at the sixth item, team mail skipped and logged without team address; admin logic run directly against the database: list, conflict, apply with confirmation, not open on repeat, done, dismiss, invalid stored value rejected; test field restored. Open: real team inbox and the admin dialog UI behind a Clerk login) Walk through `specs/018-participant-messages/quickstart.md`; note steps that need the migration or a real inbox.
 
 ## Dependencies
 
