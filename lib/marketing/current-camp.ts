@@ -20,6 +20,7 @@ export type LandingCamp = RegistrationWindow & {
   id: string;
   name: string;
   startDate: string | null;
+  endDate: string | null;
   /** Public base price in whole euros. Hidden tier prices never appear here. */
   basePrice: number;
   fields: CampFormField[];
@@ -67,7 +68,7 @@ async function loadLandingCamp(): Promise<LandingCamp | null> {
     supabase
       .from("camps")
       .select(
-        "name, start_date, base_price, registration_open, registration_opens_at, registration_closes_at, capacity",
+        "name, start_date, end_date, base_price, registration_open, registration_opens_at, registration_closes_at, capacity",
       )
       .eq("id", currentCampId)
       .maybeSingle(),
@@ -85,6 +86,7 @@ async function loadLandingCamp(): Promise<LandingCamp | null> {
     id: currentCampId,
     name: camp.name,
     startDate: camp.start_date,
+    endDate: camp.end_date,
     basePrice: camp.base_price,
     registrationOpen: camp.registration_open,
     opensAt: camp.registration_opens_at,

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { registerMessages } from "@/lib/register/messages";
 import {
   CORE_FIELDS,
+  genderFromOption,
   mergeFields,
   validateField,
   validateFields,
@@ -35,6 +36,7 @@ describe("mergeFields", () => {
       "first_name",
       "last_name",
       "email",
+      "gender",
       "age",
       "church",
     ]);
@@ -97,6 +99,7 @@ describe("validateFields", () => {
       first_name: "Lena",
       last_name: "",
       email: "falsch",
+      gender: "Männlich",
       age: "abc",
     });
     expect(errors).toEqual({ last_name: m.required, email: m.email, age: m.number });
@@ -108,8 +111,29 @@ describe("validateFields", () => {
         first_name: "Lena",
         last_name: "Muster",
         email: "lena@example.com",
+        gender: "Weiblich",
       }),
     ).toEqual({});
+  });
+
+  it("requires a gender from the offered options", () => {
+    const errors = validateFields(CORE_FIELDS, {
+      first_name: "Lena",
+      last_name: "Muster",
+      email: "lena@example.com",
+      gender: "Divers",
+    });
+    expect(errors).toEqual({ gender: m.option });
+    expect(validateFields(CORE_FIELDS, { first_name: "a", last_name: "b", email: "a@b.de" }))
+      .toEqual({ gender: m.required });
+  });
+});
+
+describe("genderFromOption", () => {
+  it("maps the German labels to stored values", () => {
+    expect(genderFromOption("Weiblich")).toBe("female");
+    expect(genderFromOption("Männlich")).toBe("male");
+    expect(genderFromOption("")).toBeNull();
   });
 });
 

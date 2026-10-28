@@ -1,10 +1,13 @@
 "use client";
 
 import {
+  Bed,
+  Campfire,
   ClipboardText,
   CurrencyEur,
   EnvelopeSimple,
   type Icon,
+  Receipt,
   SquaresFour,
   Tent,
   UserCircle,
@@ -19,8 +22,11 @@ import { NAV_ITEMS } from "./nav-items";
 
 const NAV_ICONS: Record<string, Icon> = {
   "/admin": SquaresFour,
-  "/admin/finanzen": CurrencyEur,
+  "/admin/finanzen": Receipt,
+  "/admin/preise": CurrencyEur,
   "/admin/camps": Tent,
+  "/admin/zimmerplanung": Bed,
+  "/admin/zeltkreise": Campfire,
   "/admin/logs": ClipboardText,
   "/admin/mail": EnvelopeSimple,
   "/admin/benutzer": Users,
@@ -63,6 +69,7 @@ export function SidebarContent({
       >
         <Link
           href="/admin"
+          prefetch
           onClick={onNavigate}
           className="flex items-center gap-3"
           aria-label={de.brand.name}
@@ -90,8 +97,11 @@ export function SidebarContent({
             const Glyph = NAV_ICONS[item.href];
             return (
               <li key={item.href}>
+                {/* Full prefetch: the tab and its data load in the background, so
+                    switching feels instant (reused 30s, see next.config.ts). */}
                 <Link
                   href={item.href}
+                  prefetch
                   onClick={onNavigate}
                   title={collapsed ? item.label : undefined}
                   aria-current={active ? "page" : undefined}

@@ -1,125 +1,90 @@
+import { Tent } from "@phosphor-icons/react/dist/ssr";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { FinanceManager } from "@/components/admin/finance-manager";
 import { PageBody, PageHeader } from "@/components/admin/page-header";
-import { StatCard } from "@/components/admin/stat-card";
+import { EmptyState } from "@/components/admin/states";
+import { canUseSection } from "@/lib/admin/access";
 import {
-  getCurrentCamp,
-  getFinanceSummary,
+  getCamps,
+  getCurrentCampId,
   getPriceTiers,
+  getRegistrations,
 } from "@/lib/admin/data";
+import { isActiveRegistration, toFinanceRow, todayInBerlin } from "@/lib/admin/finance";
 import { guardTab } from "@/lib/admin/guard";
-import { formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { de } from "@/lib/admin/messages";
+import { appBaseUrl } from "@/lib/email/links";
+import { formatDate } from "@/lib/format";
+
+const t = de.finances;
+
+// File name safe camp label for the CSV export.
+function slugify(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "camp"
+  );
+}
 
 export default async function FinancesPage() {
-  await guardTab("/admin/finanzen");
+  const profile = await guardTab("/admin/finanzen");
 
-  // MOCK BOUNDARY: swap for real Supabase aggregates (server-side).
-  const [camp, finance, tiers] = await Promise.all([
-    getCurrentCamp(),
-    getFinanceSummary(),
+  const [currentCampId, camps, registrations, tiers] = await Promise.all([
+    getCurrentCampId(),
+    getCamps(),
+    getRegistrations(),
     getPriceTiers(),
   ]);
+  const camp = camps.find((c) => c.id === currentCampId) ?? null;
+  const canEdit = canUseSection(profile, "finances");
 
-  const paidRatio =
-    finance.totalCount > 0 ? finance.paidCount / finance.totalCount : 0;
-  const collectedRatio =
-    finance.expected > 0 ? finance.collected / finance.expected : 0;
-  const totalRevenue = tiers.reduce((sum, t) => sum + t.price * t.count, 0);
+  if (!camp) {
+    return (
+      <PageBody>
+        <PageHeader title={t.title} />
+        <Card>
+          <EmptyState
+            icon={Tent}
+            title={t.noCurrentCamp.title}
+            description={t.noCurrentCamp.description}
+          />
+        </Card>
+      </PageBody>
+    );
+  }
+
+  // Only finance fields leave the server: form answers stay here (FR-007).
+  const tierNames = new Map(tiers.map((tier) => [tier.id, tier.name]));
+  const rows = registrations
+    .filter((r) => r.campId === camp.id && isActiveRegistration(r))
+    .sort((a, b) => a.lastName.localeCompare(b.lastName, "de") || a.firstName.localeCompare(b.firstName, "de"))
+    .map((r) => toFinanceRow(r, tierNames));
 
   return (
     <PageBody>
       <PageHeader
-        title={de.finances.title}
-        badge={<Badge tone="paid">{camp.name}</Badge>}
-        description={de.finances.description(camp.name)}
+        title={t.title}
+        badge={
+          <div className="flex items-center gap-2">
+            <Badge tone="paid">{camp.name}</Badge>
+            {!canEdit && <Badge tone="neutral">{t.readOnly}</Badge>}
+          </div>
+        }
+        description={camp.paymentDueDate ? t.dueDate(formatDate(camp.paymentDueDate)) : t.noDueDate}
       />
-
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          hero
-          label={de.payments.collected}
-          value={formatCurrency(finance.collected)}
-          delta={`${formatPercent(collectedRatio)} ${de.payments.expected.toLowerCase()}`}
-        />
-        <StatCard
-          label={de.payments.outstanding}
-          value={formatCurrency(finance.outstanding)}
-          delta={`${de.payments.expected} ${formatCurrency(finance.expected)}`}
-        />
-        <StatCard
-          label={de.finances.collectedRatio}
-          value={formatPercent(collectedRatio)}
-        />
-        <StatCard
-          label={de.finances.paidRegistrations}
-          value={`${formatNumber(finance.paidCount)} / ${formatNumber(finance.totalCount)}`}
-          delta={`${formatPercent(paidRatio)} ${de.payments.collected.toLowerCase()}`}
-        />
-      </div>
-
-      <Card className="flex flex-col">
-        <div className="p-6 pb-4">
-          <h2 className="font-display text-lg font-bold tracking-tight text-foreground">
-            {de.finances.tierBreakdown}
-          </h2>
-        </div>
-        <div className="overflow-x-auto border-t border-border">
-          <table className="w-full min-w-[520px] text-sm">
-            <thead>
-              <tr className="border-b border-border text-xs text-muted-foreground">
-                <th className="px-6 py-3 text-left font-medium">
-                  {de.finances.tierColumns.tier}
-                </th>
-                <th className="px-6 py-3 text-right font-medium">
-                  {de.finances.tierColumns.price}
-                </th>
-                <th className="px-6 py-3 text-right font-medium">
-                  {de.finances.tierColumns.count}
-                </th>
-                <th className="px-6 py-3 text-right font-medium">
-                  {de.finances.tierColumns.revenue}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {tiers.map((tier) => (
-                <tr key={tier.id} className="text-foreground">
-                  <td className="px-6 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{tier.name}</span>
-                      {tier.hidden && (
-                        <Badge tone="neutral">{de.finances.hiddenTier}</Badge>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-3 text-right font-mono tabular-nums text-muted-foreground">
-                    {formatCurrency(tier.price)}
-                  </td>
-                  <td className="px-6 py-3 text-right font-mono tabular-nums">
-                    {formatNumber(tier.count)}
-                  </td>
-                  <td className="px-6 py-3 text-right font-mono tabular-nums">
-                    {formatCurrency(tier.price * tier.count)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t border-border font-medium text-foreground">
-                <td className="px-6 py-3">{de.payments.collected}</td>
-                <td className="px-6 py-3" aria-hidden />
-                <td className="px-6 py-3 text-right font-mono tabular-nums">
-                  {formatNumber(tiers.reduce((s, t) => s + t.count, 0))}
-                </td>
-                <td className="px-6 py-3 text-right font-mono tabular-nums">
-                  {formatCurrency(totalRevenue)}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </Card>
+      <FinanceManager
+        rows={rows}
+        dueDate={camp.paymentDueDate}
+        today={todayInBerlin()}
+        canEdit={canEdit}
+        appUrl={appBaseUrl()}
+        campSlug={slugify(camp.name)}
+      />
     </PageBody>
   );
 }

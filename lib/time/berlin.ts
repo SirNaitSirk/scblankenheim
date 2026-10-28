@@ -35,3 +35,15 @@ export function formatGermanDate(isoDate: string): string {
   const [year, month, day] = isoDate.slice(0, 10).split("-");
   return `${day}.${month}.${year}`;
 }
+
+/** Start of the Berlin calendar day of `date` as an ISO instant (handles summer time). */
+export function berlinDayStartIso(date: Date): string {
+  const day = berlinDate(date);
+  for (const offset of ["+01:00", "+02:00"]) {
+    const start = new Date(`${day}T00:00:00${offset}`);
+    if (berlinDate(start) === day && berlinDate(new Date(start.getTime() - 1)) !== day) {
+      return start.toISOString();
+    }
+  }
+  return `${day}T00:00:00.000Z`;
+}

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { sendEmail } from "@/lib/email/provider";
+import { formatFrom, sendEmail } from "@/lib/email/provider";
 
 const email = { to: "lena@example.com", subject: "Betreff", html: "<p>Hallo</p>", text: "Hallo" };
 
@@ -59,5 +59,37 @@ describe("sendEmail", () => {
     const mock = stubFetch(new Response("{}", { status: 200 }));
     await expect(sendEmail(email, "k")).resolves.toEqual({ ok: false, error: "not_configured" });
     expect(mock).not.toHaveBeenCalled();
+  });
+});
+
+describe("sender override (specs/016-mail-settings)", () => {
+  it("keeps the env sender without a name", () => {
+    expect(formatFrom("Camp <camp@example.com>", null)).toBe("Camp <camp@example.com>");
+    expect(formatFrom("camp@example.com", "  ")).toBe("camp@example.com");
+  });
+
+  it("puts the camp name in front of the fixed address", () => {
+    expect(formatFrom("Camp <camp@example.com>", "Summercamp 2027")).toBe('"Summercamp 2027" <camp@example.com>');
+    expect(formatFrom("camp@example.com", "Summercamp 2027")).toBe('"Summercamp 2027" <camp@example.com>');
+  });
+
+  it("drops quotes from the name", () => {
+    expect(formatFrom("camp@example.com", 'A "B"')).toBe('"A B" <camp@example.com>');
+  });
+
+  it("sends the camp name and reply address", async () => {
+    const mock = stubFetch(new Response(JSON.stringify({ id: "msg_2" }), { status: 200 }));
+    await sendEmail(email, "k", { name: "Summercamp 2027", replyTo: "leitung@example.com" });
+    const [, init] = mock.mock.calls[0] as unknown as [string, RequestInit];
+    const body = JSON.parse(String(init.body));
+    expect(body).toMatchObject({ from: '"Summercamp 2027" <camp@example.com>', reply_to: "leitung@example.com" });
+  });
+
+  it("falls back to the env reply address", async () => {
+    const mock = stubFetch(new Response(JSON.stringify({ id: "msg_3" }), { status: 200 }));
+    await sendEmail(email, "k", { name: null, replyTo: null });
+    const [, init] = mock.mock.calls[0] as unknown as [string, RequestInit];
+    const body = JSON.parse(String(init.body));
+    expect(body).toMatchObject({ from: "Camp <camp@example.com>", reply_to: "team@example.com" });
   });
 });

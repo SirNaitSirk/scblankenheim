@@ -1,7 +1,14 @@
 import { ShieldCheck } from "@phosphor-icons/react/dist/ssr";
 import { Reveal } from "@/components/marketing/reveal";
 
-const methods = ["Karte", "Apple Pay", "Google Pay", "PayPal"];
+const methods = [
+  "Karte",
+  "Apple Pay",
+  "Google Pay",
+  "PayPal",
+  "SEPA Lastschrift",
+  "Klarna",
+];
 
 /**
  * Payment reassurance (Persuade): short, centered trust block explaining that

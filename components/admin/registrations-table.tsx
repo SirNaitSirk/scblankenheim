@@ -22,9 +22,8 @@ import { type ColumnDef, formatFieldValue } from "./registration-columns";
 
 export type SortDir = "asc" | "desc";
 
-const statusTone: Record<RegistrationStatus, "paid" | "pending" | "danger"> = {
-  confirmed: "paid",
-  pending: "pending",
+const statusTone: Record<RegistrationStatus, "neutral" | "danger"> = {
+  active: "neutral",
   cancelled: "danger",
 };
 

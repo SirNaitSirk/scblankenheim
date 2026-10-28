@@ -11,8 +11,23 @@ export type FieldValue = string | boolean;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const CORE_KEYS = ["first_name", "last_name", "email"] as const;
+export const CORE_KEYS = ["first_name", "last_name", "email", "gender"] as const;
 export type CoreKey = (typeof CORE_KEYS)[number];
+
+/**
+ * The gender core field (specs/008-room-planning) shows German labels; the
+ * `registrations.gender` column stores the English value.
+ */
+export const GENDER_OPTIONS: Record<"female" | "male", string> = {
+  female: registerMessages.fields.genderFemale,
+  male: registerMessages.fields.genderMale,
+};
+
+export function genderFromOption(value: unknown): "female" | "male" | null {
+  if (value === GENDER_OPTIONS.female) return "female";
+  if (value === GENDER_OPTIONS.male) return "male";
+  return null;
+}
 
 /**
  * Fixed identity fields backed by dedicated `registrations` columns rather than
@@ -23,12 +38,18 @@ export const CORE_FIELDS: CampFormField[] = [
   { key: "first_name", label: registerMessages.fields.firstName, fieldType: "text" },
   { key: "last_name", label: registerMessages.fields.lastName, fieldType: "text" },
   { key: "email", label: registerMessages.fields.email, fieldType: "email" },
+  {
+    key: "gender",
+    label: registerMessages.fields.gender,
+    fieldType: "select",
+    options: Object.values(GENDER_OPTIONS),
+  },
 ].map((f) => ({
+  options: null,
   ...f,
   id: `core-${f.key}`,
   campId: "",
   required: true,
-  options: null,
   sortOrder: -1,
   config: {},
 }));
@@ -65,6 +86,14 @@ export function validateField(
   }
   if (field.fieldType === "number" && Number.isNaN(Number(text))) {
     return registerMessages.validation.number;
+  }
+  if (
+    field.fieldType === "select" &&
+    Array.isArray(field.options) &&
+    field.options.length > 0 &&
+    !field.options.includes(text)
+  ) {
+    return registerMessages.validation.option;
   }
   return null;
 }

@@ -83,23 +83,27 @@ Rules:
 - One **config-driven** registration form: fields come from `camp_form_fields` for the current camp (single source of truth — no parallel form components).
 - Payment page (`/bezahlen`, `/bezahlen/danke`) — Stripe checkout + result.
 - Packing list page (`/packzettel`).
+- Participant page (`/meine-anmeldung/<token>`): private, read only page per registration with status, amounts, pay button, own answers, camp facts and packing list link; reachable only through an unguessable link that every mail to the registration contains; admins copy and renew it in the registration dialog (specs/017-participant-page).
 
 **Registration & payment**
 
 - Registration via a `register` route handler → row in `registrations` (+ `submission_attempts` for abuse/rate tracking).
-- Stripe payment: route handlers for creating checkout / payment links, plus a `stripe-webhook` route to reconcile payment status.
+- Stripe payment: Checkout Sessions are created in `register` (right after signup) and in `checkout` (`/api/checkout`, pay later by reference on `/bezahlen`), plus a `stripe-webhook` route to reconcile payment status (specs/006-stripe-payment). Admins can send or copy the payment link from the registration dialog (specs/007-transactional-emails).
 - Price tiers with hidden invitation links (`price_tiers`).
-- Automatic payment reminders via a **Vercel Cron** route `app/api/cron/payment-reminders` (protected by `CRON_SECRET`, schedule in `vercel.json`, specs/007-transactional-emails).
+- Automatic payment reminders via a **Vercel Cron** route `app/api/cron/payment-reminders` (protected by `CRON_SECRET`, schedule in `vercel.json`, specs/007-transactional-emails). Reminders can be switched off per camp and paused per registration (specs/016-mail-settings).
 - Tolerant fallback: registered-but-unpaid is allowed; no auto-cancellation.
 
 **Admin dashboard** (`app/admin/*`, protected by Clerk)
 
-- Registrations: table with filters, custom filters, column selector, CSV export, inline edit, add, delete.
+- Registrations: table with filters, custom filters, column selector, CSV export, inline edit, add, delete. The registration dialog shows a read only mail history per registration from `email_deliveries` (specs/013-registration-mail-history).
 - Finance overview: aggregated payment/revenue view.
+- Finance tab (`/admin/finanzen`) for the accountant: sums, filters (open, partial, overdue, paused), search, inline edit of paid amount and payment status, payment link copy/send, pause or resume automatic reminders per registration, CSV export. Only finance fields reach the browser; writes need the `finances` permission (specs/009-finance-tab). Price tiers stay in `/admin/preise`.
 - Camps management: create camps, configure `camp_form_fields`, set the current camp (`camp_settings`), pricing.
 - Users & roles: `superadmin` / `admin` with granular permissions.
 - Invitation system: invite admins by email, accept-invitation flow.
 - Logs: lightweight activity/error log view.
+- Room planning (`/admin/zimmerplanung`): houses and rooms with bed counts (shared by all camps), per camp room gender, and drag and drop or click assignment of active registrations to rooms with a print view (specs/008-room-planning).
+- Tent circles (`/admin/zeltkreise`): per camp circles with name, kind (mixed, female, male) and exactly one leader from the camp's registrations; drag and drop or click assignment of active registrations as participants, no capacity; a leader is never a participant; print view (specs/011-tent-circles).
 - Transactional email (see below).
 
 **Auth & roles**
@@ -112,11 +116,13 @@ Rules:
 
 - Code-defined templates only (confirmation, payment link, reminder). Sent from server route handlers via the email provider. (Password reset is handled by Clerk.)
 - **No** in-app email template editor and **no** `email_templates` table.
-- A read only admin tab "Mail" (`/admin/mail`) previews every template with sample data, rendered by the same template functions; no editing, no test send (specs/007-transactional-emails).
+- A read only admin tab "Mail" (`/admin/mail`) previews every template with sample data, rendered by the same template functions; no editing (specs/007-transactional-emails). Admins with the `camps` permission may send a test of any template to their own address (specs/016-mail-settings).
+- Info mails to active registrations (by default teaser 56 days before start, packing list 21 days before, arrival 5 days before, thank you 5 days after the end), code defined, per camp content and switches in `camp_mail_info`, sent by the cron route `app/api/cron/info-mails` within the remaining daily quota (specs/012-info-mails). No marketing mails to people without registration.
+- Mail settings per camp on `/admin/camps/[campId]/infomails` ("Mails", specs/016-mail-settings): payment reminder switch, send days of the info mails and reminder cadence (empty means the default from `lib/email/limits.ts`), sender display name and reply address (the sender address stays `EMAIL_FROM`), and four short text blocks (greeting line, closing, contact name and phone) at fixed positions in confirmation, payment link and reminders. Still no template editor.
 
 ### Out of scope (explicitly dropped from v1 — do not build)
 
-- **Housing**: houses/rooms/waitlist management (`houses`, `rooms` tables) — removed.
+- **Housing waitlist** and any housekeeping beyond room planning (keys, cleaning, equipment).
 - **Mail template editor** + `email_templates` — removed; emails are code-defined.
 - **Custom DB backups** (`backup-database`) — rely on Supabase's built-in backups.
 - **A/B landing pages** — one landing page only; no `/v2` variant.
@@ -134,12 +140,25 @@ Core tables:
 - `camp_settings` — global/per-camp settings incl. which camp is *current* and base price.
 - `camp_form_fields` — dynamic registration form definition per camp (drives the public form).
 - `registrations` — attendee registrations (main entity). Avoid rigid value CHECK constraints on free-form fields (v1 hit repeated migration pain from over-strict constraints — prefer app/Zod validation).
+  `registrations.access_token` holds the secret of the participant page link (specs/017-participant-page); only the server reads it.
 - `submission_attempts` — throttling/abuse tracking for the public form.
 - `price_tiers` — pricing tiers, including hidden ones reachable only via invitation link.
 - `profiles` — admin profile + granular permissions + visible tabs.
 - `user_roles` — `superadmin` / `admin`.
 - `admin_invitations` — pending admin invites.
 - `logs` — activity/error log.
+- `houses`, `rooms`: buildings and their rooms with bed counts, shared by all camps (specs/008-room-planning).
+- `camp_rooms`: per camp room gender (`female` / `male`, missing row = not set).
+- `room_assignments`: one room per registration and camp; capacity and gender match enforced on the server.
+- `tent_circles`: per camp tent circles with name, kind (`mixed` / `female` / `male`) and one leader registration.
+- `tent_circle_members`: one circle per registration and camp; leader exclusivity and kind match enforced on the server (specs/011-tent-circles).
+- `camp_mail_info`: per camp content and on/off switches for the four info mails (specs/012-info-mails), plus the mail settings of specs/016-mail-settings (reminder switch, nullable timing values, sender name, reply address, text blocks).
+- `registrations.reminders_paused`: no automatic payment reminders for this registration (specs/016-mail-settings).
+- `email_deliveries`: one row per send attempt; rows without `registration_id` and kind `test` are admin test sends that count against the daily quota.
+
+The registration gender (`female` / `male`) is a fixed core field of the one registration form, stored in `registrations.gender`; older registrations may lack it.
+
+A registration status is `active` or `cancelled` (specs/014-simplify-registration-status); only `cancelled` changes behaviour, payment progress lives in `payment_status`.
 
 When any field changes: write a migration, run it, and regenerate the DB types before testing.
 
@@ -155,7 +174,7 @@ When any field changes: write a migration, run it, and regenerate the DB types b
 
 All privileged server work lives in Next.js route handlers (these replace v1's Supabase Edge Functions). Group by concern:
 
-- **Registration/payment**: `register`, create-checkout / payment-link, `stripe-webhook`, and a cron route for payment reminders.
+- **Registration/payment**: `register`, `checkout`, `stripe-webhook`, and the cron routes `cron/payment-reminders` and `cron/info-mails` (specs/012-info-mails). Mail logic lives in `lib/email/` (Resend over `fetch`; env `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO`, `CRON_SECRET`, `APP_URL`).
 - **Admin/auth**: create-admin, update-admin, delete-admin, `create-invitation`, `accept-invitation`, `send-confirmation-email`. (Password reset and email verification are handled by Clerk, so no custom routes for those.)
 
 Rules:
@@ -267,8 +286,9 @@ Even though this document is written in English, the two languages have strict, 
 
 ## Quick reference (target layout — Next.js)
 
-- Public routes: `app/page.tsx` (landing), `app/bezahlen/*`, `app/packzettel/page.tsx`
+- Public routes: `app/page.tsx` (landing), `app/bezahlen/*`, `app/packzettel/page.tsx`, `app/meine-anmeldung/[token]/page.tsx`
 - Admin: `app/admin/*` (protected by Clerk in `proxy.ts`) + `components/admin/*`
+- Room planning and tent circles: `app/admin/zimmerplanung`, `app/admin/zeltkreise`, server data in `lib/admin/rooms-data.ts` and `lib/admin/tent-circles-data.ts`
 - Auth: Clerk (`proxy.ts`, Clerk components/hooks) + `app/admin/accept-invitation`
 - Governance and specs: `.specify/memory/constitution.md`, `specs/*`
 - Current camp: a `useCamp` hook / server helper backed by `camp_settings`

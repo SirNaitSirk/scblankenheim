@@ -1,13 +1,18 @@
 import "server-only";
 
 import { getServiceClient } from "@/lib/supabase/server";
-import { writeLog } from "@/lib/admin/data";
+import { resolveMailSettings } from "@/lib/admin/camp-mail-info";
+import { getCampMailInfo } from "@/lib/admin/camp-mail-info-data";
+import { getCurrentCamp, writeLog } from "@/lib/admin/data";
 import { outstandingAmount, type PayableRegistration } from "@/lib/payment/eligibility";
 import type { PaymentStatus } from "@/lib/admin/types";
-import { berlinDate } from "@/lib/time/berlin";
+import { berlinDate, berlinDayStartIso } from "@/lib/time/berlin";
 import { checkoutEligibility } from "@/lib/payment/eligibility";
 import {
   claimDelivery,
+  claimTestDelivery,
+  countDeliveriesSince,
+  testOnCooldown,
   failStaleDeliveries,
   paymentLinkOnCooldown,
   markFailed,
@@ -16,10 +21,18 @@ import {
   type DeliveryTrigger,
   type EmailKind,
 } from "./deliveries";
-import { REMINDER_RUN_CAP, SEND_SPACING_MS } from "./limits";
+import {
+  CONFIRMATION_RESERVE,
+  DAILY_EMAIL_BUDGET,
+  REMINDER_RUN_CAP,
+  SEND_SPACING_MS,
+} from "./limits";
+import { emailMessages } from "./messages";
+import { renderTemplate, type TemplateId } from "./preview";
 import { nextReminder } from "./reminders";
-import { paymentUrl } from "./links";
+import { participantUrl, paymentUrl } from "./links";
 import { sendEmail } from "./provider";
+import type { CampMailSettings } from "./settings";
 import {
   confirmationEmail,
   paymentLinkEmail,
@@ -44,10 +57,11 @@ export type MailTarget = {
   payable: PayableRegistration;
   context: EmailContext | null; // null when APP_URL is missing
   reference: string;
+  settings: CampMailSettings; // per camp mail settings (specs/016-mail-settings)
 };
 
 export const REGISTRATION_COLUMNS =
-  "id, reference, camp_id, first_name, email, status, payment_status, amount_due, amount_paid, deleted, registered_at";
+  "id, reference, camp_id, first_name, email, status, payment_status, amount_due, amount_paid, deleted, registered_at, reminders_paused, access_token";
 
 export type RegistrationRow = {
   id: string;
@@ -61,6 +75,8 @@ export type RegistrationRow = {
   amount_paid: number;
   deleted: boolean;
   registered_at: string;
+  reminders_paused: boolean;
+  access_token: string;
 };
 
 export type CampRow = {
@@ -70,7 +86,11 @@ export type CampRow = {
   payment_due_date: string | null;
 };
 
-export function buildMailTarget(registration: RegistrationRow, camp: CampRow): MailTarget {
+export function buildMailTarget(
+  registration: RegistrationRow,
+  camp: CampRow,
+  settings: CampMailSettings,
+): MailTarget {
   const payable: PayableRegistration = {
     amountDue: registration.amount_due,
     amountPaid: registration.amount_paid,
@@ -79,6 +99,7 @@ export function buildMailTarget(registration: RegistrationRow, camp: CampRow): M
     deleted: registration.deleted,
   };
   const payUrl = paymentUrl(registration.reference);
+  const ownPageUrl = participantUrl(registration.access_token);
   const email = registration.email?.trim() || null;
 
   return {
@@ -86,19 +107,23 @@ export function buildMailTarget(registration: RegistrationRow, camp: CampRow): M
     email,
     payable,
     reference: registration.reference,
-    context: payUrl
-      ? {
-          firstName: registration.first_name?.trim() || null,
-          campName: camp.name,
-          campStart: camp.start_date,
-          campEnd: camp.end_date,
-          reference: registration.reference,
-          amountDue: registration.amount_due,
-          outstanding: outstandingAmount(payable),
-          paymentDueDate: camp.payment_due_date,
-          payUrl,
-        }
-      : null,
+    settings,
+    context:
+      payUrl && ownPageUrl
+        ? {
+            firstName: registration.first_name?.trim() || null,
+            campName: camp.name,
+            campStart: camp.start_date,
+            campEnd: camp.end_date,
+            reference: registration.reference,
+            amountDue: registration.amount_due,
+            outstanding: outstandingAmount(payable),
+            paymentDueDate: camp.payment_due_date,
+            payUrl,
+            participantUrl: ownPageUrl,
+            texts: settings.texts,
+          }
+        : null,
   };
 }
 
@@ -119,7 +144,8 @@ export async function loadMailTarget(registrationId: string): Promise<MailTarget
     .maybeSingle();
   if (!camp) return null;
 
-  return buildMailTarget(registration, camp);
+  const mailInfo = await getCampMailInfo(registration.camp_id);
+  return buildMailTarget(registration, camp, resolveMailSettings(mailInfo));
 }
 
 /**
@@ -159,7 +185,11 @@ export async function deliver(input: {
     const rendered = input.render(target.context);
     const idempotencyKey =
       kind === "payment_link" ? `payment_link/${claim.id}` : `${kind}/${target.registrationId}`;
-    const result = await sendEmail({ to: target.email, ...rendered }, idempotencyKey);
+    const result = await sendEmail(
+      { to: target.email, ...rendered },
+      idempotencyKey,
+      target.settings.sender,
+    );
 
     if (result.ok) {
       await markSent(claim.id, result.id);
@@ -254,9 +284,10 @@ export async function runPaymentReminders(
 
   const rows = registrations ?? [];
   const history = await reminderHistory(rows.map((row) => row.id));
+  const mailSettings = resolveMailSettings(await getCampMailInfo(campId));
 
   for (const row of rows) {
-    const target = buildMailTarget(row, camp);
+    const target = buildMailTarget(row, camp, mailSettings);
     const past = history.get(row.id);
     const kind = nextReminder(
       {
@@ -270,6 +301,9 @@ export async function runPaymentReminders(
         paymentDueDate: camp.payment_due_date,
         sentKinds: past?.kinds ?? [],
         lastReminderDate: past?.lastSentAt ? berlinDate(new Date(past.lastSentAt)) : null,
+        paused: row.reminders_paused,
+        campEnabled: mailSettings.remindersEnabled,
+        timing: mailSettings.timing,
       },
       today,
     );
@@ -327,4 +361,69 @@ export async function sendPaymentLinkEmail(
     render: paymentLinkEmail,
   });
   return outcome === "sent" ? "sent" : "failed";
+}
+
+export type TestSendOutcome =
+  | "sent"
+  | "failed"
+  | "not_configured"
+  | "no_email"
+  | "no_camp"
+  | "cooldown"
+  | "quota";
+
+/**
+ * Sends one template with sample data and the current camp's settings to the
+ * admin's own address (specs/016-mail-settings, US6, research R7). Counts
+ * against the daily quota, keeps the confirmation reserve free and allows one
+ * test per admin within the cooldown. Logs carry the template id only.
+ */
+export async function sendTestEmail(
+  templateId: TemplateId,
+  admin: { id: string; email: string; label: string },
+  now: Date = new Date(),
+): Promise<TestSendOutcome> {
+  const to = admin.email.trim();
+  if (!to) return "no_email";
+
+  const camp = await getCurrentCamp();
+  if (!camp?.isCurrent) return "no_camp";
+  if (await testOnCooldown(admin.id, now)) return "cooldown";
+  const sentToday = await countDeliveriesSince(berlinDayStartIso(now));
+  if (sentToday >= DAILY_EMAIL_BUDGET - CONFIRMATION_RESERVE) return "quota";
+
+  const mailInfo = await getCampMailInfo(camp.id);
+  const rendered = renderTemplate(
+    templateId,
+    {
+      name: camp.name,
+      startDate: camp.startDate || null,
+      endDate: camp.endDate || null,
+      basePrice: camp.basePrice,
+      paymentDueDate: camp.paymentDueDate,
+      tagline: camp.tagline,
+    },
+    mailInfo,
+  );
+
+  const claim = await claimTestDelivery(admin.id);
+  const result = await sendEmail(
+    { to, ...rendered, subject: `${emailMessages.testSubjectPrefix}${rendered.subject}` },
+    `test/${claim.id}`,
+    resolveMailSettings(mailInfo).sender,
+  );
+
+  if (result.ok) {
+    await markSent(claim.id, result.id);
+    await writeLog({ actor: admin.label, action: "email.test_sent", message: templateId });
+    return "sent";
+  }
+  await markFailed(claim.id, result.error);
+  await writeLog({
+    level: "warning",
+    actor: admin.label,
+    action: "email.test_failed",
+    message: `${templateId}: ${result.error}`,
+  });
+  return result.error === "not_configured" ? "not_configured" : "failed";
 }

@@ -14,6 +14,7 @@ import {
   type RegistrationWindow,
 } from "@/lib/register/registration-state";
 import {
+  genderFromOption,
   isCoreKey,
   mergeFields,
   validateFields,
@@ -203,13 +204,19 @@ function splitValues(
   fields: CampFormField[],
   values: Record<string, FieldValue>,
 ): { core: Record<CoreKey, string>; formData: Record<string, FieldValue> } {
-  const core: Record<CoreKey, string> = { first_name: "", last_name: "", email: "" };
+  const core: Record<CoreKey, string> = {
+    first_name: "",
+    last_name: "",
+    email: "",
+    gender: "",
+  };
   const formData: Record<string, FieldValue> = {};
 
   for (const field of fields) {
     const value = values[field.key];
     if (isCoreKey(field.key)) {
-      core[field.key] = typeof value === "string" ? value.trim() : "";
+      const text = typeof value === "string" ? value.trim() : "";
+      core[field.key] = field.key === "gender" ? (genderFromOption(text) ?? "") : text;
     } else if (value !== undefined) {
       formData[field.key] = typeof value === "string" ? value.trim() : value;
     }
@@ -249,6 +256,7 @@ async function insertPublicRegistration(
       p_first_name: registration.core.first_name,
       p_last_name: registration.core.last_name,
       p_email: registration.core.email,
+      p_gender: registration.core.gender,
       p_form_data: registration.formData,
       p_amount_due: registration.amountDue,
       p_price_tier_id: registration.priceTierId,

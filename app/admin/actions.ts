@@ -4,18 +4,28 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
   createRegistration,
+  getAccessToken,
   getCurrentCamp,
+  renewAccessToken,
   setRegistrationDeleted,
   setRegistrationPayment,
+  setRemindersPaused,
   updateRegistration,
   writeLog,
 } from "@/lib/admin/data";
+import { reminderPauseSchema } from "@/lib/admin/finance";
 import { AuthError, requirePermission } from "@/lib/admin/guard";
+import { syncRoomAssignment } from "@/lib/admin/rooms-data";
+import { syncTentCircle } from "@/lib/admin/tent-circles-data";
+import { getMailHistoryByReference } from "@/lib/email/deliveries";
+import type { MailHistoryResult } from "@/lib/email/history";
+import { participantPath, participantUrl } from "@/lib/email/links";
 import { sendPaymentLinkEmail, type PaymentLinkOutcome } from "@/lib/email/send";
 import { de } from "@/lib/admin/messages";
 import type {
   ActionResult,
   AdminUser,
+  ParticipantLinkResult,
   RegistrationFormValues,
   RegistrationInput,
 } from "@/lib/admin/types";
@@ -48,8 +58,9 @@ const registrationSchema = z
     firstName: z.string(),
     lastName: z.string(),
     email: z.string(),
+    gender: z.enum(["female", "male", ""]),
     priceTierId: z.string(),
-    status: z.enum(["confirmed", "pending", "cancelled"]),
+    status: z.enum(["active", "cancelled"]),
     payment: z.enum(["unpaid", "processing", "partial", "paid", "refunded"]),
     amountDue: z.string(),
     amountPaid: z.string(),
@@ -80,6 +91,7 @@ const registrationSchema = z
       firstName: values.firstName.trim(),
       lastName: values.lastName.trim(),
       email: values.email.trim(),
+      gender: values.gender === "" ? null : values.gender,
       priceTierId: nullify(values.priceTierId),
       status: values.status,
       payment: values.payment,
@@ -111,7 +123,9 @@ function fieldErrorResult(error: z.ZodError): ActionResult {
 // The dashboard and finance view both read registrations.
 function revalidateRegistrations(): void {
   revalidatePath("/admin");
-  revalidatePath("/admin/finanzen");
+  revalidatePath("/admin/preise");
+  revalidatePath("/admin/zimmerplanung");
+  revalidatePath("/admin/zeltkreise");
 }
 
 // Runs `fn` only after a successful `registrations` permission check, mapping
@@ -179,6 +193,10 @@ export async function updateRegistrationAction(
     if (!parsed.success) return fieldErrorResult(parsed.error);
 
     await updateRegistration(reference, parsed.data);
+    // Cancelled or gender changed: the room may no longer fit (specs/008), a
+    // changed gender may no longer fit the tent circle (specs/011).
+    await syncRoomAssignment({ reference });
+    await syncTentCircle({ reference });
     await writeLog({
       actor: actorLabel(admin),
       action: "registration.update",
@@ -216,6 +234,7 @@ export async function setRegistrationDeletedAction(
 ): Promise<ActionResult> {
   return runGuarded(async (admin) => {
     await setRegistrationDeleted(reference, deleted);
+    await syncRoomAssignment({ reference });
     await writeLog({
       level: deleted ? "warning" : "info",
       actor: actorLabel(admin),
@@ -250,4 +269,111 @@ export async function sendPaymentLinkAction(reference: string): Promise<ActionRe
     if (outcome !== "sent") return { ok: false, error: PAYMENT_LINK_ERRORS[outcome] };
     return { ok: true };
   });
+}
+
+// Pauses or resumes automatic payment reminders of one registration
+// (specs/016-mail-settings, US1, contracts/actions-and-mail.md).
+export async function setReminderPauseAction(
+  reference: string,
+  paused: boolean,
+): Promise<ActionResult> {
+  return runGuarded(async (admin) => {
+    const parsed = reminderPauseSchema.safeParse({ reference, paused });
+    if (!parsed.success) return { ok: false, error: de.registrations.toast.error };
+
+    const result = await setRemindersPaused(parsed.data.reference, parsed.data.paused);
+    if (!result) return { ok: false, error: de.registrations.reminderPause.notFound };
+
+    await writeLog({
+      actor: actorLabel(admin),
+      action: parsed.data.paused ? "registration.reminders_paused" : "registration.reminders_resumed",
+      message: `${parsed.data.reference} ${result.name}`.trim(),
+    });
+    revalidateRegistrations();
+    revalidatePath("/admin/finanzen");
+    return { ok: true };
+  });
+}
+
+// Read only mail history of one registration for the dialog
+// (specs/013-registration-mail-history, contracts/server-action.md). Returns
+// only mapped entries: no address, subject, body, provider id or error code.
+export async function getRegistrationMailsAction(reference: string): Promise<MailHistoryResult> {
+  const t = de.registrations.mails;
+  try {
+    await requirePermission("registrations");
+  } catch (error) {
+    if (error instanceof AuthError) return { ok: false, error: de.registrations.toast.unauthorized };
+    console.error("[registrations] auth check failed", error);
+    return { ok: false, error: t.loadFailed };
+  }
+
+  try {
+    const parsed = referenceSchema.safeParse(reference);
+    if (!parsed.success) return { ok: false, error: t.notFound };
+
+    const mails = await getMailHistoryByReference(parsed.data);
+    return mails ? { ok: true, mails } : { ok: false, error: t.notFound };
+  } catch (error) {
+    console.error("[registrations] mail history failed", error);
+    return { ok: false, error: t.loadFailed };
+  }
+}
+
+// --- participant page link (specs/017-participant-page) ----------------------
+
+function participantLink(token: string): string {
+  return participantUrl(token) ?? participantPath(token);
+}
+
+// Same guard as `runGuarded`, typed for the link result.
+async function runLinkGuarded(
+  fn: (admin: AdminUser) => Promise<ParticipantLinkResult>,
+  failure: string,
+): Promise<ParticipantLinkResult> {
+  let admin: AdminUser;
+  try {
+    admin = await requirePermission("registrations");
+  } catch (error) {
+    if (error instanceof AuthError) return { ok: false, error: de.registrations.toast.unauthorized };
+    console.error("[registrations] auth check failed", error);
+    return { ok: false, error: failure };
+  }
+  try {
+    return await fn(admin);
+  } catch (error) {
+    console.error("[registrations] participant link failed", error);
+    return { ok: false, error: failure };
+  }
+}
+
+// Fetches the link on demand for the dialog, so tokens never travel with the table data.
+export async function getParticipantLinkAction(reference: string): Promise<ParticipantLinkResult> {
+  const t = de.participantLink;
+  return runLinkGuarded(async () => {
+    const parsed = referenceSchema.safeParse(reference);
+    if (!parsed.success) return { ok: false, error: t.notFound };
+
+    const result = await getAccessToken(parsed.data);
+    return result ? { ok: true, url: participantLink(result.token) } : { ok: false, error: t.notFound };
+  }, t.copyFailed);
+}
+
+// Replaces the token; the old link shows the neutral notice from now on (US6).
+export async function renewParticipantLinkAction(reference: string): Promise<ParticipantLinkResult> {
+  const t = de.participantLink;
+  return runLinkGuarded(async (admin) => {
+    const parsed = referenceSchema.safeParse(reference);
+    if (!parsed.success) return { ok: false, error: t.notFound };
+
+    const result = await renewAccessToken(parsed.data);
+    if (!result) return { ok: false, error: t.notFound };
+
+    await writeLog({
+      actor: actorLabel(admin),
+      action: "registration.access_renewed",
+      message: `${parsed.data} ${result.name}`.trim(),
+    });
+    return { ok: true, url: participantLink(result.token) };
+  }, t.renewFailed);
 }

@@ -10,6 +10,20 @@ export const emailMessages = {
   payButton: "Jetzt bezahlen",
   linkFallback: "Falls der Knopf nicht funktioniert, öffne diesen Link:",
   closing: "Viele Grüße\nDein Summercamp Team",
+  /** Subject prefix of admin test sends (specs/016-mail-settings, US6). */
+  testSubjectPrefix: "Test: ",
+  /** Contact line from the camp's text blocks (specs/016-mail-settings, US5). */
+  contactLine: (name: string | null, phone: string | null) =>
+    name && phone
+      ? `Bei Fragen erreichst du ${name} unter ${phone}.`
+      : name
+        ? `Bei Fragen erreichst du ${name}, antworte einfach auf diese Mail.`
+        : `Bei Fragen erreichst du uns unter ${phone}.`,
+
+  participant: {
+    intro: "Deinen Anmeldestand, Zahlungen und Daten findest du jederzeit hier:",
+    link: "Meine Anmeldung ansehen",
+  },
 
   labels: {
     camp: "Camp",
@@ -66,5 +80,62 @@ export const emailMessages = {
     intro: (camp: string) =>
       `das Zahlungsziel für das ${camp} ist vorbei, und deine Zahlung ist bei uns noch nicht angekommen. Dein Platz bleibt bestehen. Bitte bezahle so bald wie möglich.`,
     help: "Gibt es einen Grund, warum es gerade nicht klappt? Antworte einfach auf diese Mail, dann finden wir gemeinsam eine Lösung.",
+  },
+  info: {
+    packingButton: "Zur Packliste",
+    labels: {
+      address: "Adresse",
+      arrival: "Ankunft",
+      pickup: "Abholung",
+      emergency: "Notfallnummer",
+    },
+
+    teaser: {
+      subject: (camp: string) => `Noch 8 Wochen bis zum ${camp}`,
+      preheader: "Bald ist es so weit.",
+      title: "Die Vorfreude steigt",
+      intro: (camp: string) =>
+        `in acht Wochen beginnt das ${camp}, und wir freuen uns schon sehr auf dich.`,
+      motto: (motto: string) => `Unser Motto in diesem Jahr: ${motto}`,
+      highlightsTitle: "Darauf kannst du dich freuen",
+      greetingTitle: "Ein Gruß vom Team",
+    },
+
+    packing: {
+      subject: (camp: string) => `Deine Packliste für das ${camp}`,
+      preheader: "Damit du an alles denkst.",
+      title: "Deine Packliste",
+      intro: (camp: string) =>
+        `in drei Wochen geht es los mit dem ${camp}. Damit du nichts vergisst, haben wir eine Packliste vorbereitet. Das Wichtigste vorab:`,
+      more: "Die ganze Liste findest du hier. Dort kannst du abhaken, was schon im Koffer ist.",
+      health:
+        "Brauchst du Medikamente, oder gibt es Besonderheiten beim Essen, zum Beispiel eine Allergie? Dann antworte einfach auf diese Mail, damit wir Bescheid wissen.",
+    },
+
+    arrival: {
+      subject: "Bald geht es los: alles zur Anreise",
+      preheader: "Adresse, Zeiten und Notfallnummer.",
+      title: "Alles zur Anreise",
+      intro: (camp: string) =>
+        `in wenigen Tagen beginnt das ${camp}. Hier findest du alles, was du für die Anreise brauchst.`,
+      emergencyNote: "Im Notfall erreichst du die Campleitung unter der Notfallnummer.",
+      firstDayTitle: "So läuft der erste Tag",
+      phoneTitle: "Handy im Camp",
+      packing: "Hast du schon alles eingepackt? Hier ist noch einmal deine Packliste:",
+      payNote: (amount: string) =>
+        `Bei uns ist noch ein Betrag von ${amount} offen. Wenn du ihn vor dem Camp bezahlst, ist bei der Ankunft alles erledigt.`,
+    },
+
+    thanks: {
+      subject: (camp: string) => `Danke für das ${camp}`,
+      preheader: "Schön, dass du dabei warst.",
+      title: "Danke, dass du dabei warst",
+      intro: (camp: string) =>
+        `das ${camp} ist vorbei. Wir sind dankbar für die gemeinsame Zeit und dafür, dass du dabei warst.`,
+      photos: "Die Fotos vom Camp findest du hier:",
+      photosButton: "Fotos ansehen",
+      feedback: "Was hat dir gefallen, und was können wir besser machen? Wir freuen uns über deine Rückmeldung.",
+      feedbackButton: "Feedback geben",
+    },
   },
 } as const;

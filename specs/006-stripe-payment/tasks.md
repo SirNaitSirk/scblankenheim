@@ -75,10 +75,12 @@ Format: `[ID] [P?] [Story] Description`. `[P]` = can run in parallel (different 
 
 ## Phase 6: Polish
 
-- [ ] T031 [P] Update `components/marketing/payment-faq.tsx` method list to Karte, Apple Pay, Google Pay, PayPal, SEPA Lastschrift, Klarna
-- [ ] T032 [P] Update AGENTS.md section 6 route names to the real ones (`/api/checkout`, `/api/stripe-webhook`) if they differ from the wording there
-- [ ] T033 Run `npm run lint`, `npm test`, `npm run build` and report the output verbatim
-- [ ] T034 Walk through quickstart.md scenarios 1 to 13 in Stripe test mode with `stripe listen`; note any scenario that could not be run (needs owner's test keys)
+- [x] T031 [P] Update `components/marketing/payment-faq.tsx` method list to Karte, Apple Pay, Google Pay, PayPal, SEPA Lastschrift, Klarna
+- [x] T032 [P] Update AGENTS.md section 6 route names to the real ones (`/api/checkout`, `/api/stripe-webhook`) if they differ from the wording there
+- [x] T033 Run `npm run lint`, `npm test`, `npm run build` and report the output verbatim
+- [x] T034 Walk through quickstart.md scenarios 1 to 13 in Stripe test mode with `stripe listen`; note any scenario that could not be run (needs owner's test keys)
+  * 2026-10-27: scenarios 9 (unsigned webhook → 400), 10 (unknown reference → neutral notice) and the checkout half of 13 (no Stripe key → `/bezahlen?ref=…&fehler=stripe`) passed. Scenarios 1 to 8, 11, 12 and the registration half of 13 are open: migration 0007 is not applied, no Stripe test keys in `.env.local`, Stripe CLI not installed.
+  * 2026-10-27, Stripe sandbox with `stripe listen`: scenarios 1 (card, paid 195 €), 2 (hidden tier, Stripe asks 120 €, price not on landing page), 3 (cancel shows open state with hint), 4 (paid shows notice, checkout post redirects back), 5 (SEPA processing, then paid), 6 (failing SEPA back to unpaid), 7 (partial refund → partial 100 €, full refund → refunded 0 €), 8 (resent event changes nothing), 11 (0 € tier → paid, no redirect) and 12 (new checkout expires the previous session) passed; every webhook answered 200. Scenario 13 registration half not run with a broken key; an earlier registration without key (REG-07FD6CBA) was saved and logged `payment.checkout_failed`, which covers it. PayPal does not appear in Checkout yet: it still has to be enabled in the Stripe Dashboard.
 
 ## Dependencies
 

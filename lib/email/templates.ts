@@ -6,8 +6,10 @@ import {
   renderLayout,
   renderParagraph,
   renderText,
+  renderTextLink,
 } from "./layout";
 import { emailMessages as m } from "./messages";
+import type { MailTexts } from "./settings";
 
 /**
  * Code defined mail templates (specs/007-transactional-emails,
@@ -26,6 +28,8 @@ export type EmailContext = {
   outstanding: number; // whole euros still to pay
   paymentDueDate: string | null; // ISO date
   payUrl: string;
+  participantUrl: string; // private participant page (specs/017-participant-page)
+  texts: MailTexts; // per camp text blocks (specs/016-mail-settings)
 };
 
 export type ReminderKind = "reminder_1" | "reminder_2" | "reminder_3";
@@ -41,6 +45,31 @@ function campDates(ctx: EmailContext): string | null {
 
 function dueDate(ctx: EmailContext): string | null {
   return ctx.paymentDueDate ? formatGermanDate(ctx.paymentDueDate) : null;
+}
+
+/** Greeting line plus the camp's own opening sentence, if set (specs/016-mail-settings, research R6). */
+function openingBlocks(ctx: EmailContext): string[] {
+  const blocks = [m.greeting(ctx.firstName)];
+  if (ctx.texts.greeting) blocks.push(ctx.texts.greeting);
+  return blocks;
+}
+
+/** Optional contact line, then the camp's closing or the default closing. */
+function closingBlocks(ctx: EmailContext): string[] {
+  const { contactName, contactPhone, closing } = ctx.texts;
+  const blocks: string[] = [];
+  if (contactName || contactPhone) blocks.push(m.contactLine(contactName, contactPhone));
+  blocks.push(closing ?? m.closing);
+  return blocks;
+}
+
+/** Link to the participant page, shared by every mail to a registration. */
+export function participantBlock(ctx: EmailContext): { html: string; text: string } {
+  const copy = m.participant;
+  return {
+    html: renderTextLink(copy.intro, copy.link, ctx.participantUrl),
+    text: `${copy.intro}\n${copy.link}: ${ctx.participantUrl}`,
+  };
 }
 
 function factsToText(facts: ReadonlyArray<Fact>): string {
@@ -64,26 +93,30 @@ function paymentMail(
   copy: { subject: string; preheader: string; title: string; intro: string; extra?: string },
 ): RenderedEmail {
   const facts = paymentFacts(ctx);
-  const greeting = m.greeting(ctx.firstName);
+  const opening = openingBlocks(ctx);
+  const closing = closingBlocks(ctx);
+  const participant = participantBlock(ctx);
   const bodyHtml = [
-    renderParagraph(greeting),
+    ...opening.map(renderParagraph),
     renderParagraph(copy.intro),
     renderFacts(facts),
     renderButton(m.payButton, ctx.payUrl),
     copy.extra ? renderParagraph(copy.extra) : "",
-    renderParagraph(m.closing),
+    participant.html,
+    ...closing.map(renderParagraph),
   ].join("\n");
 
   return {
     subject: copy.subject,
     html: renderLayout({ preheader: copy.preheader, campName: ctx.campName, title: copy.title, bodyHtml }),
     text: renderText([
-      greeting,
+      ...opening,
       copy.intro,
       factsToText(facts),
       `${m.payButton}: ${ctx.payUrl}`,
       copy.extra ?? "",
-      m.closing,
+      participant.text,
+      ...closing,
     ]),
   };
 }
@@ -98,7 +131,8 @@ export function confirmationEmail(ctx: EmailContext): RenderedEmail {
   const due = dueDate(ctx);
   if (!free && due) facts.push([m.labels.dueDate, due]);
 
-  const greeting = m.greeting(ctx.firstName);
+  const opening = openingBlocks(ctx);
+  const closing = closingBlocks(ctx);
   const intro = m.confirmation.intro(ctx.campName);
   const payBlockHtml = free
     ? renderParagraph(m.confirmation.free)
@@ -111,13 +145,15 @@ export function confirmationEmail(ctx: EmailContext): RenderedEmail {
     ? [m.confirmation.free]
     : [m.confirmation.payIntro, `${m.payButton}: ${ctx.payUrl}`, m.confirmation.alreadyPaid];
 
+  const participant = participantBlock(ctx);
   const bodyHtml = [
-    renderParagraph(greeting),
+    ...opening.map(renderParagraph),
     renderParagraph(intro),
     renderFacts(facts),
     payBlockHtml,
     renderParagraph(m.confirmation.keepReference),
-    renderParagraph(m.closing),
+    participant.html,
+    ...closing.map(renderParagraph),
   ].join("\n");
 
   return {
@@ -129,12 +165,13 @@ export function confirmationEmail(ctx: EmailContext): RenderedEmail {
       bodyHtml,
     }),
     text: renderText([
-      greeting,
+      ...opening,
       intro,
       factsToText(facts),
       ...payBlockText,
       m.confirmation.keepReference,
-      m.closing,
+      participant.text,
+      ...closing,
     ]),
   };
 }

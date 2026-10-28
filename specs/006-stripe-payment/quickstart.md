@@ -13,7 +13,7 @@
 4. Stripe CLI installed and logged in.
 
 ```bash
-stripe listen --forward-to localhost:3000/api/stripe-webhook
+stripe listen --forward-to localhost:3000/api/stripe-webhook --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,charge.refunded
 ```
 
 ```bash

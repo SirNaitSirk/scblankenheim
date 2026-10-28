@@ -26,3 +26,41 @@ export const PAYMENT_LINK_COOLDOWN_MS = 60 * 1000;
 
 /** Provider request timeout. */
 export const PROVIDER_TIMEOUT_MS = 10_000;
+
+/** Provider quota per Berlin day, shared by every mail kind (specs/012-info-mails, research R5). */
+export const DAILY_EMAIL_BUDGET = 100;
+
+/** Part of the daily quota the info run leaves free for confirmations later that day. */
+export const CONFIRMATION_RESERVE = 15;
+
+/** Info mail due days relative to camp start and end (specs/012-info-mails, research R3). */
+export const INFO_TEASER_BEFORE_DAYS = 56;
+export const INFO_PACKING_BEFORE_DAYS = 21;
+export const INFO_ARRIVAL_BEFORE_DAYS = 5;
+export const INFO_THANKS_AFTER_DAYS = 5;
+
+/** Last day after camp end on which the thank you mail may still go out. */
+export const INFO_THANKS_LAST_DAY = 30;
+
+/** Allowed per camp timing values in whole days (specs/016-mail-settings, FR-006). */
+export const TIMING_BOUNDS = {
+  teaserDaysBefore: { min: 14, max: 120 },
+  packingDaysBefore: { min: 7, max: 60 },
+  arrivalDaysBefore: { min: 1, max: 21 },
+  thanksDaysAfter: { min: 1, max: 29 },
+  reminderFirstAfterDays: { min: 3, max: 60 },
+  reminderBeforeDueDays: { min: 1, max: 30 },
+  reminderMinGapDays: { min: 1, max: 14 },
+} as const;
+
+/** At most one test send per admin within this window (specs/016-mail-settings, FR-017). */
+export const TEST_SEND_COOLDOWN_MS = 60 * 1000;
+
+/** Sender display name and text block lengths (specs/016-mail-settings, FR-009, FR-011). */
+export const SENDER_NAME_MAX = 60;
+export const MAIL_TEXT_LIMITS = {
+  textGreeting: 300,
+  textClosing: 200,
+  contactName: 80,
+  contactPhone: 40,
+} as const;

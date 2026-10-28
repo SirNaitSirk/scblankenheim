@@ -9,12 +9,6 @@ const currency = new Intl.NumberFormat("de-DE", {
   maximumFractionDigits: 0,
 });
 
-const currencyPrecise = new Intl.NumberFormat("de-DE", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 2,
-});
-
 const decimal = new Intl.NumberFormat("de-DE");
 
 const percent = new Intl.NumberFormat("de-DE", {
@@ -47,11 +41,6 @@ export function formatCurrency(value: number): string {
   return currency.format(value);
 }
 
-/** Two-decimal euro amount, e.g. `195,00 €`. */
-export function formatCurrencyPrecise(value: number): string {
-  return currencyPrecise.format(value);
-}
-
 export function formatNumber(value: number): string {
   return decimal.format(value);
 }
@@ -71,4 +60,18 @@ export function formatDateLong(iso: string): string {
 
 export function formatDateTime(iso: string): string {
   return dateTime.format(new Date(iso));
+}
+
+const dateTimeBerlin = new Intl.DateTimeFormat("de-DE", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Europe/Berlin",
+});
+
+/** Date and time in German time, independent of the viewer's time zone. */
+export function formatDateTimeBerlin(iso: string): string {
+  return dateTimeBerlin.format(new Date(iso));
 }

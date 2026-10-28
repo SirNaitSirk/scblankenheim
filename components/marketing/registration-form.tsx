@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -84,12 +84,14 @@ function firstErrorTarget(
   return known ? { index: stepIndexOf(steps, known), key: known } : null;
 }
 
-/** Tracks the rendered height of an element so its wrapper can ease to it. */
+/**
+ * Tracks the rendered height of an element so its wrapper can ease to it. A
+ * callback ref, so a remounted node (form shown again after the success
+ * notice) is observed instead of the detached one.
+ */
 function useMeasuredHeight<T extends HTMLElement>() {
-  const ref = useRef<T | null>(null);
   const [height, setHeight] = useState<number | null>(null);
-  useLayoutEffect(() => {
-    const node = ref.current;
+  const ref = useCallback((node: T | null) => {
     if (!node) return;
     const observer = new ResizeObserver(([entry]) => {
       setHeight(entry.borderBoxSize?.[0]?.blockSize ?? node.offsetHeight);

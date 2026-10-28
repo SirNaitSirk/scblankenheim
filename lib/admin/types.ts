@@ -6,7 +6,7 @@
 
 import type { FieldType } from "./field-types";
 
-export type RegistrationStatus = "confirmed" | "pending" | "cancelled";
+export type RegistrationStatus = "active" | "cancelled";
 export type PaymentStatus =
   | "unpaid"
   | "processing"
@@ -15,12 +15,14 @@ export type PaymentStatus =
   | "refunded";
 export type UserRole = "superadmin" | "admin";
 export type LogLevel = "info" | "warning" | "error";
+export type Gender = "female" | "male";
 
 export type Registration = {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
+  gender: Gender | null;
   campId: string;
   priceTierId: string;
   registeredAt: string; // ISO date
@@ -32,6 +34,7 @@ export type Registration = {
   formData: Record<string, unknown>; // dynamic answers keyed by CampFormField.key
   reminderCount: number; // automatic payment reminders sent (specs/007)
   lastReminderAt: string | null; // ISO date-time of the latest reminder
+  remindersPaused: boolean; // no automatic payment reminders (specs/016)
 };
 
 /**
@@ -44,6 +47,7 @@ export type RegistrationFormValues = {
   firstName: string;
   lastName: string;
   email: string;
+  gender: Gender | ""; // "" = not given (older registrations)
   priceTierId: string; // "" = none
   status: RegistrationStatus;
   payment: PaymentStatus;
@@ -57,6 +61,7 @@ export type RegistrationInput = {
   firstName: string;
   lastName: string;
   email: string;
+  gender: Gender | null;
   priceTierId: string | null;
   status: RegistrationStatus;
   payment: PaymentStatus;
@@ -73,6 +78,26 @@ export type PriceTier = {
   count: number; // registrations on this tier
   validFrom: string | null; // ISO date-time, null = no lower bound
   validUntil: string | null; // ISO date-time, null = no upper bound
+  invitationToken: string | null; // secret part of `/?einladung=<token>`
+  status: PriceTierStatus; // derived from the validity window at read time
+};
+
+export type PriceTierStatus = "active" | "scheduled" | "expired";
+
+/** Raw price tier dialog values; validity as ISO date-time or "". */
+export type PriceTierFormValues = {
+  name: string;
+  price: string;
+  validFrom: string;
+  validUntil: string;
+};
+
+/** Validated price tier ready to persist. */
+export type PriceTierInput = {
+  name: string;
+  price: number; // whole euros
+  validFrom: string | null;
+  validUntil: string | null;
 };
 
 export type Camp = {
@@ -133,8 +158,11 @@ export type CampInput = {
 
 /** Server Action result: German error copy + optional per-field messages. */
 export type ActionResult =
-  | { ok: true; id?: string }
+  | { ok: true; id?: string; roomGender?: Gender; leaderMoved?: boolean }
   | { ok: false; error: string; fieldErrors?: Record<string, string> };
+
+/** Participant page link for the admin dialog (specs/017-participant-page). */
+export type ParticipantLinkResult = { ok: true; url: string } | { ok: false; error: string };
 
 export type CampFormField = {
   id: string;
@@ -188,9 +216,6 @@ export type FieldInput = {
   options: string[] | null; // non-null only for `select`
   config: FieldConfig;
 };
-
-/** App-wide settings bag (camp_settings.settings), admin-editable without a deploy. */
-export type AppSettings = Record<string, unknown>;
 
 /** Fixed dashboard metrics computed from registrations / finance / camp. */
 export type BuiltinMetricKey =
@@ -324,4 +349,88 @@ export type FinanceSummary = {
   outstanding: number;
   paidCount: number;
   totalCount: number;
+};
+
+// --- room planning (specs/008-room-planning) ---------------------------------
+
+/** Gender of a room in one camp; `null` = not set yet. */
+export type RoomGender = Gender | null;
+
+export type Room = {
+  id: string;
+  houseId: string;
+  name: string;
+  beds: number;
+  sortOrder: number;
+  gender: RoomGender; // for the current camp
+};
+
+export type House = {
+  id: string;
+  name: string;
+  sortOrder: number;
+  rooms: Room[];
+};
+
+/** An active registration of the current camp, shared by room planning and tent circles. */
+export type PlanningPersonBase = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  gender: Gender | null;
+  formData: Record<string, unknown>;
+};
+
+/** An active registration of the current camp as seen by room planning. */
+export type PlanningPerson = PlanningPersonBase & {
+  roomId: string | null;
+};
+
+export type RoomPlan = {
+  campId: string | null;
+  campName: string | null;
+  campStart: string | null; // ISO date, for ages
+  birthdateKey: string | null; // camp field holding the birth date, if any
+  houses: House[];
+  people: PlanningPerson[];
+  fields: CampFormField[]; // question fields of the current camp, for filters
+};
+
+/** Who may join a tent circle (specs/011-tent-circles). */
+export type TentCircleKind = "mixed" | Gender;
+
+export type TentCircle = {
+  id: string;
+  name: string;
+  kind: TentCircleKind;
+  leaderId: string | null; // null after the leader registration was hard deleted
+  sortOrder: number;
+};
+
+/** An active registration as seen by the tent circle planner. */
+export type CirclePerson = PlanningPersonBase & {
+  circleId: string | null; // circle this person takes part in
+  leads: string | null; // circle this person leads
+};
+
+export type TentCirclePlan = {
+  campId: string | null;
+  campName: string | null;
+  campStart: string | null;
+  birthdateKey: string | null;
+  circles: TentCircle[];
+  people: CirclePerson[];
+  fields: CampFormField[];
+};
+
+export type GenderFilter = "all" | Gender | "missing";
+
+export type FieldFilter = { id: string; key: string; value: string };
+
+export type PersonFilter = {
+  search: string;
+  gender: GenderFilter;
+  ageMin: number | null;
+  ageMax: number | null;
+  fields: FieldFilter[];
 };

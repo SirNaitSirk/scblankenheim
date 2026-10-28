@@ -333,7 +333,8 @@ Admin ohne Zugriff auf den Tab wird zur Übersicht umgeleitet.
 ### Out of Scope
 
 - Editor für Mailvorlagen und gespeicherte Vorlagen (Verfassung III). Der Tab „Mail“ zeigt nur an.
-- Testversand einer Vorlage aus dem Tab „Mail“.
+- Testversand einer Vorlage aus dem Tab „Mail“. Nachtrag 2026-10-28: Feature 016 (specs/016-mail-settings)
+  führt den Testversand an die eigene Adresse ein und hebt diesen Ausschluss und FR-026 insoweit auf.
 - Mail „Zahlung erhalten“, Rechnungen und Quittungen als Dokument.
 - Newsletter, Rundmails an alle Teilnehmenden und Werbemails.
 - Mails an Admins (Einladungen und Passwörter laufen über die Anmeldeplattform der Admins).

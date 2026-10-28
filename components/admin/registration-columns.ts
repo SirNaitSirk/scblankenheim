@@ -1,16 +1,6 @@
 import { de } from "@/lib/admin/messages";
 import type { CampFormField } from "@/lib/admin/types";
 
-/** Stable identifiers for the built-in (core) registrations-table columns. */
-export type CoreColumnKey =
-  | "name"
-  | "contact"
-  | "id"
-  | "registeredAt"
-  | "amount"
-  | "payment"
-  | "status";
-
 export type ColumnKind = "core" | "field";
 
 export type ColumnDef = {
@@ -26,7 +16,7 @@ export type ColumnDef = {
 };
 
 /** Identity fields backed by dedicated columns — never surfaced as camp-field columns. */
-export const CORE_FIELD_KEYS = new Set(["first_name", "last_name", "email"]);
+export const CORE_FIELD_KEYS = new Set(["first_name", "last_name", "email", "gender"]);
 
 /** Prefix that namespaces a camp-field column key away from the core keys. */
 export const FIELD_COLUMN_PREFIX = "field:";

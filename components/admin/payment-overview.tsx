@@ -41,7 +41,7 @@ export function PaymentOverview({ summary }: { summary: FinanceSummary }) {
             {formatCurrency(summary.outstanding)}
           </span>
           <span className="font-mono text-xs text-muted-foreground">
-            {formatPercent(ratio)} {de.finances.collectedRatio.toLowerCase()}
+            {formatPercent(ratio)} {de.pricing.collectedRatio.toLowerCase()}
           </span>
         </div>
       </div>

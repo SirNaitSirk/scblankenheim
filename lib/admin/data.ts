@@ -1,14 +1,18 @@
 import "server-only";
 
+import { cache } from "react";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { getServiceClient } from "@/lib/supabase/server";
+import { generateAccessToken } from "@/lib/participant/token-server";
 import type { Tables } from "@/lib/database.types";
 import { parseStoredMetrics } from "./dashboard-metrics";
+import { getTierStatus } from "./price-tiers";
+import { toRegistrationStatus } from "./registration-status";
+import { retryTransient } from "./transient";
 import type {
   AddUserInput,
   AdminUser,
   AdminUserInput,
-  AppSettings,
   Camp,
   CampFormField,
   CampInput,
@@ -22,9 +26,9 @@ import type {
   PaymentStatus,
   PendingInvitation,
   PriceTier,
+  PriceTierInput,
   Registration,
   RegistrationInput,
-  RegistrationStatus,
   UserRole,
 } from "./types";
 
@@ -35,71 +39,6 @@ import type {
  * admin surface (Server Components). Function signatures match the former mock
  * getters, so consumers are unchanged. Row → domain mapping helpers live here.
  */
-
-// --- transient-error retry --------------------------------------------------
-
-/**
- * Postgres/PostgREST error codes that are transient: a cold or just-restarted
- * Supabase instance (schema cache not yet loaded), a statement timeout, or a
- * dropped connection. These typically succeed on a quick retry, so admin reads
- * retry them instead of surfacing the raw error after the app has been idle.
- */
-const TRANSIENT_ERROR_CODES = new Set([
-  "PGRST002", // schema cache could not be loaded (instance waking up)
-  "PGRST001", // could not connect to the database
-  "57014", // statement_timeout
-  "08000", // connection_exception
-  "08003", // connection_does_not_exist
-  "08006", // connection_failure
-]);
-
-/**
- * True for transient Supabase read failures worth a retry: an allowlisted
- * PostgREST/Postgres code, a code-less network/fetch failure (e.g.
- * `TypeError: fetch failed` from a dead keep-alive socket after idle), or a
- * contentless error object with neither code nor message (a cold/dropped
- * connection on the dev server's first request).
- */
-function isTransientError(error: unknown): boolean {
-  if (!error || typeof error !== "object") return false;
-  const code = (error as { code?: unknown }).code;
-  if (typeof code === "string" && code.length > 0) {
-    return TRANSIENT_ERROR_CODES.has(code);
-  }
-  const message = (error as { message?: unknown }).message;
-  if (
-    typeof message === "string" &&
-    /fetch failed|network|ECONNRESET|ETIMEDOUT|socket/i.test(message)
-  ) {
-    return true;
-  }
-  // Contentless PostgREST error: a cold or dropped connection (e.g. the dev
-  // server's first request after idle) can surface as an error object with no
-  // code and no message (details/hint null). A genuine Postgres rejection always
-  // carries a code, so a code-less, message-less error is treated as transient.
-  const hasMessage = typeof message === "string" && message.length > 0;
-  return !hasMessage;
-}
-
-/**
- * Runs a read thunk, retrying only on transient errors (see `isTransientError`)
- * with short backoff. Non-transient errors are rethrown immediately, and the
- * last transient error is rethrown after the final attempt — so genuine failures
- * still reach the admin error boundary and retries stay bounded.
- */
-async function retryTransient<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
-  let lastError: unknown;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error;
-      if (attempt === retries || !isTransientError(error)) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1) ** 2));
-    }
-  }
-  throw lastError;
-}
 
 // --- helpers ---------------------------------------------------------------
 
@@ -147,10 +86,11 @@ function mapRegistration(
     firstName: row.first_name ?? "",
     lastName: row.last_name ?? "",
     email: row.email ?? "",
+    gender: row.gender === "female" || row.gender === "male" ? row.gender : null,
     campId: row.camp_id,
     priceTierId: row.price_tier_id ?? "",
     registeredAt: row.registered_at,
-    status: row.status as RegistrationStatus,
+    status: toRegistrationStatus(row.status),
     payment: row.payment_status as PaymentStatus,
     amountDue: row.amount_due,
     amountPaid: row.amount_paid,
@@ -158,6 +98,7 @@ function mapRegistration(
     formData: asRecord(row.form_data),
     reminderCount: reminders?.count ?? 0,
     lastReminderAt: reminders?.lastAt ?? null,
+    remindersPaused: row.reminders_paused ?? false,
   };
 }
 
@@ -179,7 +120,7 @@ async function loadReminderInfo(registrationIds: string[]): Promise<Map<string, 
     if (error) return info;
     const wanted = new Set(registrationIds);
     for (const row of data ?? []) {
-      if (!wanted.has(row.registration_id)) continue;
+      if (!row.registration_id || !wanted.has(row.registration_id)) continue;
       const entry = info.get(row.registration_id) ?? { count: 0, lastAt: null };
       entry.count += 1;
       if (!entry.lastAt || row.updated_at > entry.lastAt) entry.lastAt = row.updated_at;
@@ -222,7 +163,7 @@ function mapAdminUser(
   };
 }
 
-async function getCurrentCampId(): Promise<string | null> {
+async function readCurrentCampId(): Promise<string | null> {
   const supabase = getServiceClient();
   const { data, error } = await supabase
     .from("camp_settings")
@@ -233,13 +174,18 @@ async function getCurrentCampId(): Promise<string | null> {
   return data?.current_camp_id ?? null;
 }
 
+// Request scoped memo (React `cache`): one render asks for the current camp id
+// and the camp list from several getters, but reads each only once. The memo
+// wraps the retried read, so a retry never reuses a cached rejection.
+const loadCurrentCampId = cache(() => retryTransient(readCurrentCampId));
+
 // Build all camps with derived counts (non-deleted registrations + form fields).
 async function buildCamps(): Promise<Camp[]> {
   const supabase = getServiceClient();
 
   const [campsRes, currentCampId, regsRes, fieldsRes] = await Promise.all([
     supabase.from("camps").select("*").order("start_date", { ascending: false }),
-    getCurrentCampId(),
+    loadCurrentCampId(),
     supabase.from("registrations").select("camp_id, deleted"),
     supabase.from("camp_form_fields").select("camp_id"),
   ]);
@@ -264,24 +210,22 @@ async function buildCamps(): Promise<Camp[]> {
   );
 }
 
+const loadCamps = cache(() => retryTransient(buildCamps));
+
 // --- getters (mock-compatible signatures) ----------------------------------
 
 export async function getCamps(): Promise<Camp[]> {
-  return retryTransient(() => buildCamps());
+  return loadCamps();
 }
 
 export async function getCurrentCamp(): Promise<Camp> {
-  return retryTransient(async () => {
-    const camps = await buildCamps();
-    return camps.find((c) => c.isCurrent) ?? camps[0];
-  });
+  const camps = await loadCamps();
+  return camps.find((c) => c.isCurrent) ?? camps[0];
 }
 
 export async function getCampById(campId: string): Promise<Camp | null> {
-  return retryTransient(async () => {
-    const camps = await buildCamps();
-    return camps.find((c) => c.id === campId) ?? null;
-  });
+  const camps = await loadCamps();
+  return camps.find((c) => c.id === campId) ?? null;
 }
 
 export async function getRegistrations(): Promise<Registration[]> {
@@ -306,6 +250,7 @@ function mapRegistrationInputToRow(input: RegistrationInput) {
     first_name: input.firstName,
     last_name: input.lastName,
     email: input.email,
+    gender: input.gender,
     price_tier_id: input.priceTierId,
     status: input.status,
     payment_status: input.payment,
@@ -371,6 +316,59 @@ export async function setRegistrationPayment(
   if (error) throw error;
 }
 
+export type FinanceChange = {
+  before: { amountPaid: number; payment: PaymentStatus };
+  after: { amountPaid: number; payment: PaymentStatus };
+  name: string;
+};
+
+/**
+ * Sets paid amount and payment status from the finance tab (specs/009-finance-tab).
+ * Only touches an active registration of the current camp; returns null otherwise.
+ */
+export async function setRegistrationFinance(
+  reference: string,
+  input: { amountPaid: number; payment: PaymentStatus },
+): Promise<FinanceChange | null> {
+  const supabase = getServiceClient();
+  const currentCampId = await loadCurrentCampId();
+  if (!currentCampId) return null;
+
+  const { data: existing, error: readError } = await supabase
+    .from("registrations")
+    .select("first_name, last_name, amount_paid, payment_status, status, deleted, camp_id")
+    .eq("reference", reference)
+    .maybeSingle();
+  if (readError) throw readError;
+  if (
+    !existing ||
+    existing.camp_id !== currentCampId ||
+    existing.deleted ||
+    existing.status === "cancelled"
+  ) {
+    return null;
+  }
+
+  const { error } = await supabase
+    .from("registrations")
+    .update({
+      amount_paid: input.amountPaid,
+      payment_status: input.payment,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("reference", reference);
+  if (error) throw error;
+
+  return {
+    before: {
+      amountPaid: existing.amount_paid,
+      payment: existing.payment_status as PaymentStatus,
+    },
+    after: input,
+    name: `${existing.first_name ?? ""} ${existing.last_name ?? ""}`.trim(),
+  };
+}
+
 /** Soft-deletes / restores a registration identified by its unique `reference`. */
 export async function setRegistrationDeleted(
   reference: string,
@@ -400,7 +398,7 @@ export async function getCampFormFields(campId: string): Promise<CampFormField[]
 export async function getPriceTiers(): Promise<PriceTier[]> {
   return retryTransient(async () => {
     const supabase = getServiceClient();
-    const currentCampId = await getCurrentCampId();
+    const currentCampId = await loadCurrentCampId();
     if (!currentCampId) return [];
 
     const [tiersRes, regsRes] = await Promise.all([
@@ -432,40 +430,134 @@ export async function getPriceTiers(): Promise<PriceTier[]> {
       count: tierCount.get(tier.id) ?? 0,
       validFrom: tier.valid_from,
       validUntil: tier.valid_until,
+      invitationToken: tier.invitation_token,
+      status: getTierStatus(tier.valid_from, tier.valid_until),
     }));
   });
 }
 
-export async function getAppSettings(): Promise<AppSettings> {
-  return retryTransient(async () => {
-    const supabase = getServiceClient();
-    const { data, error } = await supabase
-      .from("camp_settings")
-      .select("settings")
-      .eq("id", true)
-      .maybeSingle();
-    if (error) throw error;
-    return asRecord(data?.settings);
-  });
+/** The camp id of the current camp, or null when none is set. */
+export async function getCurrentCampId(): Promise<string | null> {
+  return loadCurrentCampId();
+}
+
+/** A single tier's ownership and name, for scope checks in actions. */
+export async function getPriceTierRef(
+  id: string,
+): Promise<{ id: string; campId: string; name: string; validFrom: string | null } | null> {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("price_tiers")
+    .select("id, camp_id, name, valid_from")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data
+    ? { id: data.id, campId: data.camp_id, name: data.name, validFrom: data.valid_from }
+    : null;
+}
+
+// New tiers are always hidden: they only apply through their invitation link.
+export async function createPriceTier(
+  campId: string,
+  input: PriceTierInput,
+  invitationToken: string,
+): Promise<string> {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("price_tiers")
+    .insert({
+      camp_id: campId,
+      name: input.name,
+      price: input.price,
+      valid_from: input.validFrom,
+      valid_until: input.validUntil,
+      hidden: true,
+      invitation_token: invitationToken,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+// Only the tier changes; amounts on existing registrations stay as they were.
+export async function updatePriceTier(id: string, input: PriceTierInput): Promise<void> {
+  const supabase = getServiceClient();
+  const { error } = await supabase
+    .from("price_tiers")
+    .update({
+      name: input.name,
+      price: input.price,
+      valid_from: input.validFrom,
+      valid_until: input.validUntil,
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+// Replacing the token invalidates the old link at once.
+export async function setPriceTierToken(id: string, invitationToken: string): Promise<void> {
+  const supabase = getServiceClient();
+  const { error } = await supabase
+    .from("price_tiers")
+    .update({ invitation_token: invitationToken, hidden: true })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+// Ends validity now. A start in the future is cleared so the window stays valid.
+export async function endPriceTier(id: string, validFrom: string | null): Promise<void> {
+  const supabase = getServiceClient();
+  const now = new Date();
+  const update: { valid_until: string; valid_from?: null } = {
+    valid_until: now.toISOString(),
+  };
+  if (validFrom && new Date(validFrom).getTime() > now.getTime()) {
+    update.valid_from = null;
+  }
+  const { error } = await supabase.from("price_tiers").update(update).eq("id", id);
+  if (error) throw error;
+}
+
+/** Non deleted registrations on a tier (same count as the admin table). */
+export async function countActiveRegistrationsForTier(id: string): Promise<number> {
+  const supabase = getServiceClient();
+  const { count, error } = await supabase
+    .from("registrations")
+    .select("id", { count: "exact", head: true })
+    .eq("price_tier_id", id)
+    .eq("deleted", false);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export async function deletePriceTier(id: string): Promise<void> {
+  const supabase = getServiceClient();
+  const { error } = await supabase.from("price_tiers").delete().eq("id", id);
+  if (error) throw error;
 }
 
 export async function getFinanceSummary(): Promise<FinanceSummary> {
   return retryTransient(async () => {
     const supabase = getServiceClient();
-    const currentCampId = await getCurrentCampId();
+    const currentCampId = await loadCurrentCampId();
 
-    const campsPromise = buildCamps();
+    const campsPromise = loadCamps();
     const regsPromise = currentCampId
       ? supabase
           .from("registrations")
-          .select("amount_due, amount_paid, payment_status, deleted")
+          .select("amount_due, amount_paid, payment_status, status, deleted")
           .eq("camp_id", currentCampId)
       : Promise.resolve({ data: [], error: null } as const);
 
     const [camps, regsRes] = await Promise.all([campsPromise, regsPromise]);
     if (regsRes.error) throw regsRes.error;
 
-    const active = (regsRes.data ?? []).filter((r) => !r.deleted);
+    // Same base as the finance tab: cancelled registrations owe nothing.
+    const active = (regsRes.data ?? []).filter(
+      (r) => !r.deleted && r.status !== "cancelled",
+    );
     const expected = active.reduce((sum, r) => sum + r.amount_due, 0);
     const collected = active.reduce((sum, r) => sum + r.amount_paid, 0);
     const currentCamp = camps.find((c) => c.id === currentCampId) ?? camps[0];
@@ -502,7 +594,9 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
   });
 }
 
-export async function getCurrentProfile(): Promise<AdminUser | null> {
+// Memoized per render: the admin layout and the page both need the profile.
+// Outside a render (Server Actions) `cache` does not memoize, so guards read fresh.
+export const getCurrentProfile = cache(async (): Promise<AdminUser | null> => {
   const { userId } = await auth();
   if (!userId) return null;
 
@@ -519,7 +613,7 @@ export async function getCurrentProfile(): Promise<AdminUser | null> {
     const role = (roleRes.data?.role as UserRole) ?? "admin";
     return mapAdminUser(profileRes.data, role);
   });
-}
+});
 
 /**
  * Persists an admin's dashboard metric selection to their own `profiles` row.
@@ -1046,4 +1140,63 @@ export async function getLogs(): Promise<LogEntry[]> {
       createdAt: log.created_at,
     }));
   });
+}
+
+/**
+ * Pauses or resumes automatic payment reminders of one registration
+ * (specs/016-mail-settings, US1). Callers must have passed the `registrations`
+ * or `finances` permission. Returns the registration's name, or null when no
+ * registration has the reference.
+ */
+export async function setRemindersPaused(
+  reference: string,
+  paused: boolean,
+): Promise<{ name: string } | null> {
+  const { data, error } = await getServiceClient()
+    .from("registrations")
+    .update({ reminders_paused: paused, reminders_paused_at: new Date().toISOString() })
+    .eq("reference", reference)
+    .select("first_name, last_name")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return { name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim() };
+}
+
+/**
+ * Current participant page token of a non deleted registration
+ * (specs/017-participant-page, US3). Callers must have passed the
+ * `registrations` permission. Null when no registration has the reference.
+ */
+export async function getAccessToken(reference: string): Promise<{ token: string } | null> {
+  const { data, error } = await getServiceClient()
+    .from("registrations")
+    .select("access_token")
+    .eq("reference", reference)
+    .eq("deleted", false)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? { token: data.access_token } : null;
+}
+
+/**
+ * Replaces the participant page token (specs/017-participant-page, US6), so the
+ * old link stops working at once. Returns the new token and the name for the log.
+ */
+export async function renewAccessToken(
+  reference: string,
+): Promise<{ token: string; name: string } | null> {
+  const { data, error } = await getServiceClient()
+    .from("registrations")
+    .update({ access_token: generateAccessToken() })
+    .eq("reference", reference)
+    .eq("deleted", false)
+    .select("access_token, first_name, last_name")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return {
+    token: data.access_token,
+    name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
+  };
 }

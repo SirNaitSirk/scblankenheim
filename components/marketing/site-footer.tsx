@@ -1,7 +1,7 @@
 const links = [
-  { label: "Camp", href: "#camp" },
+  { label: "Camp", href: "/#camp" },
   { label: "Packliste", href: "/packzettel" },
-  { label: "Anmelden", href: "#anmelden" },
+  { label: "Anmelden", href: "/#anmelden" },
 ];
 
 /** Minimal marketing footer. */

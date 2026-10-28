@@ -1,4 +1,8 @@
-import { paymentPath, paymentUrl } from "./links";
+import { resolveMailSettings, type CampMailInfo } from "@/lib/admin/camp-mail-info";
+import { INFO_KINDS, type InfoMailKind } from "./info-mails";
+import { INFO_TEMPLATES, type InfoMailContext } from "./info-templates";
+import { packingUrl, participantPath, participantUrl, paymentPath, paymentUrl } from "./links";
+import { DEFAULT_MAIL_SETTINGS, type MailTexts } from "./settings";
 import {
   confirmationEmail,
   paymentLinkEmail,
@@ -24,6 +28,8 @@ export type PreviewId =
 
 export type MailPreview = RenderedEmail & { id: PreviewId };
 
+export type InfoMailPreview = RenderedEmail & { id: InfoMailKind };
+
 export type PreviewCamp = {
   name: string;
   startDate: string | null;
@@ -34,8 +40,10 @@ export type PreviewCamp = {
 
 export const SAMPLE_FIRST_NAME = "Lena";
 export const SAMPLE_REFERENCE = "REG-BEISPIEL";
+export const SAMPLE_ACCESS_TOKEN = "0".repeat(64);
 
-export function sampleContext(camp: PreviewCamp): EmailContext {
+/** Sample person with the camp's own text blocks (specs/016-mail-settings, US5). */
+export function sampleContext(camp: PreviewCamp, texts: MailTexts = DEFAULT_MAIL_SETTINGS.texts): EmailContext {
   return {
     firstName: SAMPLE_FIRST_NAME,
     campName: camp.name,
@@ -46,11 +54,16 @@ export function sampleContext(camp: PreviewCamp): EmailContext {
     outstanding: camp.basePrice,
     paymentDueDate: camp.paymentDueDate,
     payUrl: paymentUrl(SAMPLE_REFERENCE) ?? paymentPath(SAMPLE_REFERENCE),
+    participantUrl: participantUrl(SAMPLE_ACCESS_TOKEN) ?? participantPath(SAMPLE_ACCESS_TOKEN),
+    texts,
   };
 }
 
-export function buildMailPreviews(camp: PreviewCamp): MailPreview[] {
-  const ctx = sampleContext(camp);
+export function buildMailPreviews(
+  camp: PreviewCamp,
+  texts: MailTexts = DEFAULT_MAIL_SETTINGS.texts,
+): MailPreview[] {
+  const ctx = sampleContext(camp, texts);
   const free = { ...ctx, amountDue: 0, outstanding: 0 };
   return [
     { id: "confirmation", ...confirmationEmail(ctx) },
@@ -60,4 +73,53 @@ export function buildMailPreviews(camp: PreviewCamp): MailPreview[] {
     { id: "reminder_2", ...reminderEmail("reminder_2", ctx) },
     { id: "reminder_3", ...reminderEmail("reminder_3", ctx) },
   ];
+}
+
+/** Sample person with the arrival preview owing the base price (specs/012-info-mails, US5). */
+export function sampleInfoContext(
+  camp: PreviewCamp & { tagline: string | null },
+  mailInfo: CampMailInfo,
+): InfoMailContext {
+  return {
+    ...sampleContext(camp),
+    mailInfo,
+    motto: camp.tagline?.trim() || null,
+    packingUrl: packingUrl() ?? "/packzettel",
+  };
+}
+
+export function buildInfoMailPreviews(
+  camp: PreviewCamp & { tagline: string | null },
+  mailInfo: CampMailInfo,
+): InfoMailPreview[] {
+  const ctx = sampleInfoContext(camp, mailInfo);
+  return INFO_KINDS.map((kind) => ({ id: kind, ...INFO_TEMPLATES[kind](ctx) }));
+}
+
+/** Every template the Mail tab lists and can send as a test (specs/016-mail-settings, US6). */
+export type TemplateId = PreviewId | InfoMailKind;
+
+export const TEMPLATE_IDS = [
+  "confirmation",
+  "confirmation_free",
+  "payment_link",
+  "reminder_1",
+  "reminder_2",
+  "reminder_3",
+  ...INFO_KINDS,
+] as const satisfies readonly TemplateId[];
+
+/** One template with sample data and the camp's settings, exactly as the preview shows it. */
+export function renderTemplate(
+  id: TemplateId,
+  camp: PreviewCamp & { tagline: string | null },
+  mailInfo: CampMailInfo,
+): RenderedEmail {
+  const { texts } = resolveMailSettings(mailInfo);
+  const previews: Array<RenderedEmail & { id: TemplateId }> = [
+    ...buildMailPreviews(camp, texts),
+    ...buildInfoMailPreviews(camp, mailInfo),
+  ];
+  const { subject, html, text } = previews.find((preview) => preview.id === id)!;
+  return { subject, html, text };
 }

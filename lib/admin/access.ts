@@ -23,18 +23,6 @@ export const NAV_HREFS = NAV_ITEMS.map((item) => item.href);
 /** Tabs every admin can always see/reach, independent of their grant. */
 export const ALWAYS_VISIBLE_TABS = ["/admin", "/admin/profil"] as const;
 
-/**
- * Maps a nav href to the permission that governs its write actions. Hrefs without
- * an entry (e.g. `/admin/profil`) have no gated actions.
- */
-export const PERMISSION_BY_HREF: Record<string, string> = {
-  "/admin": "registrations",
-  "/admin/finanzen": "finances",
-  "/admin/camps": "camps",
-  "/admin/logs": "logs",
-  "/admin/benutzer": "users",
-};
-
 /** Whether the user may see/reach the given nav href. */
 export function canSeeTab(
   user: Pick<AdminUser, "role" | "visibleTabs">,

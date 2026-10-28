@@ -9,7 +9,7 @@ const base: PayableRegistration = {
   amountDue: 250,
   amountPaid: 0,
   paymentStatus: "unpaid",
-  status: "pending",
+  status: "active",
   deleted: false,
 };
 

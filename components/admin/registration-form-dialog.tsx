@@ -9,25 +9,43 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/cn";
 import {
+  GENDER_LABELS,
   PAYMENT_STATUS_LABELS,
   REGISTRATION_STATUS_LABELS,
   de,
 } from "@/lib/admin/messages";
+import { splitCampFields } from "@/lib/admin/form-layout";
 import type {
   ActionResult,
+  ParticipantLinkResult,
   CampFormField,
+  Gender,
   PaymentStatus,
   PriceTier,
   Registration,
   RegistrationFormValues,
   RegistrationStatus,
 } from "@/lib/admin/types";
+import type { MailHistoryResult } from "@/lib/email/history";
+import { MailHistory } from "./mail-history";
+import { ParticipantLinkPanel } from "./participant-link-panel";
 import { hasPaymentDue, PaymentLinkPanel } from "./payment-link-panel";
 import { CORE_FIELD_KEYS } from "./registration-columns";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const t = de.registrations.form;
+
+/** Contact and registration rows: four short fields side by side on desktop. */
+const CORE_GRID = "grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4";
+
+const GENDER_OPTIONS = [
+  { value: "", label: t.genderNone },
+  ...(Object.entries(GENDER_LABELS) as [Gender, string][]).map(([value, label]) => ({
+    value,
+    label,
+  })),
+];
 
 const STATUS_OPTIONS = (
   Object.keys(REGISTRATION_STATUS_LABELS) as RegistrationStatus[]
@@ -94,8 +112,9 @@ function initialValues(
     firstName: registration?.firstName ?? "",
     lastName: registration?.lastName ?? "",
     email: registration?.email ?? "",
+    gender: registration?.gender ?? "",
     priceTierId: registration?.priceTierId ?? "",
-    status: registration?.status ?? "pending",
+    status: registration?.status ?? "active",
     payment: registration?.payment ?? "unpaid",
     amountDue: registration ? String(registration.amountDue) : "",
     amountPaid: registration ? String(registration.amountPaid) : "",
@@ -157,6 +176,10 @@ export function RegistrationFormDialog({
   onRestore,
   appUrl,
   onSendPaymentLink,
+  onSetReminderPause,
+  onLoadMails,
+  onGetParticipantLink,
+  onRenewParticipantLink,
 }: {
   open: boolean;
   mode: "create" | "edit";
@@ -170,6 +193,10 @@ export function RegistrationFormDialog({
   onRestore?: () => void;
   appUrl?: string | null;
   onSendPaymentLink?: (reference: string) => Promise<ActionResult>;
+  onSetReminderPause?: (reference: string, paused: boolean) => Promise<ActionResult>;
+  onLoadMails?: (reference: string) => Promise<MailHistoryResult>;
+  onGetParticipantLink?: (reference: string) => Promise<ParticipantLinkResult>;
+  onRenewParticipantLink?: (reference: string) => Promise<ParticipantLinkResult>;
 }) {
   // Initialised from props at mount; the parent remounts via `key` on each open,
   // so state is always fresh without a setState-in-effect reset.
@@ -179,8 +206,11 @@ export function RegistrationFormDialog({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // Bumped after a payment link send so the mail history shows the new attempt.
+  const [mailsReloadKey, setMailsReloadKey] = useState(0);
 
   const dynamic = dynamicFields(formFields);
+  const campFields = splitCampFields(dynamic);
 
   function clearError(key: string) {
     setErrors((prev) => {
@@ -254,6 +284,7 @@ export function RegistrationFormDialog({
         mode === "edit" ? t.editDescription(name) : t.createDescription
       }
       closeLabel={t.close}
+      className="max-w-lg sm:max-w-2xl lg:max-w-5xl"
       footer={
         <>
           {mode === "edit" && registration?.deleted && onRestore ? (
@@ -297,7 +328,7 @@ export function RegistrationFormDialog({
       <form
         id="registration-form"
         onSubmit={handleSubmit}
-        className="flex flex-col gap-7"
+        className="flex flex-col gap-5"
       >
         {formError && (
           <p className="rounded-input border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
@@ -306,7 +337,7 @@ export function RegistrationFormDialog({
         )}
 
         <Section title={t.sectionContact}>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className={CORE_GRID}>
             <Field label={t.firstName} htmlFor="reg-firstName" error={errors.firstName}>
               <Input
                 id="reg-firstName"
@@ -335,11 +366,19 @@ export function RegistrationFormDialog({
                 className={cn(errors.email && "border-danger focus-visible:border-danger")}
               />
             </Field>
+            <Field label={t.gender} htmlFor="reg-gender">
+              <Select
+                id="reg-gender"
+                value={values.gender}
+                onChange={(e) => setValue("gender", e.target.value as Gender | "")}
+                options={GENDER_OPTIONS}
+              />
+            </Field>
           </div>
         </Section>
 
         <Section title={t.sectionRegistration}>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className={CORE_GRID}>
             <Field label={t.tier} htmlFor="reg-tier">
               <Select
                 id="reg-tier"
@@ -397,23 +436,56 @@ export function RegistrationFormDialog({
           <PaymentLinkPanel
             registration={registration}
             appUrl={appUrl ?? null}
-            onSend={onSendPaymentLink}
+            onSend={async (reference) => {
+              const result = await onSendPaymentLink(reference);
+              setMailsReloadKey((key) => key + 1);
+              return result;
+            }}
+            onSetReminderPause={onSetReminderPause}
           />
+        )}
+
+        {mode === "edit" && registration && !registration.deleted && onGetParticipantLink && (
+          <ParticipantLinkPanel
+            registration={registration}
+            onGetLink={onGetParticipantLink}
+            onRenewLink={onRenewParticipantLink}
+          />
+        )}
+
+        {mode === "edit" && registration && onLoadMails && (
+          <MailHistory reference={registration.id} load={onLoadMails} reloadKey={mailsReloadKey} />
         )}
 
         {dynamic.length > 0 && (
           <Section title={t.sectionCampFields}>
-            <div className="flex flex-col gap-4">
-              {dynamic.map((field) => (
-                <DynamicField
-                  key={field.id}
-                  field={field}
-                  value={values.formData[field.key]}
-                  error={errors[field.key]}
-                  onChange={(value) => setDynamic(field.key, value)}
-                />
-              ))}
-            </div>
+            {campFields.inputs.length > 0 && (
+              <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+                {campFields.inputs.map((field) => (
+                  <DynamicField
+                    key={field.id}
+                    field={field}
+                    value={values.formData[field.key]}
+                    error={errors[field.key]}
+                    onChange={(value) => setDynamic(field.key, value)}
+                    className={field.fieldType === "textarea" ? "sm:col-span-full" : undefined}
+                  />
+                ))}
+              </div>
+            )}
+            {campFields.toggles.length > 0 && (
+              <div className="grid gap-x-6 gap-y-2.5 pt-1 sm:grid-cols-2 lg:grid-cols-3">
+                {campFields.toggles.map((field) => (
+                  <DynamicField
+                    key={field.id}
+                    field={field}
+                    value={values.formData[field.key]}
+                    error={errors[field.key]}
+                    onChange={(value) => setDynamic(field.key, value)}
+                  />
+                ))}
+              </div>
+            )}
           </Section>
         )}
       </form>
@@ -437,11 +509,13 @@ function DynamicField({
   value,
   error,
   onChange,
+  className,
 }: {
   field: CampFormField;
   value: DynamicValue;
   error?: string;
   onChange: (value: DynamicValue) => void;
+  className?: string;
 }) {
   const id = `reg-field-${field.key}`;
   const placeholder = readString(field.config, "placeholder");
@@ -461,7 +535,7 @@ function DynamicField({
   }
 
   return (
-    <Field label={label} htmlFor={id} hint={helpText} error={error}>
+    <Field label={label} htmlFor={id} hint={helpText} error={error} className={className}>
       {field.fieldType === "textarea" ? (
         <Textarea
           id={id}

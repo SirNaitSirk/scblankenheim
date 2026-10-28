@@ -37,14 +37,14 @@ describe("buildSteps", () => {
     const steps = buildSteps([]);
     expect(steps).toHaveLength(1);
     expect(steps[0].title).toBe(copy.coreTitle);
-    expect(keys(steps[0].fields)).toEqual(["first_name", "last_name", "email"]);
+    expect(keys(steps[0].fields)).toEqual(["first_name", "last_name", "email", "gender"]);
   });
 
   it("chunks questions automatically when there is no step break", () => {
     const questions = Array.from({ length: 9 }, (_, i) => field(`q${i + 1}`));
     const steps = buildSteps(questions);
     expect(AUTO_STEP_SIZE).toBe(4);
-    expect(steps.map((s) => s.fields.length)).toEqual([3, 4, 4, 1]);
+    expect(steps.map((s) => s.fields.length)).toEqual([4, 4, 4, 1]);
     expect(steps.slice(1).every((s) => s.title === copy.autoTitle)).toBe(true);
   });
 
@@ -100,6 +100,7 @@ describe("questionFields", () => {
       first_name: "Ada",
       last_name: "L",
       email: "ada@example.org",
+      gender: "Weiblich",
       q1: "ok",
       schritt_x: "egal",
     });

@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
+import { withReadTimeout } from "./fetch";
 
 /**
  * Service-role Supabase client — privileged, RLS-bypassing. Server-only:
@@ -10,6 +11,10 @@ import type { Database } from "@/lib/database.types";
  * never by RLS, since auth is Clerk not Supabase Auth.
  *
  * Uses SUPABASE_ROLE_KEY (the project's env name for the service-role key).
+ *
+ * Supabase's own retry is off: `retryTransient` (lib/admin/transient.ts) is the
+ * single retry layer, and `withReadTimeout` bounds every read, so a failing read
+ * surfaces within about 10s instead of hanging or stacking backoffs.
  */
 let client: SupabaseClient<Database> | null = null;
 
@@ -27,6 +32,8 @@ export function getServiceClient(): SupabaseClient<Database> {
 
   client = createClient<Database>(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
+    db: { retry: false },
+    global: { fetch: withReadTimeout(fetch) },
   });
 
   return client;

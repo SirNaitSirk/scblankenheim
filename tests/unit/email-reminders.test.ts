@@ -1,18 +1,22 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { nextReminder, type ReminderInput } from "@/lib/email/reminders";
+import { DEFAULT_TIMING } from "@/lib/email/settings";
 import { isAuthorizedCronRequest } from "@/lib/email/cron-auth";
 
 const base: ReminderInput = {
   paymentStatus: "unpaid",
   outstanding: 250,
   deleted: false,
-  status: "pending",
+  status: "active",
   hasEmail: true,
   registeredDate: "2027-03-01",
   campStartDate: "2027-07-20",
   paymentDueDate: "2027-06-15",
   sentKinds: [],
   lastReminderDate: null,
+  paused: false,
+  campEnabled: true,
+  timing: DEFAULT_TIMING,
 };
 
 describe("nextReminder", () => {
@@ -41,10 +45,32 @@ describe("nextReminder", () => {
     ["free", { outstanding: 0 }, "2027-03-08", null],
     ["no email", { hasEmail: false }, "2027-03-08", null],
     ["partial with remainder", { paymentStatus: "partial", outstanding: 50 }, "2027-03-08", "reminder_1"],
+    ["camp switched off gets no first reminder", { campEnabled: false }, "2027-03-08", null],
+    ["camp switched off gets no third reminder", { campEnabled: false, sentKinds: ["reminder_1", "reminder_2"], lastReminderDate: "2027-06-08" }, "2027-06-16", null],
+    ["paused gets no first reminder", { paused: true }, "2027-03-08", null],
+    ["paused gets no second reminder", { paused: true, sentKinds: ["reminder_1"], lastReminderDate: "2027-03-08" }, "2027-06-08", null],
+    ["paused gets no third reminder", { paused: true, sentKinds: ["reminder_1", "reminder_2"], lastReminderDate: "2027-06-08" }, "2027-06-16", null],
+    ["resumed after the due date gets the open third stage, not the missed second", { sentKinds: ["reminder_1"], lastReminderDate: "2027-03-08" }, "2027-06-20", "reminder_3"],
   ];
 
   it.each(cases)("%s", (_name, overrides, today, expected) => {
     expect(nextReminder({ ...base, ...overrides }, today)).toBe(expected);
+  });
+});
+
+describe("nextReminder with custom timing (specs/016-mail-settings)", () => {
+  const timing = { ...DEFAULT_TIMING, reminderFirstAfterDays: 10, reminderBeforeDueDays: 14, reminderMinGapDays: 5 };
+  const cases: Array<[string, Partial<ReminderInput>, string, string | null]> = [
+    ["no first reminder on day 9", {}, "2027-03-10", null],
+    ["first reminder on day 10", {}, "2027-03-11", "reminder_1"],
+    ["second reminder 14 days before the due date", { sentKinds: ["reminder_1"], lastReminderDate: "2027-03-11" }, "2027-06-01", "reminder_2"],
+    ["nothing 15 days before the due date", { sentKinds: ["reminder_1"], lastReminderDate: "2027-03-11" }, "2027-05-31", null],
+    ["gap of five days", { sentKinds: ["reminder_1"], lastReminderDate: "2027-05-29" }, "2027-06-02", null],
+    ["after the gap", { sentKinds: ["reminder_1"], lastReminderDate: "2027-05-29" }, "2027-06-03", "reminder_2"],
+  ];
+
+  it.each(cases)("%s", (_name, overrides, today, expected) => {
+    expect(nextReminder({ ...base, timing, ...overrides }, today)).toBe(expected);
   });
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { GearSix, PencilSimple, Plus, Tent, Trash } from "@phosphor-icons/react";
+import { EnvelopeSimple, GearSix, PencilSimple, Plus, Tent, Trash } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -183,7 +183,7 @@ export function CampsBoard({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-border pt-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
                   <div className="flex flex-col">
                     <span className="font-display text-base font-bold tracking-tight text-foreground">
                       {formatCurrency(camp.basePrice)}
@@ -192,7 +192,7 @@ export function CampsBoard({
                       {de.camps.formFields(camp.formFieldCount)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -200,6 +200,14 @@ export function CampsBoard({
                     >
                       <GearSix size={16} weight="regular" />
                       {de.camps.configureFields}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => router.push(`/admin/camps/${camp.id}/infomails`)}
+                    >
+                      <EnvelopeSimple size={16} weight="regular" />
+                      {de.camps.configureMails}
                     </Button>
                     {canWrite && !camp.isCurrent && (
                       <Button

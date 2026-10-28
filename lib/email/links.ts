@@ -19,3 +19,20 @@ export function paymentUrl(reference: string): string | null {
   const base = appBaseUrl();
   return base ? `${base}${paymentPath(reference)}` : null;
 }
+
+/** Path of the participant page for `token` (specs/017-participant-page). */
+export function participantPath(token: string): string {
+  return `/meine-anmeldung/${encodeURIComponent(token)}`;
+}
+
+/** Absolute participant page link, or null when `APP_URL` is not configured. */
+export function participantUrl(token: string): string | null {
+  const base = appBaseUrl();
+  return base ? `${base}${participantPath(token)}` : null;
+}
+
+/** Absolute link to the packing list (specs/012-info-mails), or null without `APP_URL`. */
+export function packingUrl(): string | null {
+  const base = appBaseUrl();
+  return base ? `${base}/packzettel` : null;
+}

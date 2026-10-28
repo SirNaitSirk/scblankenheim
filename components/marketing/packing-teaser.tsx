@@ -1,23 +1,11 @@
 import { ButtonLink } from "@/components/ui/button";
 import { Reveal } from "@/components/marketing/reveal";
-
-const items = [
-  "Schlafsack",
-  "Iso-Matte",
-  "Kissen",
-  "Handtuch",
-  "Waschzeug",
-  "Zahnbürste & Zahnpasta",
-  "Warme Sachen",
-  "Lockere Kleidung",
-  "Regenfeste Schuhe",
-  "Etwas Sportliches",
-  "Deine Bibel",
-];
+import { featuredPackingItems } from "@/lib/marketing/packing-list";
 
 /**
- * Packing-list teaser (Persuade): full-width band, real items as chips,
- * link to the full `/packzettel` page. Anchored as `#packliste`.
+ * Packing list teaser (Persuade): full width band, the featured items of the
+ * shared list (lib/marketing/packing-list.ts) as chips, link to the full
+ * `/packzettel` page. Anchored as `#packliste`.
  */
 export function PackingTeaser() {
   return (
@@ -38,12 +26,12 @@ export function PackingTeaser() {
 
         <Reveal delay={80} className="mt-12">
           <ul className="flex flex-wrap gap-3">
-            {items.map((item) => (
+            {featuredPackingItems().map((item) => (
               <li
-                key={item}
+                key={item.id}
                 className="cursor-default rounded-pill border border-border bg-sand-50 px-4 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:border-amber-300 hover:bg-amber-100 hover:text-amber-700"
               >
-                {item}
+                {item.label}
               </li>
             ))}
           </ul>

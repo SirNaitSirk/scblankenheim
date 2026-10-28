@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
 import {
   createRegistrationAction,
+  getRegistrationMailsAction,
+  getParticipantLinkAction,
+  renewParticipantLinkAction,
   sendPaymentLinkAction,
+  setReminderPauseAction,
   setRegistrationDeletedAction,
   setRegistrationPaymentAction,
   updateRegistrationAction,
@@ -15,7 +19,7 @@ import { Card } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import type { SelectOption } from "@/components/ui/select";
 import { useColumnSettings } from "@/hooks/use-column-settings";
-import { de } from "@/lib/admin/messages";
+import { REGISTRATION_STATUS_LABELS, de } from "@/lib/admin/messages";
 import type {
   ActionResult,
   CampFormField,
@@ -130,7 +134,7 @@ function csvValue(column: ColumnDef, r: Registration): string | number {
     case "payment":
       return r.payment;
     case "status":
-      return r.status;
+      return REGISTRATION_STATUS_LABELS[r.status];
     default:
       return "";
   }
@@ -387,6 +391,17 @@ export function RegistrationsManager({
     router.refresh();
   }, [dialog, router, showToast]);
 
+  // Pause toggles in the dialog persist at once; refresh so the table and a
+  // reopened dialog show the new state (specs/016-mail-settings, US1).
+  const setRemindersPausedFromDialog = useCallback(
+    async (reference: string, paused: boolean) => {
+      const result = await setReminderPauseAction(reference, paused);
+      if (result.ok) router.refresh();
+      return result;
+    },
+    [router],
+  );
+
   // Clicking "Löschen" in the edit dialog opens a confirmation instead of
   // deleting straight away.
   const onDeleteFromDialog = useCallback(() => {
@@ -505,6 +520,10 @@ export function RegistrationsManager({
           onRestore={onRestoreFromDialog}
           appUrl={appUrl}
           onSendPaymentLink={sendPaymentLinkAction}
+          onSetReminderPause={setRemindersPausedFromDialog}
+          onLoadMails={getRegistrationMailsAction}
+          onGetParticipantLink={getParticipantLinkAction}
+          onRenewParticipantLink={renewParticipantLinkAction}
         />
       )}
 

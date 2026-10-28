@@ -16,6 +16,8 @@ const ctx: EmailContext = {
   outstanding: 250,
   paymentDueDate: "2027-06-15",
   payUrl: "https://camp.example/bezahlen?ref=REG-1A2B3C4D",
+  participantUrl: `https://camp.example/meine-anmeldung/${"a".repeat(64)}`,
+  texts: { greeting: null, closing: null, contactName: null, contactPhone: null },
 };
 
 const DASHES = /[–—]/;
@@ -89,5 +91,76 @@ describe("payment mails", () => {
       expect(mail.subject).not.toMatch(DASHES);
       expect(mail.text).not.toMatch(DASHES);
     }
+  });
+});
+
+describe("participant link", () => {
+  const mails = [
+    confirmationEmail(ctx),
+    confirmationEmail({ ...ctx, amountDue: 0, outstanding: 0 }),
+    paymentLinkEmail(ctx),
+    reminderEmail("reminder_1", ctx),
+    reminderEmail("reminder_2", ctx),
+    reminderEmail("reminder_3", ctx),
+  ];
+
+  it("appears in html and text of every payment related mail", () => {
+    for (const mail of mails) {
+      expect(mail.html).toContain(`href="${ctx.participantUrl}"`);
+      expect(mail.text).toContain(`Meine Anmeldung ansehen: ${ctx.participantUrl}`);
+    }
+  });
+});
+
+describe("camp text blocks (specs/016-mail-settings)", () => {
+  const texts = {
+    greeting: "Schön, dass du dabei bist!",
+    closing: "Herzliche Grüße\nDein Leitungsteam",
+    contactName: "Anna Becker",
+    contactPhone: "0170 1234567",
+  };
+  const withTexts = { ...ctx, texts };
+  const mails = [
+    ["confirmation", confirmationEmail(withTexts)],
+    ["payment link", paymentLinkEmail(withTexts)],
+    ["reminder 1", reminderEmail("reminder_1", withTexts)],
+    ["reminder 3", reminderEmail("reminder_3", withTexts)],
+  ] as const;
+
+  it.each(mails)("%s shows every block once in html and text", (_name, mail) => {
+    for (const value of ["Schön, dass du dabei bist!", "Bei Fragen erreichst du Anna Becker unter 0170 1234567."]) {
+      expect(mail.html.split(value)).toHaveLength(2);
+      expect(mail.text.split(value)).toHaveLength(2);
+    }
+    expect(mail.html).toContain("Herzliche Grüße<br>Dein Leitungsteam");
+    expect(mail.text).toContain("Herzliche Grüße\nDein Leitungsteam");
+    expect(mail.text).not.toContain("Dein Summercamp Team");
+  });
+
+  it("puts the greeting line right after the salutation and the contact before the closing", () => {
+    const text = confirmationEmail(withTexts).text;
+    expect(text.indexOf("Hallo Lena,")).toBeLessThan(text.indexOf("Schön, dass du dabei bist!"));
+    expect(text.indexOf("Schön, dass du dabei bist!")).toBeLessThan(text.indexOf("vielen Dank"));
+    expect(text.indexOf("Bei Fragen erreichst du")).toBeLessThan(text.indexOf("Herzliche Grüße"));
+  });
+
+  it("shows only the given contact part", () => {
+    const nameOnly = confirmationEmail({ ...ctx, texts: { ...texts, contactPhone: null } }).text;
+    expect(nameOnly).toContain("Bei Fragen erreichst du Anna Becker, antworte einfach auf diese Mail.");
+    const phoneOnly = confirmationEmail({ ...ctx, texts: { ...texts, contactName: null } }).text;
+    expect(phoneOnly).toContain("Bei Fragen erreichst du uns unter 0170 1234567.");
+  });
+
+  it("escapes markup typed by admins", () => {
+    const mail = paymentLinkEmail({ ...ctx, texts: { ...texts, greeting: "<b>Hallo</b> & <script>x</script>" } });
+    expect(mail.html).not.toContain("<b>Hallo</b>");
+    expect(mail.html).not.toContain("<script>");
+    expect(mail.html).toContain("&lt;b&gt;Hallo&lt;/b&gt; &amp;");
+  });
+
+  it("without blocks the mail matches the default text", () => {
+    const plain = confirmationEmail(ctx).text;
+    expect(plain).toContain("Viele Grüße\nDein Summercamp Team");
+    expect(plain).not.toContain("Bei Fragen erreichst du");
   });
 });

@@ -33,13 +33,26 @@ export function renderParagraph(text: string): string {
   return `<p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:${COLORS.text};">${html}</p>`;
 }
 
-/** Label and value rows (reference, amount, ...). */
+/** A small section heading inside the mail body. */
+export function renderHeading(text: string): string {
+  return `<h2 style="margin:24px 0 8px;font-size:17px;line-height:1.4;color:${COLORS.text};">${escapeHtml(text)}</h2>`;
+}
+
+/** A bulleted list of escaped items. */
+export function renderList(items: ReadonlyArray<string>): string {
+  const rows = items
+    .map((item) => `<li style="margin:0 0 6px;">${escapeHtml(item)}</li>`)
+    .join("");
+  return `<ul style="margin:0 0 16px;padding-left:20px;font-size:16px;line-height:1.6;color:${COLORS.text};">${rows}</ul>`;
+}
+
+/** Label and value rows (reference, amount, ...); line breaks in a value become `<br>`. */
 export function renderFacts(rows: ReadonlyArray<readonly [string, string]>): string {
   const cells = rows
     .map(
       ([label, value]) =>
         `<tr><td style="padding:6px 0;font-size:14px;color:${COLORS.muted};width:45%;">${escapeHtml(label)}</td>` +
-        `<td style="padding:6px 0;font-size:16px;color:${COLORS.text};font-weight:600;">${escapeHtml(value)}</td></tr>`,
+        `<td style="padding:6px 0;font-size:16px;color:${COLORS.text};font-weight:600;">${escapeHtml(value).replace(/\n/g, "<br>")}</td></tr>`,
     )
     .join("");
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 24px;border-top:1px solid ${COLORS.border};border-bottom:1px solid ${COLORS.border};">${cells}</table>`;
@@ -55,6 +68,16 @@ export function renderButton(label: string, href: string): string {
     `</td></tr></table>` +
     `<p style="margin:0 0 24px;font-size:13px;line-height:1.5;color:${COLORS.muted};">${escapeHtml(emailMessages.linkFallback)}<br>` +
     `<a href="${url}" style="color:${COLORS.accent};word-break:break-all;">${url}</a></p>`
+  );
+}
+
+/** Quiet secondary link: one sentence plus a bold link line, lighter than a button. */
+export function renderTextLink(intro: string, label: string, href: string): string {
+  const url = escapeHtml(href);
+  return (
+    `<p style="margin:8px 0 16px;padding:16px;border:1px solid ${COLORS.border};border-radius:8px;font-size:15px;line-height:1.6;color:${COLORS.text};">` +
+    `${escapeHtml(intro)}<br>` +
+    `<a href="${url}" style="font-weight:600;color:${COLORS.accent};">${escapeHtml(label)}</a></p>`
   );
 }
 

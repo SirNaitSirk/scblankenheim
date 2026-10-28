@@ -38,6 +38,12 @@
   --success: #2e7d57;
   --danger: #b23b3b;
 
+  /* --- primitive: room planning (specs/008), muted berry and lake --- */
+  --female: #a3416b;
+  --female-soft: #f7e6ee;
+  --male: #2a6a8c;
+  --male-soft: #e2eef5;
+
   /* --- semantic --- */
   --background: var(--canvas);
   --surface: var(--paper);
@@ -97,6 +103,12 @@ html[data-admin-theme="dark"] .admin-theme-scope {
   --success: #3fae7a;
   --danger: #e26d6d;
 
+  /* room planning — lifted hues, deep tinted surfaces */
+  --female: #e78fb4;
+  --female-soft: #35202a;
+  --male: #84bfdd;
+  --male-soft: #1b2a33;
+
   /* semantic */
   --background: #0e0e10;
   --surface: #17171a;
@@ -143,6 +155,10 @@ html[data-admin-theme="dark"] .admin-theme-scope {
 
   --color-success: var(--success);
   --color-danger: var(--danger);
+  --color-female: var(--female);
+  --color-female-soft: var(--female-soft);
+  --color-male: var(--male);
+  --color-male-soft: var(--male-soft);
 
   --color-background: var(--background);
   --color-surface: var(--surface);
@@ -276,5 +292,53 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================================
+   Print: room plan sheet (specs/008-room-planning). On a page that carries a
+   `.print-sheet`, only the sheet prints; the admin shell stays on screen.
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+  body:has(.print-sheet) * {
+    visibility: hidden;
+  }
+  body:has(.print-sheet) .print-sheet,
+  body:has(.print-sheet) .print-sheet * {
+    visibility: visible;
+  }
+  body:has(.print-sheet) .print-sheet {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    color: #0a0a0b;
+    background: #ffffff;
+  }
+  .print-sheet .print-house + .print-house {
+    break-before: page;
+  }
+  .print-sheet .print-room {
+    break-inside: avoid;
+  }
+
+  /* Packing list (specs/010-packing-list): sections stay whole and every box
+     prints empty, whatever was ticked on screen. */
+  .print-sheet .packing-section {
+    break-inside: avoid;
+  }
+  .print-sheet .packing-tick {
+    border-color: #0a0a0b !important;
+    background: #ffffff !important;
+  }
+  .print-sheet .packing-tick svg {
+    display: none;
+  }
+  .print-sheet .packing-label {
+    color: #0a0a0b !important;
+    text-decoration: none !important;
   }
 }

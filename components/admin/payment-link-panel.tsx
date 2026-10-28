@@ -3,11 +3,13 @@
 import { Copy, PaperPlaneTilt } from "@phosphor-icons/react";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { de } from "@/lib/admin/messages";
 import type { ActionResult, Registration } from "@/lib/admin/types";
 import { formatDate } from "@/lib/format";
 
 const t = de.paymentLink;
+const pause = de.registrations.reminderPause;
 
 /** Money still due on the saved registration (the dialog's unsaved edits do not count). */
 export function hasPaymentDue(registration: Registration): boolean {
@@ -21,18 +23,23 @@ export function hasPaymentDue(registration: Registration): boolean {
 
 /**
  * "Zahlung" block in the registration dialog (specs/007-transactional-emails,
- * US3): reminder history, send the payment link mail, copy the link.
+ * US3): reminder history, send the payment link mail, copy the link, and
+ * pause automatic reminders (specs/016-mail-settings, US1).
  */
 export function PaymentLinkPanel({
   registration,
   appUrl,
   onSend,
+  onSetReminderPause,
 }: {
   registration: Registration;
   appUrl: string | null;
   onSend: (reference: string) => Promise<ActionResult>;
+  onSetReminderPause?: (reference: string, paused: boolean) => Promise<ActionResult>;
 }) {
   const [pending, startTransition] = useTransition();
+  const [paused, setPaused] = useState(registration.remindersPaused);
+  const [pausePending, startPauseTransition] = useTransition();
   const [feedback, setFeedback] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const hasEmail = registration.email.trim() !== "";
   const link = appUrl ? `${appUrl}/bezahlen?ref=${encodeURIComponent(registration.id)}` : null;
@@ -42,6 +49,21 @@ export function PaymentLinkPanel({
     startTransition(async () => {
       const result = await onSend(registration.id);
       setFeedback(result.ok ? { tone: "ok", text: t.sent } : { tone: "error", text: result.error });
+    });
+  };
+
+  const togglePause = (next: boolean) => {
+    if (!onSetReminderPause || pausePending) return;
+    setFeedback(null);
+    setPaused(next);
+    startPauseTransition(async () => {
+      const result = await onSetReminderPause(registration.id, next);
+      if (result.ok) {
+        setFeedback({ tone: "ok", text: next ? pause.paused : pause.resumed });
+      } else {
+        setPaused(!next);
+        setFeedback({ tone: "error", text: result.error });
+      }
     });
   };
 
@@ -87,6 +109,18 @@ export function PaymentLinkPanel({
           </Button>
         )}
       </div>
+
+      {onSetReminderPause && (
+        <div className="flex flex-col gap-1 border-t border-border pt-3">
+          <Switch
+            id={`reminder-pause-${registration.id}`}
+            checked={paused}
+            onCheckedChange={togglePause}
+            label={pause.label}
+          />
+          <p className="text-xs text-muted-foreground">{pause.hint}</p>
+        </div>
+      )}
 
       <p
         aria-live="polite"

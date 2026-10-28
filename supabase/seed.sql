@@ -72,20 +72,20 @@ insert into public.registrations
   (id, reference, camp_id, price_tier_id, first_name, last_name, email, city,
    form_data, status, payment_status, amount_due, amount_paid, deleted, registered_at)
 values
-  ('44444444-0000-0000-0000-000000003471', 'A-3471', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Lena',   'Fischer',    'lena.fischer@example.com',    'Köln',            '{"accommodation":"zimmer","tshirt_size":"M"}'::jsonb, 'confirmed', 'paid',    195, 195, false, '2026-03-04'),
-  ('44444444-0000-0000-0000-000000003472', 'A-3472', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Jonas',  'Weber',      'jonas.weber@example.com',     'Aachen',          '{"accommodation":"zelt","tshirt_size":"L"}'::jsonb,  'confirmed', 'unpaid',  195, 0,   false, '2026-03-05'),
-  ('44444444-0000-0000-0000-000000003473', 'A-3473', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220002', 'Mia',    'Schulz',     'mia.schulz@example.com',      'Bonn',            '{"accommodation":"zimmer","tshirt_size":"S"}'::jsonb, 'confirmed', 'paid',    165, 165, false, '2026-02-11'),
-  ('44444444-0000-0000-0000-000000003474', 'A-3474', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220003', 'Elias',  'Braun',      'elias.braun@example.com',     'Düren',           '{"accommodation":"zimmer","tshirt_size":"M"}'::jsonb, 'confirmed', 'partial', 150, 75,  false, '2026-02-11'),
-  ('44444444-0000-0000-0000-000000003475', 'A-3475', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Emilia', 'Wagner',     'emilia.wagner@example.com',   'Euskirchen',      '{"accommodation":"zelt"}'::jsonb,                     'pending',   'unpaid',  195, 0,   false, '2026-03-18'),
-  ('44444444-0000-0000-0000-000000003476', 'A-3476', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Noah',   'Hoffmann',   'noah.hoffmann@example.com',   'Mechernich',      '{"accommodation":"zimmer","tshirt_size":"L"}'::jsonb, 'confirmed', 'paid',    195, 195, false, '2026-03-19'),
-  ('44444444-0000-0000-0000-000000003477', 'A-3477', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220002', 'Sophie', 'Koch',       'sophie.koch@example.com',     'Blankenheim',     '{"accommodation":"zimmer","tshirt_size":"S"}'::jsonb, 'confirmed', 'paid',    165, 165, false, '2026-02-02'),
-  ('44444444-0000-0000-0000-000000003478', 'A-3478', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Ben',    'Richter',    'ben.richter@example.com',     'Schleiden',       '{"accommodation":"zelt"}'::jsonb,                     'confirmed', 'unpaid',  195, 0,   false, '2026-04-01'),
-  ('44444444-0000-0000-0000-000000003479', 'A-3479', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220003', 'Marie',  'Klein',      'marie.klein@example.com',     'Kall',            '{"accommodation":"zimmer","tshirt_size":"M"}'::jsonb, 'confirmed', 'partial', 150, 75,  false, '2026-02-24'),
-  ('44444444-0000-0000-0000-000000003480', 'A-3480', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220004', 'Paul',   'Wolf',       'paul.wolf@example.com',       'Bad Münstereifel','{"accommodation":"zelt","tshirt_size":"XL"}'::jsonb, 'confirmed', 'paid',     95, 95,  false, '2026-01-28'),
-  ('44444444-0000-0000-0000-000000003481', 'A-3481', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Hannah', 'Neumann',    'hannah.neumann@example.com',  'Zülpich',         '{"accommodation":"zimmer"}'::jsonb,                   'pending',   'unpaid',  195, 0,   false, '2026-04-06'),
-  ('44444444-0000-0000-0000-000000003482', 'A-3482', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Luca',   'Schwarz',    'luca.schwarz@example.com',    'Nettersheim',     '{"accommodation":"zelt","tshirt_size":"M"}'::jsonb, 'confirmed', 'paid',    195, 195, false, '2026-04-09'),
+  ('44444444-0000-0000-0000-000000003471', 'A-3471', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Lena',   'Fischer',    'lena.fischer@example.com',    'Köln',            '{"accommodation":"zimmer","tshirt_size":"M"}'::jsonb, 'active',    'paid',    195, 195, false, '2026-03-04'),
+  ('44444444-0000-0000-0000-000000003472', 'A-3472', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Jonas',  'Weber',      'jonas.weber@example.com',     'Aachen',          '{"accommodation":"zelt","tshirt_size":"L"}'::jsonb,  'active',    'unpaid',  195, 0,   false, '2026-03-05'),
+  ('44444444-0000-0000-0000-000000003473', 'A-3473', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220002', 'Mia',    'Schulz',     'mia.schulz@example.com',      'Bonn',            '{"accommodation":"zimmer","tshirt_size":"S"}'::jsonb, 'active',    'paid',    165, 165, false, '2026-02-11'),
+  ('44444444-0000-0000-0000-000000003474', 'A-3474', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220003', 'Elias',  'Braun',      'elias.braun@example.com',     'Düren',           '{"accommodation":"zimmer","tshirt_size":"M"}'::jsonb, 'active',    'partial', 150, 75,  false, '2026-02-11'),
+  ('44444444-0000-0000-0000-000000003475', 'A-3475', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Emilia', 'Wagner',     'emilia.wagner@example.com',   'Euskirchen',      '{"accommodation":"zelt"}'::jsonb,                     'active',    'unpaid',  195, 0,   false, '2026-03-18'),
+  ('44444444-0000-0000-0000-000000003476', 'A-3476', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Noah',   'Hoffmann',   'noah.hoffmann@example.com',   'Mechernich',      '{"accommodation":"zimmer","tshirt_size":"L"}'::jsonb, 'active',    'paid',    195, 195, false, '2026-03-19'),
+  ('44444444-0000-0000-0000-000000003477', 'A-3477', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220002', 'Sophie', 'Koch',       'sophie.koch@example.com',     'Blankenheim',     '{"accommodation":"zimmer","tshirt_size":"S"}'::jsonb, 'active',    'paid',    165, 165, false, '2026-02-02'),
+  ('44444444-0000-0000-0000-000000003478', 'A-3478', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Ben',    'Richter',    'ben.richter@example.com',     'Schleiden',       '{"accommodation":"zelt"}'::jsonb,                     'active',    'unpaid',  195, 0,   false, '2026-04-01'),
+  ('44444444-0000-0000-0000-000000003479', 'A-3479', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220003', 'Marie',  'Klein',      'marie.klein@example.com',     'Kall',            '{"accommodation":"zimmer","tshirt_size":"M"}'::jsonb, 'active',    'partial', 150, 75,  false, '2026-02-24'),
+  ('44444444-0000-0000-0000-000000003480', 'A-3480', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220004', 'Paul',   'Wolf',       'paul.wolf@example.com',       'Bad Münstereifel','{"accommodation":"zelt","tshirt_size":"XL"}'::jsonb, 'active',    'paid',     95, 95,  false, '2026-01-28'),
+  ('44444444-0000-0000-0000-000000003481', 'A-3481', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Hannah', 'Neumann',    'hannah.neumann@example.com',  'Zülpich',         '{"accommodation":"zimmer"}'::jsonb,                   'active',    'unpaid',  195, 0,   false, '2026-04-06'),
+  ('44444444-0000-0000-0000-000000003482', 'A-3482', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Luca',   'Schwarz',    'luca.schwarz@example.com',    'Nettersheim',     '{"accommodation":"zelt","tshirt_size":"M"}'::jsonb, 'active',    'paid',    195, 195, false, '2026-04-09'),
   ('44444444-0000-0000-0000-000000003483', 'A-3483', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220002', 'Clara',  'Zimmermann', 'clara.zimmermann@example.com','Köln',            '{"accommodation":"zimmer"}'::jsonb,                   'cancelled', 'unpaid',  165, 0,   true,  '2026-02-15'),
-  ('44444444-0000-0000-0000-000000003484', 'A-3484', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Finn',   'Krüger',     'finn.krueger@example.com',    'Hellenthal',      '{"accommodation":"zimmer","tshirt_size":"L"}'::jsonb, 'confirmed', 'partial', 195, 98,  false, '2026-04-12')
+  ('44444444-0000-0000-0000-000000003484', 'A-3484', '11111111-1111-1111-1111-111111111126', '22222222-2222-2222-2222-222222220001', 'Finn',   'Krüger',     'finn.krueger@example.com',    'Hellenthal',      '{"accommodation":"zimmer","tshirt_size":"L"}'::jsonb, 'active',    'partial', 195, 98,  false, '2026-04-12')
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
@@ -129,3 +129,81 @@ values
   ('66666666-0000-0000-0000-000000000005', 'error',   'System',       'webhook.failed',       'Stripe-Webhook für Session cs_test_9f2 fehlgeschlagen (Timeout).', '2026-08-10T22:15:00'),
   ('66666666-0000-0000-0000-000000000006', 'info',    'Max Mustermann', 'invitation.created',   'Einladung an helfer@example.com gesendet.', '2026-08-10T11:30:00')
 on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Room planning (specs/008-room-planning): two houses, rooms of different
+-- sizes, room genders for the 2026 camp and sample genders and birth dates.
+-- ---------------------------------------------------------------------------
+insert into public.houses (id, name, sort_order)
+values
+  ('77777777-0000-0000-0000-000000000001', 'Haupthaus', 0),
+  ('77777777-0000-0000-0000-000000000002', 'Gästehaus', 1)
+on conflict (id) do nothing;
+
+insert into public.rooms (id, house_id, name, beds, sort_order)
+values
+  ('78787878-0000-0000-0000-000000000001', '77777777-0000-0000-0000-000000000001', 'Zimmer 1', 4, 0),
+  ('78787878-0000-0000-0000-000000000002', '77777777-0000-0000-0000-000000000001', 'Zimmer 2', 6, 1),
+  ('78787878-0000-0000-0000-000000000003', '77777777-0000-0000-0000-000000000001', 'Zimmer 3', 8, 2),
+  ('78787878-0000-0000-0000-000000000004', '77777777-0000-0000-0000-000000000002', 'Dachzimmer', 4, 0),
+  ('78787878-0000-0000-0000-000000000005', '77777777-0000-0000-0000-000000000002', 'Gartenzimmer', 4, 1)
+on conflict (id) do nothing;
+
+insert into public.camp_rooms (camp_id, room_id, gender)
+values
+  ('11111111-1111-1111-1111-111111111126', '78787878-0000-0000-0000-000000000001', 'female'),
+  ('11111111-1111-1111-1111-111111111126', '78787878-0000-0000-0000-000000000002', 'male')
+on conflict (camp_id, room_id) do nothing;
+
+update public.registrations set gender = 'female'
+ where reference in ('A-3471', 'A-3473', 'A-3475', 'A-3477', 'A-3479', 'A-3481', 'A-3483')
+   and gender is null;
+update public.registrations set gender = 'male'
+ where reference in ('A-3472', 'A-3474', 'A-3476', 'A-3478', 'A-3480', 'A-3482')
+   and gender is null;
+-- A-3484 stays without gender to show the „Geschlecht fehlt“ group.
+
+update public.registrations
+   set form_data = form_data || jsonb_build_object('birthdate', '20' || (10 + (right(reference, 1)::int % 5))::text || '-0' || (1 + right(reference, 1)::int % 9)::text || '-15')
+ where camp_id = '11111111-1111-1111-1111-111111111126'
+   and not form_data ? 'birthdate';
+
+-- ---------------------------------------------------------------------------
+-- Tent circles (specs/011-tent-circles): three circles for the 2026 camp, one
+-- of each kind, with a leader and a few participants. Everyone else stays
+-- unassigned to try the board.
+-- ---------------------------------------------------------------------------
+insert into public.tent_circles (id, camp_id, name, kind, leader_registration_id, sort_order)
+values
+  ('79797979-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111126', 'Senfkorn',   'mixed',  '44444444-0000-0000-0000-000000003480', 0),
+  ('79797979-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111126', 'Lichtblick', 'female', '44444444-0000-0000-0000-000000003477', 1),
+  ('79797979-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111126', 'Felsen',     'male',   '44444444-0000-0000-0000-000000003476', 2)
+on conflict (id) do nothing;
+
+insert into public.tent_circle_members (registration_id, camp_id, tent_circle_id)
+values
+  ('44444444-0000-0000-0000-000000003471', '11111111-1111-1111-1111-111111111126', '79797979-0000-0000-0000-000000000002'),
+  ('44444444-0000-0000-0000-000000003473', '11111111-1111-1111-1111-111111111126', '79797979-0000-0000-0000-000000000002'),
+  ('44444444-0000-0000-0000-000000003472', '11111111-1111-1111-1111-111111111126', '79797979-0000-0000-0000-000000000003'),
+  ('44444444-0000-0000-0000-000000003474', '11111111-1111-1111-1111-111111111126', '79797979-0000-0000-0000-000000000001'),
+  ('44444444-0000-0000-0000-000000003475', '11111111-1111-1111-1111-111111111126', '79797979-0000-0000-0000-000000000001')
+on conflict (registration_id) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Info mail content (specs/012-info-mails), every mail switched off
+-- ---------------------------------------------------------------------------
+insert into public.camp_mail_info
+  (camp_id, highlights, team_greeting, arrival_address, arrival_time, pickup_time,
+   first_day, emergency_phone, phone_rules, photos_url, feedback_url, next_camp_note)
+values
+  ('11111111-1111-1111-1111-111111111126',
+   E'Lagerfeuer am See\nGeländespiel im Wald\nLobpreisabend unter freiem Himmel',
+   'Wir freuen uns riesig auf eine Woche mit euch. Bis bald in der Eifel!',
+   E'Freizeitheim Beispielhof\nAm Waldrand 1\n53945 Blankenheim',
+   'Sonntag ab 15 Uhr', 'Samstag um 11 Uhr',
+   'Ankommen, Zimmer beziehen, gemeinsames Abendessen und ein erster Abend am Feuer.',
+   '0170 0000000',
+   'Handys bleiben tagsüber im Zimmer. Abends gibt es eine halbe Stunde Zeit zum Telefonieren.',
+   'https://fotos.example.com/sommercamp-2026', 'https://feedback.example.com/sommercamp-2026',
+   'Nächstes Jahr: 11. bis 18. Juli 2027')
+on conflict (camp_id) do nothing;

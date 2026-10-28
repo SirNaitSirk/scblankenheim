@@ -1,23 +1,17 @@
 <!--
 Sync Impact Report
-Version change: template (unversioned) → 1.0.0
-Modified principles: all template placeholders replaced (initial ratification)
-Added principles:
-  I. Fixed Stack, Clerk Owns Auth
-  II. The Server Is the Security Boundary
-  III. Strict Scope
-  IV. Single Source of Truth
-  V. Language Separation
-  VI. Tolerant Payment, Hidden Pricing
-  VII. Simplicity and Honest Quality Gates
-Added sections: Writing Rules; Development Workflow (Spec Driven Development)
+Version change: 1.0.0 → 1.1.0
+Modified principles:
+  III. Strict Scope: housing removed from the MUST NOT list; room planning (houses, rooms,
+  per camp room gender, assignment of registrations to rooms) is now in scope. The waitlist stays
+  excluded.
+  IV. Single Source of Truth: clarified that fixed core fields (name, email, gender) belong to the
+  one registration form and are backed by `registrations` columns.
+Added principles: none
 Removed sections: none
-Templates: plan-template.md, spec-template.md, tasks-template.md read the constitution at runtime;
-  not modified by this command.
+Templates: no template changes needed.
 Follow-up TODOs:
-  - AGENTS.md section 7 and 9 still describe the old prompts/ workflow; align with this constitution.
-  - Repo uses Next.js 16 proxy.ts (not middleware.ts); AGENTS.md wording to be updated.
-  - shadcn/ui, TanStack Query and react-hook-form are not installed yet; add when first needed.
+  - AGENTS.md sections 4, 5, 12 and quick reference updated in the same change (specs/008-room-planning).
 -->
 # CampConnect (scblankenheim) Constitution
 
@@ -60,7 +54,7 @@ access correctly.
 ### III. Strict Scope
 
 - Only features listed in AGENTS.md section 4 (In scope) MAY be specified and built.
-- The following MUST NOT be built: housing (houses, rooms, waitlist), an email template editor or
+- The following MUST NOT be built: a housing waitlist, an email template editor or
   `email_templates` table, custom database backups, A/B or `/v2` landing pages, and more than one
   registration form.
 - A spec that needs something outside the scope MUST first amend this constitution or AGENTS.md.
@@ -70,6 +64,9 @@ Rationale: v1 accumulated dead weight. Scope discipline keeps the yearly mainten
 ### IV. Single Source of Truth
 
 - There is exactly one registration form, driven by `camp_form_fields` of the current camp.
+  Fixed core fields the platform depends on (name, email and gender, used by room planning) are
+  part of that same form, backed by dedicated `registrations` columns, and cannot be removed by
+  admins.
 - The schema lives only in `supabase/migrations/`. Every schema change MUST be a migration
   followed by regenerated DB types in `lib/`. Dashboard only changes are forbidden.
 - Registration values MUST NOT get rigid CHECK constraints; validation belongs in Zod and the app.
@@ -139,4 +136,4 @@ Rationale: a once a year project must stay understandable for whoever maintains 
   principles or materially expanded guidance, PATCH for wording and clarifications.
 - Every plan and review verifies compliance with the principles above.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-27
+**Version**: 1.1.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-27

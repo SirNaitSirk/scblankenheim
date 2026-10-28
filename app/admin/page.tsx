@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { DashboardMetricsDialog } from "@/components/admin/dashboard-metrics-dialog";
 import { PageBody, PageHeader } from "@/components/admin/page-header";
 import { PaymentOverview } from "@/components/admin/payment-overview";
@@ -18,16 +19,30 @@ import {
   getPriceTiers,
   getRegistrations,
 } from "@/lib/admin/data";
+import { isAdminRole } from "@/lib/admin/guard";
 import { de } from "@/lib/admin/messages";
 import { appBaseUrl } from "@/lib/email/links";
 import { updateDashboardMetrics } from "./dashboard-actions";
 import { questionFields } from "@/lib/register/steps";
 
 export default async function DashboardPage() {
-  // Dashboard is always visible; only its registration actions are permission-gated.
-  // MOCK BOUNDARY: swap these getters for real Supabase reads (server-side).
-  const [profile, camp, registrations, priceTiers, finance] = await Promise.all([
-    getCurrentProfile(),
+  // The proxy only ensures a Clerk session. Any Clerk account can exist (open
+  // sign up), so registrations and finances load only for a linked admin.
+  const profile = await getCurrentProfile();
+  if (!profile || !isAdminRole(profile.role)) {
+    return (
+      <PageBody>
+        <PageHeader title={de.dashboard.title} />
+        <Card className="p-6">
+          <p className="text-sm text-muted-foreground">{de.dashboard.noAccess}</p>
+        </Card>
+      </PageBody>
+    );
+  }
+
+  // Dashboard is always visible to admins; only its registration actions are
+  // permission-gated.
+  const [camp, registrations, priceTiers, finance] = await Promise.all([
     getCurrentCamp(),
     getRegistrations(),
     getPriceTiers(),
@@ -38,9 +53,7 @@ export default async function DashboardPage() {
   // Step breaks only structure the public form: no column, CSV entry or metric.
   const formFields = camp ? questionFields(await getCampFormFields(camp.id)) : [];
 
-  const canWriteRegistrations = profile
-    ? canUseSection(profile, "registrations")
-    : false;
+  const canWriteRegistrations = canUseSection(profile, "registrations");
 
   const active = registrations.filter((r) => !r.deleted);
 
@@ -48,7 +61,7 @@ export default async function DashboardPage() {
   // selection falls back to the defaults so existing users see no change.
   const catalog = buildMetricCatalog(formFields);
   const selection =
-    profile && profile.dashboardMetrics.length > 0
+    profile.dashboardMetrics.length > 0
       ? profile.dashboardMetrics
       : DEFAULT_METRICS;
   const cards = selection
@@ -91,7 +104,7 @@ export default async function DashboardPage() {
         priceTiers={priceTiers}
         formFields={formFields}
         canWrite={canWriteRegistrations}
-        userId={profile?.id ?? null}
+        userId={profile.id}
         appUrl={appBaseUrl()}
       />
     </PageBody>
