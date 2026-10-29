@@ -8,7 +8,7 @@ import { berlinDayStartIso } from "@/lib/time/berlin";
 import { claimTeamDelivery, countDeliveriesSince, markFailed, markSent } from "./deliveries";
 import { CONFIRMATION_RESERVE, DAILY_EMAIL_BUDGET } from "./limits";
 import { appBaseUrl } from "./links";
-import { sendEmail } from "./provider";
+import { describeSendError, sendEmail } from "./provider";
 import { teamMessageEmail, type TeamMessageContext } from "./team-templates";
 
 /**
@@ -66,7 +66,7 @@ export async function sendTeamNotification(input: TeamNotification, now: Date = 
       return;
     }
     await markFailed(claim.id, result.error);
-    await writeLog({ level: "warning", action: "email.failed", message: `${label}: ${result.error}` });
+    await writeLog({ level: "warning", action: "email.failed", message: `${label}: ${describeSendError(result)}` });
   } catch (error) {
     console.error("[participant] team notification failed", error);
     await writeLog({ level: "warning", action: "email.failed", message: `${label}: database` });

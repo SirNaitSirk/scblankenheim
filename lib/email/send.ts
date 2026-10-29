@@ -32,7 +32,7 @@ import { renderTemplate, type TemplateId } from "./preview";
 import { nextReminder } from "./reminders";
 import { toCampEvent } from "@/lib/calendar/ics";
 import { appBaseUrl, calendarLinks, participantUrl, paymentUrl } from "./links";
-import { sendEmail } from "./provider";
+import { describeSendError, sendEmail } from "./provider";
 import type { CampMailSettings } from "./settings";
 import {
   confirmationEmail,
@@ -208,7 +208,7 @@ export async function deliver(input: {
       level: "warning",
       actor: logActor,
       action: "email.failed",
-      message: `${label}: ${result.error}`,
+      message: `${label}: ${describeSendError(result)}`,
     });
     return "failed";
   } catch {
@@ -431,7 +431,7 @@ export async function sendTestEmail(
     level: "warning",
     actor: admin.label,
     action: "email.test_failed",
-    message: `${templateId}: ${result.error}`,
+    message: `${templateId}: ${describeSendError(result)}`,
   });
   return result.error === "not_configured" ? "not_configured" : "failed";
 }

@@ -39,9 +39,26 @@ describe("sendEmail", () => {
     expect(body).toMatchObject({ to: ["lena@example.com"], reply_to: "team@example.com" });
   });
 
-  it("maps 422 to rejected", async () => {
+  it("maps 422 to rejected with the status as detail", async () => {
     stubFetch(new Response("{}", { status: 422 }));
-    await expect(sendEmail(email, "k")).resolves.toEqual({ ok: false, error: "rejected" });
+    await expect(sendEmail(email, "k")).resolves.toEqual({
+      ok: false,
+      error: "rejected",
+      detail: "422",
+    });
+  });
+
+  it("keeps the provider message of a rejection", async () => {
+    stubFetch(
+      new Response(JSON.stringify({ statusCode: 403, message: "Domain not verified" }), {
+        status: 403,
+      }),
+    );
+    await expect(sendEmail(email, "k")).resolves.toEqual({
+      ok: false,
+      error: "rejected",
+      detail: "403: Domain not verified",
+    });
   });
 
   it("maps 429 to rate_limited", async () => {

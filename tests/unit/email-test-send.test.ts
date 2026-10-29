@@ -28,7 +28,10 @@ vi.mock("@/lib/email/deliveries", () => ({
   reminderHistory: vi.fn(),
   testOnCooldown: mocks.testOnCooldown,
 }));
-vi.mock("@/lib/email/provider", () => ({ sendEmail: mocks.sendEmail }));
+vi.mock("@/lib/email/provider", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/email/provider")>()),
+  sendEmail: mocks.sendEmail,
+}));
 
 import { EMPTY_MAIL_INFO } from "@/lib/admin/camp-mail-info";
 import { sendTestEmail } from "@/lib/email/send";

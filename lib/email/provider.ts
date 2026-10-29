@@ -20,7 +20,28 @@ export type OutgoingEmail = {
 
 export type SendError = "not_configured" | "rejected" | "rate_limited" | "network";
 
-export type SendResult = { ok: true; id: string | null } | { ok: false; error: SendError };
+export type SendResult =
+  | { ok: true; id: string | null }
+  | { ok: false; error: SendError; detail?: string };
+
+/** Longest provider error text kept for the log, so one bad response cannot flood it. */
+const DETAIL_MAX_LENGTH = 300;
+
+/** Failure code plus the provider's own reason when it gave one, for log lines. */
+export function describeSendError(result: { error: SendError; detail?: string }): string {
+  return result.detail ? `${result.error} (${result.detail})` : result.error;
+}
+
+/** HTTP status and Resend's error message, e.g. `403: You can only send ...`. */
+async function rejectionDetail(response: Response): Promise<string> {
+  const body: unknown = await response.json().catch(() => null);
+  const message =
+    body && typeof body === "object" && "message" in body && typeof body.message === "string"
+      ? body.message.trim()
+      : "";
+  const detail = message ? `${response.status}: ${message}` : String(response.status);
+  return detail.slice(0, DETAIL_MAX_LENGTH);
+}
 
 /**
  * Sender line with an optional per camp display name (specs/016-mail-settings,
@@ -65,7 +86,9 @@ export async function sendEmail(
     });
 
     if (response.status === 429) return { ok: false, error: "rate_limited" };
-    if (!response.ok) return { ok: false, error: "rejected" };
+    if (!response.ok) {
+      return { ok: false, error: "rejected", detail: await rejectionDetail(response) };
+    }
 
     const body: unknown = await response.json().catch(() => null);
     const id =
