@@ -88,6 +88,7 @@ Rules:
 - Participant messages: from the participant page a person sends a message to the team or requests a change of one own field; items are stored, forwarded to the camp's team address by mail and handled in the registration dialog (mark done, apply, dismiss); no chat, no replies in the app (specs/018-participant-messages).
 - School release letter (Schulbefreiung): per camp switch; an active registration that is fully or partly paid (or owes nothing) enters teacher, school and address on the participant page and immediately gets a code defined PDF letter with signature image (download plus mail attachment, only to the registration's own address, never to schools); unpaid registrations see a hint with the pay button instead; admins enter, correct, download and resend it in the registration dialog; hinted in the confirmation and teaser info mail (specs/020-school-release).
 - Participant link request: on the landing page (section shown only while the release letter is on for the current camp) a person enters an email and gets one mail per matching active registration with the link to its participant page; the page always answers the same and requests are throttled (specs/020-school-release).
+- Prelaunch gate: while the server env `COMING_SOON` is `true` (set only for Vercel Production), every path except admin, sign in and sign up, the Stripe webhook and cron shows the coming soon page `/demnaechst` to visitors without an admin profile, and non GET requests get 503; removing the variable and redeploying goes live (specs/023-coming-soon).
 
 **Registration & payment**
 
@@ -184,7 +185,7 @@ When any field changes: write a migration, run it, and regenerate the DB types b
 
 All privileged server work lives in Next.js route handlers (these replace v1's Supabase Edge Functions). Group by concern:
 
-- **Registration/payment**: `register`, `checkout`, `stripe-webhook`, and the cron routes `cron/payment-reminders` and `cron/info-mails` (specs/012-info-mails). Mail logic lives in `lib/email/` (Resend over `fetch`; env `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO`, `CRON_SECRET`, `APP_URL`).
+- **Registration/payment**: `register`, `checkout`, `stripe-webhook`, and the cron routes `cron/payment-reminders` and `cron/info-mails` (specs/012-info-mails). Mail logic lives in `lib/email/` (Resend over `fetch`; env `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO`, `CRON_SECRET`, `APP_URL`). The prelaunch gate reads `COMING_SOON` in `proxy.ts` (specs/023-coming-soon).
 - **Admin/auth**: create-admin, update-admin, delete-admin, `create-invitation`, `accept-invitation`, `send-confirmation-email`. (Password reset and email verification are handled by Clerk, so no custom routes for those.)
 
 Rules:
