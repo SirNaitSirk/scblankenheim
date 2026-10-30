@@ -23,7 +23,7 @@ export function BusTicketCard({
     <section
       id={TICKET_ANCHOR}
       aria-labelledby="bus-ticket-title"
-      className="scroll-mt-6 rounded-card border border-border bg-surface p-6 shadow-card sm:p-8"
+      className="scroll-mt-20 rounded-card border border-border bg-surface p-6 shadow-card sm:p-8"
     >
       <h2
         id="bus-ticket-title"

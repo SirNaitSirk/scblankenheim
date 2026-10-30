@@ -7,6 +7,17 @@ export const participantMessages = {
   eyebrow: "Meine Anmeldung",
   greeting: (firstName: string) => (firstName ? `Hallo ${firstName}` : "Hallo"),
   intro: (campName: string) => `Hier siehst du jederzeit den Stand deiner Anmeldung zum ${campName}.`,
+  tabs: {
+    label: "Bereiche deiner Anmeldung",
+    overview: "Übersicht",
+    details: "Meine Angaben",
+    detailsShort: "Angaben",
+    documents: "Dokumente",
+  },
+  strip: {
+    outstanding: (amount: string) => `Noch ${amount} offen`,
+    cancelled: "Deine Anmeldung ist storniert.",
+  },
   status: {
     label: "Status",
     active: "Angemeldet",

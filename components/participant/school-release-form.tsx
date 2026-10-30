@@ -62,7 +62,7 @@ export function SchoolReleaseForm({
     <section
       id={RELEASE_ANCHOR}
       aria-labelledby="release-heading"
-      className="scroll-mt-6 rounded-card border border-border bg-surface p-6 shadow-card sm:p-8"
+      className="scroll-mt-20 rounded-card border border-border bg-surface p-6 shadow-card sm:p-8"
     >
       <h2 id="release-heading" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {copy.heading}

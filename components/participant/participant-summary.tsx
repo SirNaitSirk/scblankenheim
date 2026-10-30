@@ -9,12 +9,14 @@ import { participantMessages as copy } from "@/lib/participant/messages";
 import type { ParticipantView, PayState } from "@/lib/participant/view";
 import { BusTicketCard } from "./bus-ticket-card";
 import { ParticipantContact } from "./participant-contact";
+import { ParticipantTabs, type ParticipantPanel } from "./participant-tabs";
 import { SchoolReleaseForm } from "./school-release-form";
 import { formatGermanDate } from "@/lib/time/berlin";
 
 /**
- * Read only participant page body (specs/017-participant-page, plan "UI"):
- * status and amounts first, then camp facts, own answers and the packing list.
+ * Read only participant page body (specs/017-participant-page, plan "UI"),
+ * split into the tabs Übersicht, Meine Angaben and Dokumente below a short
+ * status strip (specs/022-participant-tabs).
  */
 export function ParticipantSummary({
   view,
@@ -30,6 +32,63 @@ export function ParticipantSummary({
     pdfHref: string;
   };
 }) {
+  const documents: ReactNode[] = [];
+  if (view.busTicket) {
+    documents.push(
+      <BusTicketCard
+        key="bus"
+        ticket={view.busTicket}
+        firstName={view.firstName}
+        campName={view.campName}
+      />,
+    );
+  }
+  if (release && view.schoolRelease) {
+    documents.push(
+      <SchoolReleaseForm
+        key="release"
+        action={release.action}
+        release={view.schoolRelease}
+        pdfHref={release.pdfHref}
+        payHref={view.payHref}
+      />,
+    );
+  }
+
+  const panels: ParticipantPanel[] = [
+    {
+      tab: "overview",
+      label: copy.tabs.overview,
+      content: (
+        <>
+          <StatusCard view={view} />
+          <CampCard view={view} />
+          <PackingCard />
+        </>
+      ),
+    },
+    {
+      tab: "details",
+      label: copy.tabs.details,
+      shortLabel: copy.tabs.detailsShort,
+      content: (
+        <>
+          <AnswersCard view={view} />
+          {contactAction && (
+            <ParticipantContact
+              action={contactAction}
+              fields={view.editableFields}
+              messages={view.messages}
+            />
+          )}
+        </>
+      ),
+    },
+  ];
+  if (documents.length > 0) {
+    panels.push({ tab: "documents", label: copy.tabs.documents, content: <>{documents}</> });
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -44,28 +103,8 @@ export function ParticipantSummary({
         </p>
       </header>
 
-      <StatusCard view={view} />
-      {view.busTicket && (
-        <BusTicketCard ticket={view.busTicket} firstName={view.firstName} campName={view.campName} />
-      )}
-      {release && view.schoolRelease && (
-        <SchoolReleaseForm
-          action={release.action}
-          release={view.schoolRelease}
-          pdfHref={release.pdfHref}
-          payHref={view.payHref}
-        />
-      )}
-      <CampCard view={view} />
-      <AnswersCard view={view} />
-      {contactAction && (
-        <ParticipantContact
-          action={contactAction}
-          fields={view.editableFields}
-          messages={view.messages}
-        />
-      )}
-      <PackingCard />
+      <StatusStrip view={view} />
+      <ParticipantTabs label={copy.tabs.label} panels={panels} />
     </div>
   );
 }
@@ -86,6 +125,28 @@ function Card({ title, children }: { title?: string; children: ReactNode }) {
 function statusTone(view: ParticipantView): "paid" | "pending" | "danger" {
   if (view.status === "cancelled") return "danger";
   return view.payState === "pay" ? "pending" : "paid";
+}
+
+/** Always visible above the tabs while cancelled or an amount is open and payable. */
+function StatusStrip({ view }: { view: ParticipantView }) {
+  if (view.status === "cancelled") {
+    return (
+      <p className="rounded-card border border-border bg-surface px-4 py-3 text-sm font-medium text-danger">
+        {copy.strip.cancelled}
+      </p>
+    );
+  }
+  if (view.payState !== "pay" || !view.payHref) return null;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-card border border-border bg-surface px-4 py-3">
+      <p className="text-sm font-medium text-foreground tabular-nums">
+        {copy.strip.outstanding(formatCurrency(view.amounts.outstanding))}
+      </p>
+      <ButtonLink href={view.payHref} size="sm">
+        {copy.pay.button}
+      </ButtonLink>
+    </div>
+  );
 }
 
 const PAY_NOTES: Record<Exclude<PayState, "pay">, string> = {
