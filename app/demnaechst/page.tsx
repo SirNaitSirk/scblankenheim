@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { getCurrentCamp } from "@/lib/admin/data";
 import { isComingSoonEnabled } from "@/lib/coming-soon/gate";
 import { COMING_SOON_MESSAGES as m } from "@/lib/coming-soon/messages";
+import { legalMessages } from "@/lib/legal/messages";
+
+const legal = legalMessages.links;
 
 // The switch and the camp name are read per request.
 export const dynamic = "force-dynamic";
@@ -44,6 +47,23 @@ export default async function ComingSoonPage() {
         >
           {m.teamLink}
         </Link>
+        <nav
+          aria-label={legal.legalNav}
+          className="mt-2 flex justify-center gap-6 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground"
+        >
+          <Link
+            href="/impressum"
+            className="inline-flex min-h-11 items-center underline-offset-4 transition-colors duration-150 hover:text-foreground hover:underline"
+          >
+            {legal.imprint}
+          </Link>
+          <Link
+            href="/datenschutz"
+            className="inline-flex min-h-11 items-center underline-offset-4 transition-colors duration-150 hover:text-foreground hover:underline"
+          >
+            {legal.privacy}
+          </Link>
+        </nav>
       </div>
     </main>
   );

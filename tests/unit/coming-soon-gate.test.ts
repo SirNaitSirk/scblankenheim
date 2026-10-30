@@ -29,6 +29,8 @@ describe("isOpenPath", () => {
       "/api/stripe-webhook",
       "/api/cron/info-mails",
       "/demnaechst",
+      "/impressum",
+      "/datenschutz",
     ]) {
       expect(isOpenPath(path), path).toBe(true);
     }
@@ -48,6 +50,8 @@ describe("isOpenPath", () => {
       "/administrator",
       "/api/cronjob",
       "/demnaechstx",
+      "/impressumx",
+      "/datenschutz-alt",
     ]) {
       expect(isOpenPath(path), path).toBe(false);
     }
@@ -67,6 +71,9 @@ describe("decideGate", () => {
     expect(decideGate({ ...base, pathname: "/admin" })).toBe("pass");
     expect(decideGate({ ...base, pathname: "/api/stripe-webhook", method: "POST" })).toBe("pass");
     expect(decideGate({ ...base, isAdmin: true })).toBe("pass");
+    // Legal pages stay readable for everyone (specs/025-legal-pages).
+    expect(decideGate({ ...base, pathname: "/impressum" })).toBe("pass");
+    expect(decideGate({ ...base, pathname: "/datenschutz" })).toBe("pass");
     expect(decideGate({ ...base, isAdmin: true, method: "POST" })).toBe("pass");
   });
 

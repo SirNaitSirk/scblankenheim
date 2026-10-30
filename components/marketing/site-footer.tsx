@@ -1,6 +1,9 @@
+import Link from "next/link";
+import { copyrightLine, legalMessages } from "@/lib/legal/messages";
 import { marketingMessages } from "@/lib/marketing/messages";
 
 const copy = marketingMessages.footer;
+const legal = legalMessages.links;
 
 /**
  * Minimal marketing footer, also used on the packing list and payment pages,
@@ -36,6 +39,19 @@ export function SiteFooter({ showSchoolRelease = false }: { showSchoolRelease?: 
               {link.label}
             </a>
           ))}
+        </nav>
+      </div>
+
+      {/* Legal row (specs/025-legal-pages): quieter than the main links. */}
+      <div className="mx-auto flex max-w-[1400px] flex-col gap-3 border-t border-border px-6 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between md:px-10">
+        <span>{copyrightLine(new Date().getFullYear(), marketingMessages.brand.full)}</span>
+        <nav aria-label={legal.legalNav} className="flex gap-5">
+          <Link href="/impressum" className="transition-colors duration-150 hover:text-foreground">
+            {legal.imprint}
+          </Link>
+          <Link href="/datenschutz" className="transition-colors duration-150 hover:text-foreground">
+            {legal.privacy}
+          </Link>
         </nav>
       </div>
     </footer>
