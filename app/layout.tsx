@@ -48,9 +48,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CampConnect — FCG Blankenheim Summercamp",
+  title: "FCG Blankenheim Summercamp",
   description:
-    "Online-Anmeldung und Verwaltung für das FCG Blankenheim Summercamp.",
+    "Onlineanmeldung und Verwaltung für das FCG Blankenheim Summercamp.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

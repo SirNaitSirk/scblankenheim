@@ -43,7 +43,7 @@ export const emailMessages = {
     changeHint: "Im Anmeldedialog kannst du die Änderung mit einem Klick übernehmen oder ablehnen.",
     adminLink: "Im Admin Bereich öffnen",
     unnamed: "Ohne Namen",
-    footer: "FCG Blankenheim Summercamp · Interne Mail aus CampConnect",
+    footer: "FCG Blankenheim Summercamp · Interne Mail aus dem Adminbereich",
   },
 
   calendar: {

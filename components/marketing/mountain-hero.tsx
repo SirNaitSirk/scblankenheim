@@ -1,38 +1,26 @@
-"use client";
-
-import { motion, useReducedMotion } from "motion/react";
-import { CaretDown } from "@phosphor-icons/react";
+import { CaretDown } from "@phosphor-icons/react/dist/ssr";
 import { SiteNav } from "@/components/marketing/site-nav";
 import { ParallaxImage } from "@/components/marketing/parallax-image";
 import { ButtonLink } from "@/components/ui/button";
+import type { RegistrationCta } from "@/lib/register/registration-cta";
 
 // TODO: swap for real camp photography (warm golden-hour mountain/valley).
 const HERO_PHOTO =
   "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=2400&q=80";
 
 /**
- * Full-bleed cinematic hero: warm golden-hour mountain photo with scroll
- * parallax + slow ken-burns, a light warm legibility scrim, and a staggered
- * entrance for the headline stack. Fits within the initial viewport.
+ * Full bleed hero: warm mountain photo with scroll parallax and slow ken burns,
+ * a warm legibility scrim and the headline stack. The headline renders visible
+ * with no entrance (it is the largest paint); the lines around it rise in with
+ * CSS only, so nothing waits for JavaScript (specs/024-landing-structure R2).
  */
-export function MountainHero() {
-  const reduce = useReducedMotion();
-
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-  };
-  const item = reduce
-    ? { hidden: {}, show: {} }
-    : {
-        hidden: { opacity: 0, y: 22 },
-        show: {
-          opacity: 1,
-          y: 0,
-          transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const },
-        },
-      };
-
+export function MountainHero({
+  cta,
+  showSchoolRelease,
+}: {
+  cta: RegistrationCta;
+  showSchoolRelease: boolean;
+}) {
   return (
     <section className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-sand-900">
       <ParallaxImage
@@ -44,8 +32,8 @@ export function MountainHero() {
         kenBurns
       />
 
-      {/* Warm legibility scrim — dark toward bottom-left where the copy sits,
-          transparent toward the top-right so the photo stays bright and warm. */}
+      {/* Warm legibility scrim, dark toward bottom left where the copy sits,
+          transparent toward the top right so the photo stays bright and warm. */}
       <div className="absolute inset-0 bg-gradient-to-t from-ink-950/75 via-ink-950/15 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-br from-ink-950/45 via-transparent to-amber-400/15" />
 
@@ -53,40 +41,33 @@ export function MountainHero() {
         Sommer 2027 · Blankenheim
       </span>
 
-      <SiteNav variant="overlay" />
+      <SiteNav
+        variant="overlay"
+        cta={{ label: cta.shortLabel, href: cta.href }}
+        showSchoolRelease={showSchoolRelease}
+      />
 
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-6 pb-24 pt-8 md:px-10"
-      >
-        <motion.p
-          variants={item}
-          className="mb-5 text-xs font-semibold uppercase tracking-[0.28em] text-amber-300"
-        >
+      <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-6 pb-24 pt-8 md:px-10">
+        <p className="animate-rise mb-5 text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">
           FCG Blankenheim Summercamp
-        </motion.p>
-        <motion.h1
-          variants={item}
-          className="max-w-[16ch] font-display text-5xl font-black leading-[0.92] tracking-tight text-on-inverse [text-shadow:0_2px_30px_rgba(10,10,11,0.35)] sm:text-6xl md:text-7xl lg:text-8xl"
-        >
+        </p>
+        <h1 className="max-w-[16ch] font-display text-5xl font-black leading-[0.92] tracking-tight text-on-inverse [text-shadow:0_2px_30px_rgba(10,10,11,0.35)] sm:text-6xl md:text-7xl lg:text-8xl">
           Ein Sommer in den{" "}
           <span className="text-amber-300">Bergen</span>
-        </motion.h1>
-        <motion.p
-          variants={item}
-          className="mt-6 max-w-[46ch] text-base text-on-inverse/85 md:text-lg"
+        </h1>
+        <p
+          className="animate-rise mt-6 max-w-[46ch] text-base text-on-inverse/85 md:text-lg"
+          style={{ animationDelay: "120ms" }}
         >
           Eine Woche Gemeinschaft, Abenteuer und Glaube. Sichere dir jetzt
           deinen Platz beim Summercamp.
-        </motion.p>
-        <motion.div
-          variants={item}
-          className="mt-9 flex flex-wrap items-center gap-3"
+        </p>
+        <div
+          className="animate-rise mt-9 flex flex-wrap items-center gap-3"
+          style={{ animationDelay: "240ms" }}
         >
-          <ButtonLink size="lg" href="#anmelden">
-            Jetzt anmelden
+          <ButtonLink size="lg" href={cta.href}>
+            {cta.label}
           </ButtonLink>
           <ButtonLink
             size="lg"
@@ -96,25 +77,20 @@ export function MountainHero() {
           >
             Mehr erfahren
           </ButtonLink>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
-      {/* Scroll cue — gentle bob, drops out for reduced-motion. */}
-      <motion.a
+      {/* Scroll cue with a gentle bob; the global reduced motion rule stops it. */}
+      <a
         href="#camp"
         aria-label="Weiter zum Camp"
-        initial={reduce ? false : { opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1, duration: 0.6 }}
-        className="relative z-10 mx-auto mb-8 flex h-10 w-10 items-center justify-center rounded-pill text-on-inverse/70 transition-colors hover:text-on-inverse"
+        className="animate-rise relative z-10 mx-auto mb-8 flex h-10 w-10 items-center justify-center rounded-pill text-on-inverse/70 transition-colors hover:text-on-inverse"
+        style={{ animationDelay: "900ms" }}
       >
-        <motion.span
-          animate={reduce ? undefined : { y: [0, 6, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-        >
+        <span className="animate-scroll-cue">
           <CaretDown size={22} weight="bold" />
-        </motion.span>
-      </motion.a>
+        </span>
+      </a>
     </section>
   );
 }

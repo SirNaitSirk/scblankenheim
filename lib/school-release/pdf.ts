@@ -84,7 +84,7 @@ export async function renderReleasePdf(
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.setTitle(toWinAnsi(letter.subject));
-  pdf.setProducer("CampConnect");
+  pdf.setProducer("FCG Blankenheim Summercamp");
   const page: PDFPage = pdf.addPage([PAGE.width, PAGE.height]);
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);

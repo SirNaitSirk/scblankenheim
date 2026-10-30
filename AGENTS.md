@@ -79,7 +79,7 @@ Rules:
 
 **Public**
 
-- One clean landing page (`/`) with camp info + registration entry.
+- One clean landing page (`/`) with camp info + registration entry. Order: hero, facts, program, youth groups, campfire band, registration, then „Gut zu wissen“ with open blocks for Anreise, Bezahlen, Packliste and Schulbefreiung; registration buttons follow the registration state; content is visible without JavaScript; a generated share image shows camp name and dates (specs/024-landing-structure).
 - One **config-driven** registration form: fields come from `camp_form_fields` for the current camp (single source of truth — no parallel form components).
 - Payment page (`/bezahlen`, `/bezahlen/danke`) — Stripe checkout + result.
 - Packing list page (`/packzettel`).

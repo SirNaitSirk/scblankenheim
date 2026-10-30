@@ -64,11 +64,10 @@ export async function IntroFacts() {
         </Reveal>
 
         <div className="flex flex-col divide-y divide-border overflow-hidden rounded-card border border-amber-100 bg-surface shadow-warm">
-          {facts.map((fact, i) => (
+          {facts.map((fact) => (
             <Reveal
               key={fact.label}
-              delay={i * 90}
-              className="flex items-center justify-between gap-6 p-6"
+              className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
             >
               <div className="flex items-center gap-4">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-amber-100 text-amber-700">
@@ -81,7 +80,7 @@ export async function IntroFacts() {
                   </p>
                 </div>
               </div>
-              <p className="max-w-[18ch] text-right text-sm leading-snug text-muted-foreground">
+              <p className="pl-15 text-sm leading-snug text-muted-foreground sm:max-w-[18ch] sm:pl-0 sm:text-right">
                 {fact.note}
               </p>
             </Reveal>

@@ -1,6 +1,7 @@
 import { ButtonLink } from "@/components/ui/button";
 import { Reveal } from "@/components/marketing/reveal";
 import { ParallaxImage } from "@/components/marketing/parallax-image";
+import type { RegistrationCta } from "@/lib/register/registration-cta";
 
 // TODO: swap for real campfire / golden-hour camp photo.
 const CAMPFIRE_PHOTO =
@@ -9,10 +10,10 @@ const CAMPFIRE_PHOTO =
 /**
  * Emotional lead-in (Persuade) directly above the registration section. The one
  * deliberate cinematic dark moment on the page: a warm campfire photo band with
- * parallax, nudging the visitor into the `#anmelden` form below. The action
- * itself lives in `RegistrationSection`, so this band carries no duplicate CTA.
+ * parallax, nudging the visitor into the `#anmelden` section below. Its button
+ * label follows the registration state (specs/024-landing-structure R5).
  */
-export function ClosingCta() {
+export function ClosingCta({ cta }: { cta: RegistrationCta }) {
   return (
     <section className="relative overflow-hidden border-t border-border bg-sand-900">
       <ParallaxImage
@@ -26,18 +27,17 @@ export function ClosingCta() {
       <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-amber-500/20" />
 
       <div className="relative mx-auto max-w-[1400px] px-6 py-28 md:px-10 lg:py-36">
-        <Reveal className="mx-auto max-w-[24ch] text-center">
-          <h2 className="font-display text-5xl font-black leading-[0.98] tracking-tight text-on-inverse md:text-6xl">
+        <Reveal className="text-center">
+          <h2 className="mx-auto max-w-[16ch] text-balance font-display text-5xl font-black leading-[0.98] tracking-tight text-on-inverse md:text-6xl">
             Sei dabei und erlebe den Sommer deines Lebens
           </h2>
         </Reveal>
 
         <Reveal
-          delay={120}
           className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
         >
-          <ButtonLink href="#anmelden" size="lg">
-            Zur Anmeldung
+          <ButtonLink href={cta.href} size="lg">
+            {cta.label}
           </ButtonLink>
           <ButtonLink
             href="mailto:info@fcg-blankenheim.de"

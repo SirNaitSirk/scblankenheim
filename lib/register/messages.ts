@@ -102,6 +102,18 @@ export const registerMessages = {
     empty: "Keine Angabe",
   },
   invitationHint: "Du meldest dich über eine persönliche Einladung an.",
+  cta: {
+    open: "Jetzt anmelden",
+    openShort: "Anmelden",
+    countdown: (dayMonth: string) => `Anmeldung ab ${dayMonth}`,
+    countdownShort: (numeric: string) => `Ab ${numeric}`,
+    countdownUndated: "Anmeldung bald",
+    closed: "Anmeldung geschlossen",
+    full: "Ausgebucht",
+    neutralShort: "Anmeldung",
+  },
+  countdownHeading: (dayMonth: string | null) =>
+    dayMonth ? `Die Anmeldung öffnet am ${dayMonth}` : "Die Anmeldung öffnet in Kürze",
   api: {
     badRequest: "Ungültige Anfrage.",
     invalid: "Bitte prüfe deine Angaben.",

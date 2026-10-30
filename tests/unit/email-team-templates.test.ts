@@ -26,7 +26,7 @@ describe("teamMessageEmail", () => {
       expect(part).toContain("REG-ABC123");
     }
     expect(mail.html).toContain('href="https://camp.example/admin"');
-    expect(mail.text).toContain("Interne Mail aus CampConnect");
+    expect(mail.text).toContain("Interne Mail aus dem Adminbereich");
     expect(mail.text).not.toContain("Antworten auf diese Mail erreichen unser Team");
   });
 
