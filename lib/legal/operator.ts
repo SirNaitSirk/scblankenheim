@@ -28,19 +28,19 @@ export type LegalOperator = {
 export type OperatorField = Exclude<keyof LegalOperator, "updatedAt">;
 
 export const legalOperator: LegalOperator = {
-  associationName: null,
-  street: null,
-  postalCity: null,
-  board: null,
-  registerCourt: null,
-  registerNumber: null,
-  email: null,
-  phone: null,
-  contentResponsible: null,
+  associationName: "Freie Christengemeinde Blankenheim e. V.",
+  street: "Bahnhofstraße 18",
+  postalCity: "53945 Blankenheim",
+  board: ["Olga Bormann"],
+  registerCourt: "Amtsgericht Düren",
+  registerNumber: "VR 30551",
+  email: "olga.bormann@fcg-blankenheim.de",
+  phone: "+49 2449 7945",
+  contentResponsible: "Kristian Epp, Anschrift wie oben",
   dataProtectionOfficer: null,
   supervisoryAuthority:
     "Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein Westfalen",
-  hostingRegion: null,
+  hostingRegion: "Stockholm, Schweden",
   updatedAt: "30. Oktober 2026",
 };
 
