@@ -28,6 +28,7 @@ export const de = {
     mail: "Mail",
     rooms: "Zimmerplanung",
     tentCircles: "Zeltkreise",
+    bus: "Bus",
   },
   mail: {
     title: "Mail",
@@ -83,6 +84,7 @@ export const de = {
       reminder_3: "Erinnerung 3",
       school_release: "Schulbefreiung",
       participant_link: "Link zur Anmeldung",
+      bus_ticket: "Busticket",
       info_teaser: "Vorfreude",
       info_packing: "Packliste",
       info_arrival: "Anreise",
@@ -99,6 +101,8 @@ export const de = {
         "Wenn jemand auf der Teilnehmerseite die Schulbefreiung erstellt oder ein Admin sie sendet. Das PDF hängt an.",
       participant_link:
         "Wenn jemand auf der Startseite den Link zur Schulbefreiung anfordert. Eine Mail pro passender Anmeldung.",
+      bus_ticket:
+        "Wenn ein Admin im Anmeldedialog das Busticket sendet. Das Ticket steht außerdem in der Infomail zur Anreise, wenn die Person mit dem Bus fährt.",
       info_teaser: (days: number) => `${days} Tage vor Campstart an alle Angemeldeten.`,
       info_packing: (days: number) => `${days} Tage vor Campstart an alle Angemeldeten.`,
       info_arrival: (days: number) => `${days} Tage vor Campstart an alle Angemeldeten.`,
@@ -343,6 +347,7 @@ export const de = {
         info_thanks: "Danke",
         school_release: "Schulbefreiung",
         participant_link: "Link zur Anmeldung",
+        bus_ticket: "Busticket",
       } as Record<string, string>,
       fallback: "Mail",
       status: {
@@ -1415,6 +1420,73 @@ export const de = {
       unassigned: "Noch ohne Zeltkreis",
     },
   },
+  bus: {
+    settings: {
+      title: "Busticket",
+      intro:
+        "Wähle die Frage aus dem Anmeldeformular, die die Busfahrt abfragt, und die Antworten, die „fährt mit dem Bus“ bedeuten. Diese Personen bekommen ein Busticket mit QR Code.",
+      enabled: "Busticket aktiv",
+      question: "Frage aus dem Formular",
+      questionPlaceholder: "Frage wählen",
+      noQuestions: "Dieses Camp hat noch keine Auswahlfrage und keine Ja oder Nein Frage.",
+      answers: "Antworten, die Bus bedeuten",
+      answersHint: "Mindestens eine Antwort wählen.",
+      yes: "Ja",
+      no: "Nein",
+      busPersons: (count: number) => (count === 1 ? "1 Busperson" : `${count} Buspersonen`),
+      withoutAnswer: (count: number) =>
+        count === 1 ? "1 aktive Anmeldung ohne Antwort" : `${count} aktive Anmeldungen ohne Antwort`,
+      problems: {
+        no_field: "Es ist noch keine Frage gewählt.",
+        field_missing: "Die gewählte Frage gibt es im Formular nicht mehr. Bitte neu wählen.",
+        wrong_type: "Die gewählte Frage hat keine festen Antworten. Bitte eine andere wählen.",
+        no_answers: "Es ist noch keine Antwort gewählt.",
+        answers_missing: "Eine gewählte Antwort gibt es im Formular nicht mehr. Bitte neu wählen.",
+      },
+      brokenWhileOn: "Solange die Zuordnung nicht passt, gilt kein Busticket.",
+      readOnly: "Nur Admins mit der Berechtigung für Camps können das ändern.",
+      save: "Speichern",
+      saving: "Speichert …",
+      toast: {
+        saved: "Gespeichert.",
+        error: "Speichern hat nicht geklappt. Bitte versuche es erneut.",
+        unauthorized: "Dafür fehlt dir die Berechtigung.",
+        cannotEnable: "Zum Einschalten fehlen Frage oder Antwort.",
+        invalid: "Die Eingaben sind ungültig.",
+      },
+    },
+    panel: {
+      title: "Busticket",
+      state: { active: "Aktiv", blocked: "Gesperrt", none: "Noch nicht ausgestellt" },
+      notBus: "Diese Anmeldung fährt laut Formular nicht mit dem Bus.",
+      boardings: "Einstiege",
+      notBoarded: "noch nicht",
+      manual: "von Hand",
+      issuedAt: (date: string) => `Ausgestellt am ${date}`,
+      send: "Busticket senden",
+      sending: "Sendet …",
+      reissue: "Neues Ticket ausstellen",
+      reissueConfirm:
+        "Der bisherige Code wird sofort ungültig. Die Person braucht danach den neuen Code. Fortfahren?",
+      block: "Ticket sperren",
+      blockConfirm: "Danach gilt kein Code dieser Anmeldung mehr, bis ein neues Ticket ausgestellt wird. Fortfahren?",
+      confirm: "Ja",
+      cancel: "Abbrechen",
+      loadFailed: "Das Busticket konnte nicht geladen werden.",
+      toast: {
+        sent: "Busticket verschickt.",
+        reissued: "Neues Ticket ausgestellt.",
+        blocked: "Ticket gesperrt.",
+      },
+      errors: {
+        notFound: "Anmeldung nicht gefunden.",
+        notBus: "Diese Anmeldung fährt nicht mit dem Bus.",
+        noEmail: "Diese Anmeldung hat keine Mailadresse.",
+        blocked: "Das Ticket ist gesperrt. Stelle zuerst ein neues aus.",
+        notSent: "Die Mail konnte nicht verschickt werden.",
+      },
+    },
+  },
   states: {
     errorTitle: "Etwas ist schiefgelaufen",
     errorDescription:
@@ -1452,6 +1524,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   camps: "Camps",
   rooms: "Zimmerplanung",
   tentCircles: "Zeltkreise",
+  bus: "Bus",
   users: "Benutzer",
   logs: "Logs",
 };

@@ -1,3 +1,4 @@
+import type { ParticipantBusTicket } from "@/lib/bus/types";
 import type { CampFormField, PaymentStatus } from "@/lib/admin/types";
 import type { CalendarLinks } from "@/lib/calendar/ics";
 import { paymentPath } from "@/lib/email/links";
@@ -81,6 +82,8 @@ export type ParticipantView = {
   editableFields: EditableField[];
   messages: OwnMessage[];
   schoolRelease: ParticipantRelease | null;
+  /** Bus ticket QR or a blocked hint; null when no bus person (specs/021-bus-ticket). */
+  busTicket: ParticipantBusTicket | null;
 };
 
 export type ParticipantRegistrationInput = {
@@ -223,6 +226,7 @@ export function buildParticipantView(input: {
   campFields?: ReadonlyArray<CampFormField>; // with options and required, for change requests
   messages?: ReadonlyArray<OwnMessageInput>;
   release?: { settings: ReleaseSettings; data: SchoolReleaseData | null } | null;
+  busTicket?: ParticipantBusTicket | null;
 }): ParticipantView {
   const { registration, camp, fields } = input;
   const payable: PayableRegistration = {
@@ -253,6 +257,7 @@ export function buildParticipantView(input: {
     editableFields: editableFields(registration, input.campFields ?? []),
     messages: ownMessages(input.messages ?? [], input.campFields ?? []),
     schoolRelease: releaseCard(registration, input.release ?? null),
+    busTicket: registration.status === "cancelled" ? null : (input.busTicket ?? null),
   };
 }
 

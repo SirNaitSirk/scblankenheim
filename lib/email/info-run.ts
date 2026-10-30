@@ -1,5 +1,6 @@
 import "server-only";
 
+import { mailBusTicketFor } from "@/lib/bus/participant";
 import {
   arrivalMissingFields,
   resolveMailSettings,
@@ -225,13 +226,18 @@ export async function runInfoMails(
     }
     if (summary.sent + summary.failed > 0) await sleep(SEND_SPACING_MS);
 
+    // Bus persons get their ticket in the arrival mail (specs/021-bus-ticket, FR-012).
+    const busTicket =
+      kind === "info_arrival" && context ? await mailBusTicketFor(row.id, context.participantUrl) : null;
+    const mailContext = context && busTicket ? { ...context, busTicket } : context;
+
     // `deliver` skips a target without context, so `render` only runs with one.
     const render = INFO_TEMPLATES[kind];
     const outcome = await deliver({
-      target: { ...target, context },
+      target: { ...target, context: mailContext },
       kind,
       trigger: "cron",
-      render: () => render(context!),
+      render: () => render(mailContext!),
     });
     summary[outcome] += 1;
   }

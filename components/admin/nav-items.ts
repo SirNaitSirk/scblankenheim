@@ -9,7 +9,7 @@ export type NavItem = {
  * In-scope admin navigation (labels + hrefs only, no icons) so this module stays
  * server-safe. Icons are attached in the client sidebar. Backups are dropped;
  * Mail is a read only template preview; Zimmerplanung is specs/008-room-planning;
- * Zeltkreise is specs/011-tent-circles;
+ * Zeltkreise is specs/011-tent-circles; Bus is specs/021-bus-ticket;
  * Finanzen is specs/009-finance-tab.
  */
 export const NAV_ITEMS: NavItem[] = [
@@ -19,6 +19,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: de.nav.camps, href: "/admin/camps" },
   { label: de.nav.rooms, href: "/admin/zimmerplanung" },
   { label: de.nav.tentCircles, href: "/admin/zeltkreise" },
+  { label: de.nav.bus, href: "/admin/bus" },
   { label: de.nav.logs, href: "/admin/logs" },
   { label: de.nav.mail, href: "/admin/mail" },
   { label: de.nav.users, href: "/admin/benutzer" },

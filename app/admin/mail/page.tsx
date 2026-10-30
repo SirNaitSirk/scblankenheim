@@ -33,6 +33,7 @@ function triggers(timing: MailTiming): Record<PreviewId, string> {
     reminder_3: t.triggers.reminder_3,
     school_release: t.triggers.school_release,
     participant_link: t.triggers.participant_link,
+    bus_ticket: t.triggers.bus_ticket,
   };
 }
 

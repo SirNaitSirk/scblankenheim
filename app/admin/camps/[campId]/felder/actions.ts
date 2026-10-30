@@ -18,6 +18,9 @@ import {
   slugifyKey,
 } from "@/lib/admin/field-types";
 import { AuthError, requirePermission } from "@/lib/admin/guard";
+import { busCounts, saveBusSettings } from "@/lib/bus/data";
+import { mappingProblem } from "@/lib/bus/rules";
+import { busSettingsInputSchema, type BusSettingsInput } from "@/lib/bus/schema";
 import { de } from "@/lib/admin/messages";
 import type {
   ActionResult,
@@ -319,4 +322,48 @@ export async function reorderFieldsAction(
     revalidateFields(campId);
     return { ok: true };
   });
+}
+
+// --- bus ticket settings (specs/021-bus-ticket, US1) ---------------------------
+
+export type SaveBusSettingsResult =
+  | { ok: true; busPersons: number; withoutAnswer: number }
+  | { ok: false; error: string };
+
+// Saves the bus mapping of one camp. Enabling needs a fitting question and
+// answer (FR-003); a broken mapping may be stored while switched off.
+export async function saveBusSettingsAction(input: BusSettingsInput): Promise<SaveBusSettingsResult> {
+  const copy = de.bus.settings.toast;
+  let admin: AdminUser;
+  try {
+    admin = await requirePermission("camps");
+  } catch (error) {
+    if (error instanceof AuthError) return { ok: false, error: copy.unauthorized };
+    console.error("[bus] auth check failed", error);
+    return { ok: false, error: copy.error };
+  }
+
+  try {
+    const parsed = busSettingsInputSchema.safeParse(input);
+    if (!parsed.success) return { ok: false, error: copy.invalid };
+    const { campId, enabled, fieldKey, answers } = parsed.data;
+
+    const fields = await getCampFormFields(campId);
+    const settings = { enabled, fieldKey, answers: [...new Set(answers)] };
+    if (enabled && mappingProblem(settings, fields) !== null) return { ok: false, error: copy.cannotEnable };
+
+    await saveBusSettings(campId, settings, admin.id);
+    const counts = await busCounts(campId, settings, fields);
+    await writeLog({
+      actor: admin.name?.trim() || admin.email?.trim() || admin.id,
+      action: "bus.settings_saved",
+      message: `${enabled ? "aktiv" : "aus"}, Frage ${fieldKey ?? "keine"}`,
+    });
+    revalidatePath(`/admin/camps/${campId}/felder`);
+    revalidatePath("/admin/bus");
+    return { ok: true, ...counts };
+  } catch (error) {
+    console.error("[bus] save settings failed", error);
+    return { ok: false, error: copy.error };
+  }
 }

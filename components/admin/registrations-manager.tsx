@@ -8,8 +8,12 @@ import {
   getRegistrationMailsAction,
   getParticipantLinkAction,
   getParticipantMessagesAction,
+  blockBusTicketAction,
+  loadBusTicketAction,
   loadSchoolReleaseAction,
+  reissueBusTicketAction,
   saveSchoolReleaseAdminAction,
+  sendBusTicketAction,
   sendSchoolReleaseAction,
   resolveParticipantMessageAction,
   renewParticipantLinkAction,
@@ -53,6 +57,13 @@ import {
 type DialogState = { mode: "create" | "edit"; registration: Registration | null } | null;
 
 const DEFAULT_SORT_COLUMN = "registeredAt";
+
+const BUS_TICKET_ACTIONS = {
+  load: loadBusTicketAction,
+  reissue: reissueBusTicketAction,
+  block: blockBusTicketAction,
+  send: sendBusTicketAction,
+};
 
 const INITIAL_FILTERS: RegistrationFilterState = {
   search: "",
@@ -534,6 +545,7 @@ export function RegistrationsManager({
           onLoadSchoolRelease={loadSchoolReleaseAction}
           onSaveSchoolRelease={saveSchoolReleaseAdminAction}
           onSendSchoolRelease={sendSchoolReleaseAction}
+          busTicket={BUS_TICKET_ACTIONS}
         />
       )}
 

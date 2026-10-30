@@ -7,6 +7,7 @@ import { OWN_MESSAGES_SHOWN, PARTICIPANT_THROTTLE_MAX, PARTICIPANT_THROTTLE_WIND
 import { toCampFormField } from "./contact";
 import { buildParticipantView, type ParticipantView } from "./view";
 import { getReleaseSettings, getSchoolRelease } from "@/lib/school-release/data";
+import { participantBusTicket } from "@/lib/bus/participant";
 
 /**
  * Server only lookup for the participant page (specs/017-participant-page,
@@ -25,7 +26,7 @@ export async function findParticipantByToken(token: string): Promise<Participant
     .maybeSingle();
   if (error || !registration || registration.deleted) return null;
 
-  const [{ data: camp }, { data: fields }, { data: messages }, releaseSettings, releaseData] = await Promise.all([
+  const [{ data: camp }, { data: fields }, { data: messages }, releaseSettings, releaseData, busTicket] = await Promise.all([
     supabase
       .from("camps")
       .select("id, name, start_date, end_date, location")
@@ -43,6 +44,7 @@ export async function findParticipantByToken(token: string): Promise<Participant
       .limit(OWN_MESSAGES_SHOWN),
     getReleaseSettings(registration.camp_id),
     getSchoolRelease(registration.id),
+    participantBusTicket(registration),
   ]);
   if (!camp) return null;
 
@@ -65,6 +67,7 @@ export async function findParticipantByToken(token: string): Promise<Participant
         className: releaseData.className,
       },
     },
+    busTicket,
   });
 }
 

@@ -99,6 +99,18 @@ export const emailMessages = {
     button: "Schulbefreiung erstellen",
   },
 
+  busTicket: {
+    subject: (camp: string) => `Dein Busticket für das ${camp}`,
+    preheader: "Zeig den QR Code beim Einstieg in den Bus.",
+    title: "Dein Busticket",
+    heading: "Dein Busticket",
+    intro: (camp: string) => `hier ist dein Busticket für das ${camp}.`,
+    show: "Zeig diesen QR Code beim Einstieg in den Bus, auf der Hinfahrt und auf der Rückfahrt. Dreh dafür die Helligkeit deines Bildschirms hoch.",
+    alt: "QR Code deines Bustickets",
+    noImage: "Wird kein Bild angezeigt? Auf deiner Seite zur Anmeldung findest du den Code jederzeit:",
+    button: "Busticket öffnen",
+  },
+
   releaseAfterPayment: "Die Befreiung steht bereit, sobald deine erste Zahlung bei uns eingegangen ist.",
 
   participantLink: {

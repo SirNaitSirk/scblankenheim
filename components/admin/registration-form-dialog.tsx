@@ -32,8 +32,10 @@ import type { MailHistoryResult } from "@/lib/email/history";
 import { MailHistory } from "./mail-history";
 import { ParticipantLinkPanel } from "./participant-link-panel";
 import { ParticipantMessagesPanel } from "./participant-messages-panel";
+import { BusTicketPanel } from "./bus-ticket-panel";
 import { SchoolReleasePanel } from "./school-release-panel";
 import type { AdminSchoolReleaseResult } from "@/lib/school-release/types";
+import type { AdminBusTicketResult } from "@/lib/bus/types";
 import { hasPaymentDue, PaymentLinkPanel } from "./payment-link-panel";
 import { CORE_FIELD_KEYS } from "./registration-columns";
 
@@ -190,6 +192,7 @@ export function RegistrationFormDialog({
   onLoadSchoolRelease,
   onSaveSchoolRelease,
   onSendSchoolRelease,
+  busTicket,
 }: {
   open: boolean;
   mode: "create" | "edit";
@@ -215,6 +218,13 @@ export function RegistrationFormDialog({
   onLoadSchoolRelease?: (reference: string) => Promise<AdminSchoolReleaseResult>;
   onSaveSchoolRelease?: (reference: string, input: Record<string, string>) => Promise<ActionResult>;
   onSendSchoolRelease?: (reference: string) => Promise<ActionResult>;
+  /** Bus ticket section (specs/021-bus-ticket); omitted where not wired. */
+  busTicket?: {
+    load: (reference: string) => Promise<AdminBusTicketResult>;
+    reissue: (reference: string) => Promise<ActionResult>;
+    block: (reference: string) => Promise<ActionResult>;
+    send: (reference: string) => Promise<ActionResult>;
+  };
 }) {
   // Initialised from props at mount; the parent remounts via `key` on each open,
   // so state is always fresh without a setState-in-effect reset.
@@ -493,6 +503,17 @@ export function RegistrationFormDialog({
               onMailSent={() => setMailsReloadKey((key) => key + 1)}
             />
           )}
+
+        {mode === "edit" && registration && !registration.deleted && busTicket && (
+          <BusTicketPanel
+            reference={registration.id}
+            load={busTicket.load}
+            reissue={busTicket.reissue}
+            block={busTicket.block}
+            send={busTicket.send}
+            onMailSent={() => setMailsReloadKey((key) => key + 1)}
+          />
+        )}
 
         {mode === "edit" && registration && onLoadMails && (
           <MailHistory reference={registration.id} load={onLoadMails} reloadKey={mailsReloadKey} />

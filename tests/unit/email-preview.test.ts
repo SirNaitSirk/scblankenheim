@@ -24,7 +24,7 @@ const camp: PreviewCamp = {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("buildMailPreviews", () => {
-  it("returns the eight templates in order", () => {
+  it("returns the nine templates in order", () => {
     expect(buildMailPreviews(camp).map((p) => p.id)).toEqual([
       "confirmation",
       "confirmation_free",
@@ -34,7 +34,16 @@ describe("buildMailPreviews", () => {
       "reminder_3",
       "school_release",
       "participant_link",
+      "bus_ticket",
     ]);
+  });
+
+  it("shows a harmless sample QR in the bus ticket preview (specs/021-bus-ticket)", () => {
+    vi.stubEnv("APP_URL", "https://camp.example");
+    const bus = buildMailPreviews(camp).find((p) => p.id === "bus_ticket")!;
+    expect(bus.html).toContain('src="https://camp.example/busticket/beispiel"');
+    expect(bus.text).toContain("#busticket");
+    expect(bus.html).not.toContain("/admin/bus");
   });
 
   it("renders exactly what the templates send", () => {

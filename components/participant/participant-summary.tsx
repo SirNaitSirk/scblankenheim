@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
 import { participantMessages as copy } from "@/lib/participant/messages";
 import type { ParticipantView, PayState } from "@/lib/participant/view";
+import { BusTicketCard } from "./bus-ticket-card";
 import { ParticipantContact } from "./participant-contact";
 import { SchoolReleaseForm } from "./school-release-form";
 import { formatGermanDate } from "@/lib/time/berlin";
@@ -44,6 +45,9 @@ export function ParticipantSummary({
       </header>
 
       <StatusCard view={view} />
+      {view.busTicket && (
+        <BusTicketCard ticket={view.busTicket} firstName={view.firstName} campName={view.campName} />
+      )}
       {release && view.schoolRelease && (
         <SchoolReleaseForm
           action={release.action}

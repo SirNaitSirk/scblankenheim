@@ -130,6 +130,7 @@ describe("buildParticipantView privacy", () => {
     expect(Object.keys(view()).sort()).toEqual(
       [
         "amounts",
+        "busTicket",
         "calendar",
         "campDates",
         "campLocation",
@@ -188,5 +189,20 @@ describe("school release card (specs/020-school-release)", () => {
     expect(withRelease({}, false).schoolRelease).toBeNull();
     expect(withRelease({ status: "cancelled" }).schoolRelease).toBeNull();
     expect(view().schoolRelease).toBeNull();
+  });
+});
+
+describe("bus ticket (specs/021-bus-ticket)", () => {
+  const ticket = { blocked: false as const, svg: "<svg></svg>" };
+  const withTicket = (patch: Partial<ParticipantRegistrationInput> = {}) =>
+    buildParticipantView({ registration: { ...registration, ...patch }, camp, fields, busTicket: ticket });
+
+  it("passes the ticket through for active registrations", () => {
+    expect(withTicket().busTicket).toEqual(ticket);
+  });
+
+  it("is hidden when cancelled or without ticket", () => {
+    expect(withTicket({ status: "cancelled" }).busTicket).toBeNull();
+    expect(view().busTicket).toBeNull();
   });
 });

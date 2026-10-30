@@ -71,6 +71,16 @@ export function renderButton(label: string, href: string): string {
   );
 }
 
+/** Centered image with a fixed width, e.g. the bus ticket QR code (specs/021-bus-ticket). */
+export function renderImage(src: string, alt: string, width: number): string {
+  return (
+    `<p style="margin:8px 0 16px;text-align:center;">` +
+    `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" width="${width}" height="${width}" ` +
+    `style="display:inline-block;width:${width}px;max-width:100%;height:auto;border:1px solid ${COLORS.border};border-radius:8px;background:#ffffff;">` +
+    `</p>`
+  );
+}
+
 /** Quiet secondary link: one sentence plus a bold link line, lighter than a button. */
 export function renderTextLink(intro: string, label: string, href: string): string {
   const url = escapeHtml(href);

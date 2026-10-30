@@ -186,3 +186,27 @@ describe("school release hint in the teaser (specs/020-school-release)", () => {
     expect(packingInfoEmail({ ...ctx, schoolRelease: { dates: "x", url, afterPayment: false } }).text).not.toContain("#schulbefreiung");
   });
 });
+
+describe("bus ticket in the arrival mail (specs/021-bus-ticket)", () => {
+  const busTicket = {
+    imageUrl: `${ctx.participantUrl}/busticket?v=1a2b3c4d`,
+    pageUrl: `${ctx.participantUrl}#busticket`,
+  };
+
+  it("adds the QR block for bus persons", () => {
+    const mail = arrivalInfoEmail({ ...ctx, busTicket });
+    expect(mail.html).toContain(`src="${busTicket.imageUrl}"`);
+    expect(mail.text).toContain("DEIN BUSTICKET");
+  });
+
+  it("stays unchanged without a ticket", () => {
+    expect(arrivalInfoEmail(ctx)).toEqual(arrivalInfoEmail({ ...ctx, busTicket: null }));
+    expect(arrivalInfoEmail(ctx).html).not.toContain("busticket");
+  });
+
+  it("never shows the ticket in the other info mails", () => {
+    for (const mail of [teaserInfoEmail, packingInfoEmail, thanksInfoEmail].map((render) => render({ ...ctx, busTicket }))) {
+      expect(mail.html).not.toContain("busticket?v=");
+    }
+  });
+});

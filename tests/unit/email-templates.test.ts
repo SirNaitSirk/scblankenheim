@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  busTicketEmail,
   confirmationEmail,
   participantLinkEmail,
   paymentLinkEmail,
@@ -222,5 +223,26 @@ describe("school release (specs/020-school-release)", () => {
       expect(rendered.text).not.toMatch(DASHES);
       expect(rendered.subject).not.toMatch(DASHES);
     }
+  });
+});
+
+describe("bus ticket (specs/021-bus-ticket)", () => {
+  const busTicket = {
+    imageUrl: `${ctx.participantUrl}/busticket?v=1a2b3c4d`,
+    pageUrl: `${ctx.participantUrl}#busticket`,
+  };
+
+  it("shows the QR image, the boarding hint and the page link", () => {
+    const mail = busTicketEmail({ ...ctx, busTicket });
+    expect(mail.subject).toBe("Dein Busticket für das Summercamp 2027");
+    expect(mail.html).toContain(`src="${busTicket.imageUrl}"`);
+    expect(mail.html).toContain('alt="QR Code deines Bustickets"');
+    expect(mail.text).toContain(busTicket.pageUrl);
+    expect(mail.text).toContain("Hinfahrt und auf der Rückfahrt");
+    expect(`${mail.subject}${mail.text}`).not.toMatch(DASHES);
+  });
+
+  it("leaves other mails without the ticket block", () => {
+    expect(confirmationEmail({ ...ctx, busTicket }).html).not.toContain("busticket?v=");
   });
 });

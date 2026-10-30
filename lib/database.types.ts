@@ -243,6 +243,70 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["school_releases"]["Insert"]>;
         Relationships: [];
       };
+      camp_bus_settings: {
+        Row: {
+          camp_id: string;
+          enabled: boolean;
+          field_key: string | null;
+          answers: string[];
+          updated_by: string;
+          updated_at: string;
+        };
+        Insert: {
+          camp_id: string;
+          enabled?: boolean;
+          field_key?: string | null;
+          answers?: string[];
+          updated_by: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["camp_bus_settings"]["Insert"]>;
+        Relationships: [];
+      };
+      bus_tickets: {
+        Row: {
+          id: string;
+          code: string;
+          registration_id: string;
+          camp_id: string;
+          created_at: string;
+          created_by: string | null;
+          revoked_at: string | null;
+          revoked_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          registration_id: string;
+          camp_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["bus_tickets"]["Insert"]>;
+        Relationships: [];
+      };
+      bus_boardings: {
+        Row: {
+          registration_id: string;
+          trip: string;
+          camp_id: string;
+          boarded_at: string;
+          boarded_by: string;
+          method: string;
+        };
+        Insert: {
+          registration_id: string;
+          trip: string;
+          camp_id: string;
+          boarded_at?: string;
+          boarded_by: string;
+          method: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["bus_boardings"]["Insert"]>;
+        Relationships: [];
+      };
       submission_attempts: {
         Row: {
           id: string;

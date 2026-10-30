@@ -75,3 +75,14 @@ const dateTimeBerlin = new Intl.DateTimeFormat("de-DE", {
 export function formatDateTimeBerlin(iso: string): string {
   return dateTimeBerlin.format(new Date(iso));
 }
+
+const timeBerlin = new Intl.DateTimeFormat("de-DE", {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Europe/Berlin",
+});
+
+/** Time of day in German time („08:12“). */
+export function formatTimeBerlin(iso: string): string {
+  return timeBerlin.format(new Date(iso));
+}

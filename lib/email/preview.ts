@@ -4,6 +4,7 @@ import { INFO_KINDS, type InfoMailKind } from "./info-mails";
 import { INFO_TEMPLATES, type InfoMailContext } from "./info-templates";
 import { appBaseUrl, calendarLinks, packingUrl, participantPath, participantUrl, paymentPath, paymentUrl } from "./links";
 import { DEFAULT_MAIL_SETTINGS, type MailTexts } from "./settings";
+import { TICKET_ANCHOR } from "@/lib/bus/limits";
 import { RELEASE_ANCHOR } from "@/lib/school-release/limits";
 import { formatReleaseDates, isReleaseActive, isReleaseUnlocked } from "@/lib/school-release/settings";
 import type { ReleaseSettings } from "@/lib/school-release/types";
@@ -11,6 +12,7 @@ import {
   confirmationEmail,
   paymentLinkEmail,
   reminderEmail,
+  busTicketEmail,
   participantLinkEmail,
   schoolReleaseEmail,
   type EmailContext,
@@ -32,7 +34,8 @@ export type PreviewId =
   | "reminder_2"
   | "reminder_3"
   | "school_release"
-  | "participant_link";
+  | "participant_link"
+  | "bus_ticket";
 
 export type MailPreview = RenderedEmail & { id: PreviewId };
 
@@ -51,6 +54,7 @@ export type PreviewCamp = {
 export const SAMPLE_FIRST_NAME = "Lena";
 export const SAMPLE_REFERENCE = "REG-BEISPIEL";
 export const SAMPLE_ACCESS_TOKEN = "0".repeat(64);
+export const SAMPLE_BUS_IMAGE_PATH = "/busticket/beispiel";
 
 /** Calendar links of the previewed camp; null without id, dates or `APP_URL`. */
 function sampleCalendar(camp: PreviewCamp): CalendarLinks | null {
@@ -92,6 +96,8 @@ export function sampleContext(
             afterPayment: !isReleaseUnlocked({ paymentStatus: "unpaid", amountDue: camp.basePrice, amountPaid: 0 }),
           }
         : null,
+    // Harmless sample QR (no ticket code) so previews and test mails show the block (specs/021-bus-ticket).
+    busTicket: { imageUrl: `${appBaseUrl() ?? ""}${SAMPLE_BUS_IMAGE_PATH}`, pageUrl: `${ownPage}#${TICKET_ANCHOR}` },
   };
 }
 
@@ -125,6 +131,7 @@ export function buildMailPreviews(
     { id: "reminder_3", ...reminderEmail("reminder_3", ctx) },
     { id: "school_release", ...schoolReleaseEmail(ctx, sampleRelease(camp, ctx)) },
     { id: "participant_link", ...participantLinkEmail(ctx, sampleRelease(camp, ctx).url) },
+    { id: "bus_ticket", ...busTicketEmail(ctx) },
   ];
 }
 
@@ -163,6 +170,7 @@ export const TEMPLATE_IDS = [
   "reminder_3",
   "school_release",
   "participant_link",
+  "bus_ticket",
   ...INFO_KINDS,
 ] as const satisfies readonly TemplateId[];
 

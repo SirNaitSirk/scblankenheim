@@ -16,7 +16,19 @@ import {
 import { reminderPauseSchema } from "@/lib/admin/finance";
 import { AuthError, requireAdmin, requirePermission } from "@/lib/admin/guard";
 import { canUseSection } from "@/lib/admin/access";
-import { sendSchoolRelease } from "@/lib/email/send";
+import { sendBusTicket, sendSchoolRelease } from "@/lib/email/send";
+import {
+  activeTicket,
+  boardingsOfRegistration,
+  busContext,
+  ensureTicket,
+  hasAnyTicket,
+  registrationForBusByReference,
+  reissueTicket,
+  revokeActiveTicket,
+} from "@/lib/bus/data";
+import { isBusRegistration } from "@/lib/bus/rules";
+import type { AdminBusTicketResult } from "@/lib/bus/types";
 import {
   adminDisplayName,
   findRegistrationByReference,
@@ -572,5 +584,87 @@ export async function sendSchoolReleaseAction(reference: string): Promise<Action
 
     const outcome = await sendSchoolRelease(registration.id, "admin", { id: admin.id, label: actorLabel(admin) });
     return outcome === "sent" ? { ok: true } : { ok: false, error: rp.errors.notSent };
+  });
+}
+
+// --- bus ticket (specs/021-bus-ticket, US5) -----------------------------------
+
+const bp = de.bus.panel;
+
+async function busRegistrationOf(reference: string) {
+  const ref = referenceSchema.safeParse(reference);
+  const registration = ref.success ? await registrationForBusByReference(ref.data) : null;
+  return registration && !registration.deleted ? registration : null;
+}
+
+// Ticket state and boardings for the registration dialog. Never returns the code.
+export async function loadBusTicketAction(reference: string): Promise<AdminBusTicketResult> {
+  try {
+    await requireAdmin();
+  } catch (error) {
+    if (error instanceof AuthError) return { ok: false, error: de.registrations.toast.unauthorized };
+    console.error("[bus] auth check failed", error);
+    return { ok: false, error: bp.loadFailed };
+  }
+
+  try {
+    const registration = await busRegistrationOf(reference);
+    if (!registration) return { ok: false, error: bp.errors.notFound };
+    const context = await busContext(registration.camp_id);
+    const [ticket, everIssued, boardings] = await Promise.all([
+      activeTicket(registration.id),
+      hasAnyTicket(registration.id),
+      boardingsOfRegistration(registration.id),
+    ]);
+    return {
+      ok: true,
+      ticket: {
+        isBusPerson: isBusRegistration(registration, context.settings, context.fields),
+        state: ticket ? "active" : everIssued ? "blocked" : "none",
+        issuedAt: ticket?.created_at ?? null,
+        hasEmail: Boolean(registration.email?.trim()),
+        boardings,
+      },
+    };
+  } catch (error) {
+    console.error("[bus] load ticket failed", error);
+    return { ok: false, error: bp.loadFailed };
+  }
+}
+
+// Revokes the current code and issues a new one; boardings stay (US5.2, US5.4).
+export async function reissueBusTicketAction(reference: string): Promise<ActionResult> {
+  return runGuarded(async (admin) => {
+    const registration = await busRegistrationOf(reference);
+    if (!registration) return { ok: false, error: bp.errors.notFound };
+    await reissueTicket(registration.id, registration.camp_id, admin.id);
+    await writeLog({ actor: actorLabel(admin), action: "bus.ticket_reissued", message: registration.reference });
+    return { ok: true };
+  });
+}
+
+// Revokes the current code without a new one (US5.3).
+export async function blockBusTicketAction(reference: string): Promise<ActionResult> {
+  return runGuarded(async (admin) => {
+    const registration = await busRegistrationOf(reference);
+    if (!registration) return { ok: false, error: bp.errors.notFound };
+    await revokeActiveTicket(registration.id, admin.id);
+    await writeLog({ actor: actorLabel(admin), action: "bus.ticket_blocked", message: registration.reference });
+    return { ok: true };
+  });
+}
+
+// Sends the current ticket to the registration's own address (US4.4).
+export async function sendBusTicketAction(reference: string): Promise<ActionResult> {
+  return runGuarded(async (admin) => {
+    const registration = await busRegistrationOf(reference);
+    if (!registration) return { ok: false, error: bp.errors.notFound };
+    if (!registration.email?.trim()) return { ok: false, error: bp.errors.noEmail };
+    const context = await busContext(registration.camp_id);
+    if (!isBusRegistration(registration, context.settings, context.fields)) return { ok: false, error: bp.errors.notBus };
+    if (!(await ensureTicket(registration.id, registration.camp_id))) return { ok: false, error: bp.errors.blocked };
+
+    const outcome = await sendBusTicket(registration.id, { id: admin.id, label: actorLabel(admin) });
+    return outcome === "sent" ? { ok: true } : { ok: false, error: bp.errors.notSent };
   });
 }

@@ -39,7 +39,9 @@ import { buildReleasePdf, getReleaseSettings } from "@/lib/school-release/data";
 import { RELEASE_ANCHOR } from "@/lib/school-release/limits";
 import { formatReleaseDates, isReleaseActive, isReleaseUnlocked } from "@/lib/school-release/settings";
 import type { ReleaseSettings } from "@/lib/school-release/types";
+import { mailBusTicketFor } from "@/lib/bus/participant";
 import {
+  busTicketEmail,
   confirmationEmail,
   paymentLinkEmail,
   reminderEmail,
@@ -575,6 +577,58 @@ export async function sendParticipantLink(registrationId: string): Promise<Deliv
     return "failed";
   } catch {
     await writeLog({ level: "warning", action: "email.failed", message: `participant_link ${registrationId}` });
+    return "failed";
+  }
+}
+
+/**
+ * Bus ticket mail sent from the registration dialog (specs/021-bus-ticket, US4).
+ * May repeat per registration. Skips non bus persons and blocked tickets.
+ */
+export async function sendBusTicket(
+  registrationId: string,
+  actor: { id: string; label: string },
+): Promise<DeliveryOutcome> {
+  try {
+    const target = await loadMailTarget(registrationId);
+    if (!target) return "skipped";
+    const label = `bus_ticket ${target.reference}`;
+    if (!target.email || !target.context) {
+      await writeLog({
+        level: "warning",
+        actor: actor.label,
+        action: "email.skipped",
+        message: `${label}: ${target.email ? "APP_URL fehlt" : "keine Mailadresse"}`,
+      });
+      return "skipped";
+    }
+    if (!(await selfServiceQuotaLeft())) {
+      await writeLog({ level: "warning", actor: actor.label, action: "email.skipped", message: `${label}: Tageslimit` });
+      return "skipped";
+    }
+
+    const busTicket = await mailBusTicketFor(registrationId, target.context.participantUrl);
+    if (!busTicket) return "skipped";
+    const rendered = busTicketEmail({ ...target.context, busTicket });
+
+    const claim = await claimRepeatableDelivery({ registrationId, kind: "bus_ticket", trigger: "admin", actor: actor.id });
+    const result = await sendEmail({ to: target.email, ...rendered }, `bus_ticket/${claim.id}`, target.settings.sender);
+
+    if (result.ok) {
+      await markSent(claim.id, result.id);
+      await writeLog({ actor: actor.label, action: "email.sent", message: label });
+      return "sent";
+    }
+    await markFailed(claim.id, result.error);
+    await writeLog({
+      level: "warning",
+      actor: actor.label,
+      action: "email.failed",
+      message: `${label}: ${describeSendError(result)}`,
+    });
+    return "failed";
+  } catch {
+    await writeLog({ level: "warning", actor: actor.label, action: "email.failed", message: `bus_ticket ${registrationId}` });
     return "failed";
   }
 }

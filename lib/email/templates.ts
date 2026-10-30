@@ -5,6 +5,7 @@ import {
   renderButton,
   renderFacts,
   renderHeading,
+  renderImage,
   renderLayout,
   renderLinkPair,
   renderParagraph,
@@ -37,6 +38,8 @@ export type EmailContext = {
   // Release letter hint with a deep link, null or missing when off (specs/020-school-release).
   /** `afterPayment`: nothing paid yet, the letter is ready after the first payment (FR-006a). */
   schoolRelease?: { dates: string; url: string; afterPayment: boolean } | null;
+  // Bus ticket QR image and page link, null or missing for non bus persons (specs/021-bus-ticket).
+  busTicket?: { imageUrl: string; pageUrl: string } | null;
 };
 
 export type ReminderKind = "reminder_1" | "reminder_2" | "reminder_3";
@@ -93,6 +96,23 @@ export function schoolReleaseBlock(ctx: EmailContext): { html: string; text: str
   return {
     html: [renderHeading(copy.title), renderParagraph(intro), renderButton(copy.button, ctx.schoolRelease.url)].join("\n"),
     text: `${copy.title.toUpperCase()}\n${intro}\n${copy.button}: ${ctx.schoolRelease.url}`,
+  };
+}
+
+const BUS_QR_WIDTH = 220;
+
+/** QR code of the bus ticket with the boarding hint and a fallback link (specs/021-bus-ticket). */
+export function busTicketBlock(ctx: EmailContext): { html: string; text: string } | null {
+  if (!ctx.busTicket) return null;
+  const copy = m.busTicket;
+  return {
+    html: [
+      renderHeading(copy.heading),
+      renderParagraph(copy.show),
+      renderImage(ctx.busTicket.imageUrl, copy.alt, BUS_QR_WIDTH),
+      renderTextLink(copy.noImage, copy.button, ctx.busTicket.pageUrl),
+    ].join("\n"),
+    text: `${copy.heading.toUpperCase()}\n${copy.show}\n${copy.button}: ${ctx.busTicket.pageUrl}`,
   };
 }
 
@@ -285,6 +305,27 @@ export function schoolReleaseEmail(
       `${copy.button}: ${release.url}`,
       ...closing,
     ]),
+  };
+}
+
+/** Bus ticket sent from the registration dialog (specs/021-bus-ticket, US4). */
+export function busTicketEmail(ctx: EmailContext): RenderedEmail {
+  const copy = m.busTicket;
+  const opening = openingBlocks(ctx);
+  const closing = closingBlocks(ctx);
+  const intro = copy.intro(ctx.campName);
+  const ticket = busTicketBlock(ctx);
+  const bodyHtml = [
+    ...opening.map(renderParagraph),
+    renderParagraph(intro),
+    ticket?.html ?? "",
+    ...closing.map(renderParagraph),
+  ].join("\n");
+
+  return {
+    subject: copy.subject(ctx.campName),
+    html: renderLayout({ preheader: copy.preheader, campName: ctx.campName, title: copy.title, bodyHtml }),
+    text: renderText([...opening, intro, ticket?.text ?? "", ...closing]),
   };
 }
 

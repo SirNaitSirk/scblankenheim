@@ -22,7 +22,8 @@ export type EmailKind =
   | ReminderKind
   | InfoMailKind
   | "school_release"
-  | "participant_link";
+  | "participant_link"
+  | "bus_ticket";
 export type DeliveryTrigger = "registration" | "cron" | "admin" | "participant";
 export type DeliveryError = SendError | "stale";
 
@@ -104,7 +105,7 @@ export async function claimTeamDelivery(registrationId: string): Promise<{ id: s
  */
 export async function claimRepeatableDelivery(input: {
   registrationId: string;
-  kind: "school_release" | "participant_link";
+  kind: "school_release" | "participant_link" | "bus_ticket";
   trigger: DeliveryTrigger;
   actor?: string | null;
 }): Promise<{ id: string }> {

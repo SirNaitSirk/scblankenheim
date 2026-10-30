@@ -108,6 +108,7 @@ Rules:
 - Logs: lightweight activity/error log view.
 - Room planning (`/admin/zimmerplanung`): houses and rooms with bed counts (shared by all camps), per camp room gender, and drag and drop or click assignment of active registrations to rooms with a print view (specs/008-room-planning).
 - Tent circles (`/admin/zeltkreise`): per camp circles with name, kind (mixed, female, male) and exactly one leader from the camp's registrations; drag and drop or click assignment of active registrations as participants, no capacity; a leader is never a participant; print view (specs/011-tent-circles).
+- Bus ticket (`/admin/bus`): per camp switch plus the one form question (with fixed options) and the answer options that mean "takes the bus"; no separate bus flag. Every active bus registration gets its own QR code with a random ticket code (not the participant link) on the participant page, in the arrival info mail and via "send bus ticket" in the registration dialog. Team members with the new `bus` permission scan with the phone camera per trip (outbound, return): green with name (plus a "payment open" hint, never blocking) or red (no bus ticket, cancelled, already boarded, invalid, other camp, unknown); one boarding per registration and trip, manual boarding and undo, live list of who is missing. Admins block a ticket or issue a new one, which invalidates older codes. No Apple or Google Wallet (specs/021-bus-ticket).
 - Transactional email (see below).
 
 **Auth & roles**
@@ -159,6 +160,9 @@ Core tables:
 - `camp_mail_info`: per camp content and on/off switches for the four info mails (specs/012-info-mails), plus the mail settings of specs/016-mail-settings (reminder switch, nullable timing values, sender name, reply address, text blocks).
 - `participant_messages`: messages and change requests from the participant page with status and resolution (specs/018-participant-messages).
 - `school_releases`: one row per registration with teacher, school, school address, participant address and optional class; deleted with the registration; the PDF is never stored. Per camp release settings (switch, affected days, signer name and role, private signature image in Storage) live with the camp's mail settings (specs/020-school-release).
+- `camp_bus_settings`: per camp bus switch, the chosen form field key and the answer options that mean bus (specs/021-bus-ticket).
+- `bus_tickets`: one row per issued ticket code; at most one active per registration, revoked rows stay so old codes answer "invalid"; deleted with the registration.
+- `bus_boardings`: one row per registration and trip (`outbound` / `return`) with time, scanning admin and kind (scan, manual); deleted with the registration.
 - `registrations.reminders_paused`: no automatic payment reminders for this registration (specs/016-mail-settings).
 - `email_deliveries`: one row per send attempt; rows without `registration_id` and kind `test` are admin test sends that count against the daily quota.
 

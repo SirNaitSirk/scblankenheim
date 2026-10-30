@@ -14,6 +14,7 @@ import {
 } from "./layout";
 import { emailMessages } from "./messages";
 import {
+  busTicketBlock,
   calendarBlock,
   participantBlock,
   schoolReleaseBlock,
@@ -146,6 +147,7 @@ export function arrivalInfoEmail(ctx: InfoMailContext): RenderedEmail {
       paragraph(t.arrival.intro(ctx.campName)),
       factRows.length > 0 ? facts(factRows) : null,
       info.emergencyPhone ? paragraph(t.arrival.emergencyNote) : null,
+      busTicketBlock(ctx),
       info.firstDay ? heading(t.arrival.firstDayTitle) : null,
       info.firstDay ? paragraph(info.firstDay) : null,
       info.phoneRules ? heading(t.arrival.phoneTitle) : null,

@@ -31,6 +31,7 @@ import type {
   RegistrationInput,
   UserRole,
 } from "./types";
+import { deleteBusDataByReference } from "@/lib/bus/data";
 import { deleteSchoolReleaseByReference } from "@/lib/school-release/data";
 
 /**
@@ -409,6 +410,8 @@ export async function setRegistrationDeleted(
   if (error) throw error;
   // School release data go with the registration (specs/020-school-release, research R8).
   if (deleted) await deleteSchoolReleaseByReference(reference);
+  // Bus tickets and boardings too (specs/021-bus-ticket).
+  if (deleted) await deleteBusDataByReference(reference);
 }
 
 export async function getCampFormFields(campId: string): Promise<CampFormField[]> {

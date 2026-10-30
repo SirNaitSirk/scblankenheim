@@ -2,6 +2,7 @@
 
 import {
   Bed,
+  Bus,
   Campfire,
   ClipboardText,
   CurrencyEur,
@@ -27,6 +28,7 @@ const NAV_ICONS: Record<string, Icon> = {
   "/admin/camps": Tent,
   "/admin/zimmerplanung": Bed,
   "/admin/zeltkreise": Campfire,
+  "/admin/bus": Bus,
   "/admin/logs": ClipboardText,
   "/admin/mail": EnvelopeSimple,
   "/admin/benutzer": Users,
