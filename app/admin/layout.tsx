@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { TeamClerkProvider } from "@/components/clerk-provider";
 import { getCurrentProfile } from "@/lib/admin/data";
 
 export const metadata: Metadata = {
@@ -25,11 +26,13 @@ export default async function AdminLayout({
   const profile = await getCurrentProfile();
 
   return (
-    <AdminShell
-      visibleTabs={profile?.visibleTabs ?? []}
-      isSuperadmin={profile?.role === "superadmin"}
-    >
-      {children}
-    </AdminShell>
+    <TeamClerkProvider>
+      <AdminShell
+        visibleTabs={profile?.visibleTabs ?? []}
+        isSuperadmin={profile?.role === "superadmin"}
+      >
+        {children}
+      </AdminShell>
+    </TeamClerkProvider>
   );
 }

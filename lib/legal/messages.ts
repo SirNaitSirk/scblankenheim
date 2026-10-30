@@ -134,7 +134,7 @@ const privacySections: LegalSection[] = [
       ),
       sub("Cookies und lokaler Speicher"),
       p(
-        "Wir setzen nur technisch notwendige Cookies. Der Anmeldedienst Clerk ist auf allen Seiten eingebunden und setzt Cookies, die eine Anmeldung des Teams erkennen und absichern. Für Besucherinnen und Besucher ohne Teamkonto speichern diese Cookies keine Profile. Die Packliste merkt sich deine Häkchen nur im Speicher deines Browsers, sie werden nicht an uns übertragen.",
+        "Besucherinnen und Besuchern der öffentlichen Seiten setzen wir keine Cookies. Nur im Adminbereich und auf den Anmeldeseiten des Teams ist der Anmeldedienst Clerk eingebunden. Er setzt dort technisch notwendige Cookies, die eine Anmeldung des Teams erkennen und absichern. Die Packliste merkt sich deine Häkchen nur im Speicher deines Browsers, sie werden nicht an uns übertragen.",
       ),
       p(
         "Für technisch notwendige Cookies und Speicher brauchen wir keine Einwilligung (§ 25 Abs. 2 Nr. 2 TDDDG). Deshalb gibt es kein Cookie Banner.",
