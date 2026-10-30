@@ -24,9 +24,21 @@ const AMBER = "#e8933a";
 const AMBER_DEEP = "#a4571a";
 const INK = "#0a0a0b";
 
+/**
+ * The image is prerendered at build time, where preview builds may lack the
+ * Supabase env. Fall back to the generic name instead of failing the build.
+ */
+async function readCamp() {
+  try {
+    return await getLandingCamp();
+  } catch {
+    return null;
+  }
+}
+
 export default async function Image() {
   const [camp, font] = await Promise.all([
-    getLandingCamp(),
+    readCamp(),
     readFile(join(process.cwd(), "assets/fonts/ArchivoBlack-Regular.ttf")),
   ]);
   const name = camp?.name ?? copy.fallbackName;
