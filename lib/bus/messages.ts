@@ -32,6 +32,8 @@ export const busMessages = {
     denied:
       "Die Kamera ist nicht freigegeben. Erlaube den Zugriff in den Einstellungen deines Browsers und lade die Seite neu. Bis dahin kannst du Personen in der Liste von Hand abhaken.",
     missing: "Auf diesem Gerät gibt es keine Kamera. Nutze die Liste, um Personen von Hand abzuhaken.",
+    insecure:
+      "Die Kamera funktioniert nur, wenn die Seite über https geöffnet ist. Öffne die Scanseite über die richtige Adresse der Website. Bis dahin kannst du Personen in der Liste von Hand abhaken.",
     retry: "Erneut versuchen",
   },
   list: {

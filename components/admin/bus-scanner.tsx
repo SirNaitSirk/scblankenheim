@@ -11,7 +11,7 @@ import { cn } from "@/lib/cn";
 import { formatTimeBerlin } from "@/lib/format";
 import type { ScanOutcome, Trip } from "@/lib/bus/types";
 
-type CameraState = "starting" | "running" | "denied" | "missing" | "error";
+type CameraState = "starting" | "running" | "denied" | "missing" | "insecure" | "error";
 
 type Shown = { tone: "ok" | "bad" | "offline"; title: string; name: string | null; reference: string | null; paymentOpen: boolean };
 
@@ -142,6 +142,11 @@ export function BusScanner({
     let stopped = false;
 
     async function start() {
+      // Browsers hide the camera API on plain http (for example a dev server opened by its network address).
+      if (!window.isSecureContext) {
+        setCamera("insecure");
+        return;
+      }
       if (!navigator.mediaDevices?.getUserMedia) {
         setCamera("missing");
         return;
@@ -197,7 +202,15 @@ export function BusScanner({
   }, []);
 
   const cameraHint =
-    camera === "denied" ? copy.camera.denied : camera === "missing" ? copy.camera.missing : camera === "error" ? copy.camera.prompt : null;
+    camera === "denied"
+      ? copy.camera.denied
+      : camera === "missing"
+        ? copy.camera.missing
+        : camera === "insecure"
+          ? copy.camera.insecure
+          : camera === "error"
+            ? copy.camera.prompt
+            : null;
 
   return (
     <div className="relative aspect-square w-full overflow-hidden rounded-card bg-ink-950">
@@ -217,13 +230,15 @@ export function BusScanner({
       {cameraHint && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center text-sm text-white/90">
           <p>{cameraHint}</p>
-          <Button type="button" variant="outline" size="sm" onClick={() => {
-              setCamera("starting");
-              setAttempt((count) => count + 1);
-            }}>
-            <ArrowClockwise size={14} weight="bold" />
-            {copy.camera.retry}
-          </Button>
+          {camera !== "insecure" && (
+            <Button type="button" variant="outline" size="sm" onClick={() => {
+                setCamera("starting");
+                setAttempt((count) => count + 1);
+              }}>
+              <ArrowClockwise size={14} weight="bold" />
+              {copy.camera.retry}
+            </Button>
+          )}
         </div>
       )}
 
