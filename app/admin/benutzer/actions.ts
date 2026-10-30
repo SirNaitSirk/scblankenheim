@@ -310,7 +310,10 @@ export async function inviteAdminUserAction(
       parsed.data.permissions,
       parsed.data.visibleTabs,
     );
-    const redirectUrl = `${await requestOrigin()}/admin/accept-invitation`;
+    // The invite link must open the public sign up page: it reads `__clerk_ticket`
+    // and creates the account, then continues to /admin/accept-invitation. Pointing
+    // it at /admin directly sends the not yet existing user to sign in instead.
+    const redirectUrl = `${await requestOrigin()}/sign-up`;
 
     try {
       await createAdminInvitation(
