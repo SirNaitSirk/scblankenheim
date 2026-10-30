@@ -212,8 +212,9 @@ export function BusScanner({
             ? copy.camera.prompt
             : null;
 
+  // Fixed colors: the viewfinder stays dark in light and dark mode, so the white text stays readable.
   return (
-    <div className="relative aspect-square w-full overflow-hidden rounded-card bg-ink-950">
+    <div className="relative aspect-square w-full overflow-hidden rounded-card bg-[#0a0a0b]">
       <video ref={videoRef} className="h-full w-full object-cover" playsInline muted aria-hidden="true" />
 
       {camera === "running" && !shown && (
@@ -231,7 +232,7 @@ export function BusScanner({
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center text-sm text-white/90">
           <p>{cameraHint}</p>
           {camera !== "insecure" && (
-            <Button type="button" variant="outline" size="sm" onClick={() => {
+            <Button type="button" variant="ghost" size="sm" className="border border-white/40 text-white! hover:bg-white/10!" onClick={() => {
                 setCamera("starting");
                 setAttempt((count) => count + 1);
               }}>
@@ -249,7 +250,7 @@ export function BusScanner({
           aria-live="assertive"
           className={cn(
             "absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center text-white",
-            shown.tone === "ok" ? "bg-success" : shown.tone === "bad" ? "bg-danger" : "bg-ink-700",
+            shown.tone === "ok" ? "bg-success" : shown.tone === "bad" ? "bg-danger" : "bg-[#3a3a40]",
           )}
         >
           {shown.tone === "ok" ? (
