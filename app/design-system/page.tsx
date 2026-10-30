@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { MountainHero } from "@/components/marketing/mountain-hero";
 import { SiteNav } from "@/components/marketing/site-nav";
+import { registrationCta } from "@/lib/register/registration-cta";
 import { DashboardPreview } from "@/components/admin/dashboard-preview";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,7 @@ import {
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 export const metadata: Metadata = {
-  title: "Design-System — CampConnect",
+  title: "Designsystem · FCG Summercamp",
 };
 
 const inkSwatches = [
@@ -57,7 +58,7 @@ export default function DesignSystemPage() {
   return (
     <main className="bg-canvas">
       {/* Hero — the Persuade surface */}
-      <MountainHero />
+      <MountainHero cta={registrationCta("open", null)} showSchoolRelease={false} />
 
       {/* Palette */}
       <Section title="Farben">
@@ -196,7 +197,7 @@ export default function DesignSystemPage() {
       <footer className="border-t border-border py-10">
         <div className="mx-auto max-w-[1400px] px-6 md:px-10">
           <p className="text-xs text-muted-foreground">
-            CampConnect Design-System · FCG Blankenheim Summercamp
+            Designsystem · FCG Blankenheim Summercamp
           </p>
         </div>
       </footer>

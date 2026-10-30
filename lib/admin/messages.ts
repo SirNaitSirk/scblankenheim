@@ -14,8 +14,8 @@ import type {
 
 export const de = {
   brand: {
-    name: "CampConnect",
-    panel: "Admin-Bereich",
+    name: "FCG Summercamp",
+    panel: "Adminbereich",
   },
   nav: {
     dashboard: "Dashboard",
@@ -1094,13 +1094,13 @@ export const de = {
       signInCta: "Zur Anmeldung",
       successTitle: "Willkommen an Bord!",
       successBody:
-        "Dein Konto ist eingerichtet. Du kannst jetzt den Admin-Bereich öffnen.",
+        "Dein Konto ist eingerichtet. Du kannst jetzt den Adminbereich öffnen.",
       alreadyTitle: "Konto bereits aktiv",
       alreadyBody: "Dein Zugang ist bereits eingerichtet.",
       noneTitle: "Keine offene Einladung",
       noneBody:
         "Für dieses Konto liegt keine offene Einladung vor. Wende dich an eine Administratorin.",
-      cta: "Zum Admin-Bereich",
+      cta: "Zum Adminbereich",
     },
     toast: {
       updated: "Benutzer aktualisiert.",

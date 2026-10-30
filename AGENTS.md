@@ -79,7 +79,7 @@ Rules:
 
 **Public**
 
-- One clean landing page (`/`) with camp info + registration entry.
+- One clean landing page (`/`) with camp info + registration entry. Order: hero, facts, program, youth groups, campfire band, registration, then „Gut zu wissen“ with open blocks for Anreise, Bezahlen, Packliste and Schulbefreiung; registration buttons follow the registration state; content is visible without JavaScript; a generated share image shows camp name and dates (specs/024-landing-structure).
 - One **config-driven** registration form: fields come from `camp_form_fields` for the current camp (single source of truth — no parallel form components).
 - Payment page (`/bezahlen`, `/bezahlen/danke`) — Stripe checkout + result.
 - Packing list page (`/packzettel`).
@@ -88,7 +88,8 @@ Rules:
 - Participant messages: from the participant page a person sends a message to the team or requests a change of one own field; items are stored, forwarded to the camp's team address by mail and handled in the registration dialog (mark done, apply, dismiss); no chat, no replies in the app (specs/018-participant-messages).
 - School release letter (Schulbefreiung): per camp switch; an active registration that is fully or partly paid (or owes nothing) enters teacher, school and address on the participant page and immediately gets a code defined PDF letter with signature image (download plus mail attachment, only to the registration's own address, never to schools); unpaid registrations see a hint with the pay button instead; admins enter, correct, download and resend it in the registration dialog; hinted in the confirmation and teaser info mail (specs/020-school-release).
 - Participant link request: on the landing page (section shown only while the release letter is on for the current camp) a person enters an email and gets one mail per matching active registration with the link to its participant page; the page always answers the same and requests are throttled (specs/020-school-release).
-- Prelaunch gate: while the server env `COMING_SOON` is `true` (set only for Vercel Production), every path except admin, sign in and sign up, the Stripe webhook and cron shows the coming soon page `/demnaechst` to visitors without an admin profile, and non GET requests get 503; removing the variable and redeploying goes live (specs/023-coming-soon).
+- Prelaunch gate: while the server env `COMING_SOON` is `true` (set only for Vercel Production), every path except admin, sign in and sign up, the Stripe webhook, cron and the legal pages shows the coming soon page `/demnaechst` to visitors without an admin profile, and non GET requests get 503; removing the variable and redeploying goes live (specs/023-coming-soon).
+- Impressum (`/impressum`) and Datenschutz (`/datenschutz`): static pages linked in the footer of every public page and on the coming soon page; operator data live only in `lib/legal/operator.ts`, missing values show as marked gaps; open during the prelaunch gate; the privacy text must match the services and data flows the code really uses (specs/025-legal-pages).
 
 **Registration & payment**
 
@@ -147,7 +148,7 @@ Core tables:
 - `camp_form_fields` — dynamic registration form definition per camp (drives the public form).
 - `registrations` — attendee registrations (main entity). Avoid rigid value CHECK constraints on free-form fields (v1 hit repeated migration pain from over-strict constraints — prefer app/Zod validation).
   `registrations.access_token` holds the secret of the participant page link (specs/017-participant-page); only the server reads it.
-- `submission_attempts` — throttling/abuse tracking for the public form.
+- `submission_attempts` — throttling/abuse tracking for the public form. Rows older than 7 days are deleted by the daily info mail cron (specs/025-legal-pages).
 - `price_tiers` — pricing tiers, including hidden ones reachable only via invitation link.
 - `profiles` — admin profile + granular permissions + visible tabs.
 - `user_roles` — `superadmin` / `admin`.
@@ -297,7 +298,7 @@ Even though this document is written in English, the two languages have strict, 
 
 ## Quick reference (target layout — Next.js)
 
-- Public routes: `app/page.tsx` (landing), `app/bezahlen/*`, `app/packzettel/page.tsx`, `app/meine-anmeldung/[token]/page.tsx`, `app/kalender/[campId]/route.ts`
+- Public routes: `app/page.tsx` (landing), `app/bezahlen/*`, `app/packzettel/page.tsx`, `app/meine-anmeldung/[token]/page.tsx`, `app/kalender/[campId]/route.ts`, `app/impressum/page.tsx`, `app/datenschutz/page.tsx`
 - Admin: `app/admin/*` (protected by Clerk in `proxy.ts`) + `components/admin/*`
 - Room planning and tent circles: `app/admin/zimmerplanung`, `app/admin/zeltkreise`, server data in `lib/admin/rooms-data.ts` and `lib/admin/tent-circles-data.ts`
 - Auth: Clerk (`proxy.ts`, Clerk components/hooks) + `app/admin/accept-invitation`

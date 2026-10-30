@@ -15,8 +15,8 @@ export function ProgramHighlights() {
   return (
     <section className="border-t border-border bg-sand-50">
       <div className="mx-auto max-w-[1400px] px-6 py-24 md:px-10 lg:py-32">
-        <Reveal className="max-w-[24ch]">
-          <h2 className="font-display text-4xl font-black leading-[1.02] tracking-tight text-foreground md:text-5xl">
+        <Reveal>
+          <h2 className="max-w-[18ch] text-balance font-display text-4xl font-black leading-[1.02] tracking-tight text-foreground md:text-5xl">
             Glaube, Spaß und Gemeinschaft
           </h2>
         </Reveal>
@@ -25,14 +25,14 @@ export function ProgramHighlights() {
           {/* Feature tile — spans both rows on desktop */}
           <Reveal
             as="article"
-            className="group relative flex min-h-[22rem] flex-col justify-end overflow-hidden rounded-card bg-sand-900 p-8 md:row-span-2 md:min-h-[30rem]"
+            className="relative flex min-h-[22rem] flex-col justify-end overflow-hidden rounded-card bg-sand-900 p-8 md:row-span-2 md:min-h-[30rem]"
           >
             <Image
               src={WORSHIP_PHOTO}
               alt="Worship-Abend im Camp mit erhobenen Händen"
               fill
               sizes="(min-width: 768px) 50vw, 100vw"
-              className="object-cover transition-transform duration-[1200ms] ease-[var(--ease-out-expo)] group-hover:scale-[1.06]"
+              className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-ink-950/85 via-ink-950/25 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-amber-400/20" />
@@ -52,10 +52,9 @@ export function ProgramHighlights() {
 
           <Reveal
             as="article"
-            delay={90}
-            className="group flex flex-col justify-between rounded-card border border-amber-100 bg-surface p-8 shadow-warm transition-transform duration-300 ease-[var(--ease-out-expo)] hover:-translate-y-1"
+            className="flex flex-col justify-between rounded-card border border-amber-100 bg-surface p-8"
           >
-            <span className="flex h-12 w-12 items-center justify-center rounded-pill bg-amber-100 text-amber-700 transition-transform duration-300 group-hover:scale-105">
+            <span className="flex h-12 w-12 items-center justify-center rounded-pill bg-amber-100 text-amber-700">
               <ChatsCircle size={24} weight="duotone" />
             </span>
             <div className="mt-8">
@@ -71,10 +70,9 @@ export function ProgramHighlights() {
 
           <Reveal
             as="article"
-            delay={180}
-            className="group flex flex-col justify-between overflow-hidden rounded-card border border-amber-300 bg-gradient-to-br from-amber-100 to-amber-300/60 p-8 transition-transform duration-300 ease-[var(--ease-out-expo)] hover:-translate-y-1"
+            className="flex flex-col justify-between overflow-hidden rounded-card border border-amber-300 bg-gradient-to-br from-amber-100 to-amber-300/60 p-8"
           >
-            <span className="flex h-12 w-12 items-center justify-center rounded-pill bg-amber-500/20 text-amber-700 transition-transform duration-300 group-hover:scale-105">
+            <span className="flex h-12 w-12 items-center justify-center rounded-pill bg-amber-500/20 text-amber-700">
               <Confetti size={24} weight="duotone" />
             </span>
             <div className="mt-8">

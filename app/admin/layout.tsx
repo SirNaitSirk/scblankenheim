@@ -3,7 +3,7 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { getCurrentProfile } from "@/lib/admin/data";
 
 export const metadata: Metadata = {
-  title: "Admin — CampConnect",
+  title: "Admin · FCG Summercamp",
 };
 
 // Admin pages read live, privileged data per request (service-role Supabase +

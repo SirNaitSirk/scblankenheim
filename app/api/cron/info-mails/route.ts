@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { writeLog } from "@/lib/admin/data";
 import { isAuthorizedCronRequest } from "@/lib/email/cron-auth";
 import { runInfoMails } from "@/lib/email/info-run";
+import { purgeOldSubmissionAttempts } from "@/lib/legal/retention";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -14,6 +15,17 @@ export const maxDuration = 60;
 export async function GET(request: Request) {
   if (!isAuthorizedCronRequest(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // Daily retention of throttling data (specs/025-legal-pages); never blocks the mails.
+  try {
+    await purgeOldSubmissionAttempts();
+  } catch {
+    await writeLog({
+      level: "error",
+      action: "submission_attempts.purge_failed",
+      message: "Alte Drosselungsdaten konnten nicht gelöscht werden",
+    });
   }
 
   try {

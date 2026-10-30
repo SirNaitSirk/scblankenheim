@@ -192,7 +192,7 @@ html[data-admin-theme="dark"] .admin-theme-scope {
 html {
   scroll-behavior: smooth;
   /* breathing room when jumping to an in-page anchor */
-  scroll-padding-top: 2rem;
+  scroll-padding-top: 5.5rem;
 }
 
 body {
@@ -263,6 +263,43 @@ body {
 
   .animate-dialog {
     animation: dialog-in 0.22s var(--ease-out-expo) both;
+  }
+
+  /* Gentle bob of the hero scroll cue. */
+  @keyframes scroll-cue {
+    0%,
+    100% {
+      transform: none;
+    }
+    50% {
+      transform: translateY(6px);
+    }
+  }
+
+  .animate-scroll-cue {
+    animation: scroll-cue 1.8s ease-in-out infinite;
+  }
+
+  /* Scroll reveal (specs/024-landing-structure R1). Pure CSS on the view
+     timeline: content is visible in the server HTML, browsers without scroll
+     driven animations simply show it without the fade. */
+  @supports (animation-timeline: view()) {
+    @keyframes reveal-in {
+      from {
+        opacity: 0;
+        translate: 0 1.5rem;
+      }
+      to {
+        opacity: 1;
+        translate: none;
+      }
+    }
+
+    .reveal {
+      animation: reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 40%;
+    }
   }
 }
 

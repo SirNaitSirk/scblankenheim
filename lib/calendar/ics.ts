@@ -87,7 +87,7 @@ export function buildCampIcs(event: CampEvent, now: Date, host: string): string 
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//FCG Blankenheim//CampConnect//DE",
+    "PRODID:-//FCG Blankenheim//Summercamp//DE",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",

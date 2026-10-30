@@ -12,8 +12,8 @@ export const COMING_SOON_RETRY_AFTER_SECONDS = 86400;
 
 /**
  * Paths that are never gated: the admin surface, Clerk pages, the Stripe webhook,
- * cron jobs and the gate page itself. Everything else, including future public
- * pages, is gated (research R2).
+ * cron jobs, the gate page itself and the legal pages (specs/025-legal-pages).
+ * Everything else, including future public pages, is gated (research R2).
  */
 const OPEN_PATH_PREFIXES = [
   "/admin",
@@ -23,6 +23,8 @@ const OPEN_PATH_PREFIXES = [
   "/api/stripe-webhook",
   "/api/cron",
   COMING_SOON_PATH,
+  "/impressum",
+  "/datenschutz",
 ] as const;
 
 export type GateDecision = "pass" | "rewrite" | "refuse";

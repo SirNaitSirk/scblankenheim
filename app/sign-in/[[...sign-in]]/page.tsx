@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { de } from "@/lib/admin/messages";
 
 export const metadata: Metadata = {
-  title: "Anmelden — CampConnect",
+  title: "Anmelden · FCG Summercamp",
 };
 
 export default function SignInPage() {
