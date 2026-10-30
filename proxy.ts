@@ -2,7 +2,8 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 // The admin surface is the only protected area. Public marketing, payment, the
 // packing list, the design-system reference, and the Clerk auth pages stay open.
-const isProtectedRoute = createRouteMatcher(["/admin(.*)"]);
+// Admin route handlers (specs/020-school-release) check the permission again themselves.
+const isProtectedRoute = createRouteMatcher(["/admin(.*)", "/api/admin(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {

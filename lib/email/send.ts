@@ -10,6 +10,7 @@ import { berlinDate, berlinDayStartIso } from "@/lib/time/berlin";
 import { checkoutEligibility } from "@/lib/payment/eligibility";
 import {
   claimDelivery,
+  claimRepeatableDelivery,
   claimTestDelivery,
   countDeliveriesSince,
   testOnCooldown,
@@ -34,10 +35,16 @@ import { toCampEvent } from "@/lib/calendar/ics";
 import { appBaseUrl, calendarLinks, participantUrl, paymentUrl } from "./links";
 import { describeSendError, sendEmail } from "./provider";
 import type { CampMailSettings } from "./settings";
+import { buildReleasePdf, getReleaseSettings } from "@/lib/school-release/data";
+import { RELEASE_ANCHOR } from "@/lib/school-release/limits";
+import { formatReleaseDates, isReleaseActive, isReleaseUnlocked } from "@/lib/school-release/settings";
+import type { ReleaseSettings } from "@/lib/school-release/types";
 import {
   confirmationEmail,
   paymentLinkEmail,
   reminderEmail,
+  participantLinkEmail,
+  schoolReleaseEmail,
   type EmailContext,
   type RenderedEmail,
 } from "./templates";
@@ -93,6 +100,7 @@ export function buildMailTarget(
   registration: RegistrationRow,
   camp: CampRow,
   settings: CampMailSettings,
+  release: ReleaseSettings | null = null,
 ): MailTarget {
   const payable: PayableRegistration = {
     amountDue: registration.amount_due,
@@ -128,6 +136,14 @@ export function buildMailTarget(
             participantUrl: ownPageUrl,
             calendar,
             texts: settings.texts,
+            schoolRelease:
+              release && isReleaseActive(release)
+                ? {
+                    dates: formatReleaseDates(release.dates),
+                    url: `${ownPageUrl}#${RELEASE_ANCHOR}`,
+                    afterPayment: !isReleaseUnlocked(payable),
+                  }
+                : null,
           }
         : null,
   };
@@ -150,8 +166,11 @@ export async function loadMailTarget(registrationId: string): Promise<MailTarget
     .maybeSingle();
   if (!camp) return null;
 
-  const mailInfo = await getCampMailInfo(registration.camp_id);
-  return buildMailTarget(registration, camp, resolveMailSettings(mailInfo));
+  const [mailInfo, release] = await Promise.all([
+    getCampMailInfo(registration.camp_id),
+    getReleaseSettings(registration.camp_id),
+  ]);
+  return buildMailTarget(registration, camp, resolveMailSettings(mailInfo), release);
 }
 
 /**
@@ -398,7 +417,7 @@ export async function sendTestEmail(
   const sentToday = await countDeliveriesSince(berlinDayStartIso(now));
   if (sentToday >= DAILY_EMAIL_BUDGET - CONFIRMATION_RESERVE) return "quota";
 
-  const mailInfo = await getCampMailInfo(camp.id);
+  const [mailInfo, release] = await Promise.all([getCampMailInfo(camp.id), getReleaseSettings(camp.id)]);
   const rendered = renderTemplate(
     templateId,
     {
@@ -412,6 +431,7 @@ export async function sendTestEmail(
       tagline: camp.tagline,
     },
     mailInfo,
+    release,
   );
 
   const claim = await claimTestDelivery(admin.id);
@@ -434,4 +454,127 @@ export async function sendTestEmail(
     message: `${templateId}: ${describeSendError(result)}`,
   });
   return result.error === "not_configured" ? "not_configured" : "failed";
+}
+
+/** Whether today's quota still leaves the confirmation reserve free. */
+async function selfServiceQuotaLeft(now: Date = new Date()): Promise<boolean> {
+  const sentToday = await countDeliveriesSince(berlinDayStartIso(now));
+  return sentToday < DAILY_EMAIL_BUDGET - CONFIRMATION_RESERVE;
+}
+
+/** Whether a release mail can go out now: own address, `APP_URL` and quota left (FR-009). */
+export async function canSendSchoolRelease(email: string | null): Promise<boolean> {
+  if (!email?.trim() || !appBaseUrl()) return false;
+  return selfServiceQuotaLeft();
+}
+
+/**
+ * Release letter with the PDF attached (specs/020-school-release, US1, US4).
+ * May repeat per registration; the participant action and the admin action
+ * decide when. Admins may send while the switch is off, participants not.
+ */
+export async function sendSchoolRelease(
+  registrationId: string,
+  trigger: "participant" | "admin",
+  actor?: { id: string; label: string } | null,
+): Promise<DeliveryOutcome> {
+  const logActor = actor?.label ?? null;
+  try {
+    const target = await loadMailTarget(registrationId);
+    if (!target) return "skipped";
+    const label = `school_release ${target.reference}`;
+    if (!target.email || !target.context) {
+      await writeLog({
+        level: "warning",
+        actor: logActor,
+        action: "email.skipped",
+        message: `${label}: ${target.email ? "APP_URL fehlt" : "keine Mailadresse"}`,
+      });
+      return "skipped";
+    }
+    if (!(await selfServiceQuotaLeft())) {
+      await writeLog({ level: "warning", actor: logActor, action: "email.skipped", message: `${label}: Tageslimit` });
+      return "skipped";
+    }
+
+    const pdf = await buildReleasePdf(registrationId, { requireActive: trigger === "participant" });
+    if (!pdf) return "skipped";
+    const { data: registration } = await getServiceClient()
+      .from("registrations")
+      .select("camp_id")
+      .eq("id", registrationId)
+      .maybeSingle();
+    const settings = registration ? await getReleaseSettings(registration.camp_id) : null;
+    const rendered = schoolReleaseEmail(target.context, {
+      dates: settings ? formatReleaseDates(settings.dates) : "",
+      url: `${target.context.participantUrl}#${RELEASE_ANCHOR}`,
+    });
+
+    const claim = await claimRepeatableDelivery({
+      registrationId,
+      kind: "school_release",
+      trigger,
+      actor: actor?.id ?? null,
+    });
+    const result = await sendEmail(
+      {
+        to: target.email,
+        ...rendered,
+        attachments: [{ filename: pdf.fileName, content: Buffer.from(pdf.bytes).toString("base64") }],
+      },
+      `school_release/${claim.id}`,
+      target.settings.sender,
+    );
+
+    if (result.ok) {
+      await markSent(claim.id, result.id);
+      await writeLog({ actor: logActor, action: "email.sent", message: label });
+      return "sent";
+    }
+    await markFailed(claim.id, result.error);
+    await writeLog({
+      level: "warning",
+      actor: logActor,
+      action: "email.failed",
+      message: `${label}: ${describeSendError(result)}`,
+    });
+    return "failed";
+  } catch {
+    await writeLog({ level: "warning", actor: logActor, action: "email.failed", message: `school_release ${registrationId}` });
+    return "failed";
+  }
+}
+
+/**
+ * Link to the participant page, requested on the landing page
+ * (specs/020-school-release, US2). The caller checked the per registration
+ * limits; this checks address, `APP_URL` and the daily quota.
+ */
+export async function sendParticipantLink(registrationId: string): Promise<DeliveryOutcome> {
+  try {
+    const target = await loadMailTarget(registrationId);
+    if (!target) return "skipped";
+    const label = `participant_link ${target.reference}`;
+    if (!target.email || !target.context) return "skipped";
+    if (!(await selfServiceQuotaLeft())) {
+      await writeLog({ level: "warning", action: "email.skipped", message: `${label}: Tageslimit` });
+      return "skipped";
+    }
+
+    const rendered = participantLinkEmail(target.context, `${target.context.participantUrl}#${RELEASE_ANCHOR}`);
+    const claim = await claimRepeatableDelivery({ registrationId, kind: "participant_link", trigger: "participant" });
+    const result = await sendEmail({ to: target.email, ...rendered }, `participant_link/${claim.id}`, target.settings.sender);
+
+    if (result.ok) {
+      await markSent(claim.id, result.id);
+      await writeLog({ action: "email.sent", message: label });
+      return "sent";
+    }
+    await markFailed(claim.id, result.error);
+    await writeLog({ level: "warning", action: "email.failed", message: `${label}: ${describeSendError(result)}` });
+    return "failed";
+  } catch {
+    await writeLog({ level: "warning", action: "email.failed", message: `participant_link ${registrationId}` });
+    return "failed";
+  }
 }

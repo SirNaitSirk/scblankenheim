@@ -140,8 +140,53 @@ describe("buildParticipantView privacy", () => {
         "payHref",
         "payState",
         "rows",
+        "schoolRelease",
         "status",
       ].sort(),
     );
+  });
+});
+
+describe("school release card (specs/020-school-release)", () => {
+  const settings = {
+    enabled: true,
+    dates: ["2027-07-23"],
+    signerName: "Maria Schulz",
+    signerRole: null,
+    signaturePath: "camp/signature-1.png",
+    addressKeys: ["shirt", "allergies"],
+  };
+  const withRelease = (patch: Partial<ParticipantRegistrationInput> = {}, enabled = true) =>
+    buildParticipantView({
+      registration: { ...registration, ...patch },
+      camp,
+      fields,
+      release: { settings: { ...settings, enabled }, data: null },
+    });
+
+  it("shows dates, name and prefilled address when active", () => {
+    expect(withRelease().schoolRelease).toEqual({
+      dates: "Freitag, 23. Juli 2027",
+      locked: false,
+      participantName: "Lena Muster",
+      data: null,
+      prefillAddress: "M\nNüsse",
+    });
+  });
+
+  it("locks the card until a first payment arrives", () => {
+    expect(withRelease({ payment_status: "unpaid", amount_paid: 0 }).schoolRelease?.locked).toBe(true);
+    expect(withRelease({ payment_status: "processing", amount_paid: 0 }).schoolRelease?.locked).toBe(true);
+    expect(withRelease({ payment_status: "unpaid", amount_due: 0, amount_paid: 0 }).schoolRelease?.locked).toBe(false);
+  });
+
+  it("is hidden after a refund", () => {
+    expect(withRelease({ payment_status: "refunded" }).schoolRelease).toBeNull();
+  });
+
+  it("is hidden when switched off, cancelled or without settings", () => {
+    expect(withRelease({}, false).schoolRelease).toBeNull();
+    expect(withRelease({ status: "cancelled" }).schoolRelease).toBeNull();
+    expect(view().schoolRelease).toBeNull();
   });
 });

@@ -175,3 +175,14 @@ describe("calendar block in info mails", () => {
     expect(packingInfoEmail(ctx).text).not.toContain("Apple oder Outlook");
   });
 });
+
+describe("school release hint in the teaser (specs/020-school-release)", () => {
+  it("appears only when the release is on", () => {
+    const url = `${ctx.participantUrl}#schulbefreiung`;
+    const withHint = teaserInfoEmail({ ...ctx, schoolRelease: { dates: "Freitag, 23. Juli 2027", url, afterPayment: false } });
+    expect(withHint.text).toContain(url);
+    expect(withHint.html).toContain("Schulbefreiung");
+    expect(teaserInfoEmail(ctx).text).not.toContain("#schulbefreiung");
+    expect(packingInfoEmail({ ...ctx, schoolRelease: { dates: "x", url, afterPayment: false } }).text).not.toContain("#schulbefreiung");
+  });
+});

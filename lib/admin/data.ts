@@ -31,6 +31,7 @@ import type {
   RegistrationInput,
   UserRole,
 } from "./types";
+import { deleteSchoolReleaseByReference } from "@/lib/school-release/data";
 
 /**
  * Real Supabase data-access layer (replaces the former mock-data.ts).
@@ -406,6 +407,8 @@ export async function setRegistrationDeleted(
     .update({ deleted, updated_at: new Date().toISOString() })
     .eq("reference", reference);
   if (error) throw error;
+  // School release data go with the registration (specs/020-school-release, research R8).
+  if (deleted) await deleteSchoolReleaseByReference(reference);
 }
 
 export async function getCampFormFields(campId: string): Promise<CampFormField[]> {
@@ -637,9 +640,36 @@ export const getCurrentProfile = cache(async (): Promise<AdminUser | null> => {
     if (!profileRes.data) return null;
 
     const role = (roleRes.data?.role as UserRole) ?? "admin";
-    return mapAdminUser(profileRes.data, role);
+    const profile = await touchLastActive(profileRes.data);
+    return mapAdminUser(profile, role);
   });
 });
+
+// Writes `last_active_at` at most once per interval, not on every request.
+const LAST_ACTIVE_INTERVAL_MS = 15 * 60 * 1000;
+
+/**
+ * Marks the signed in admin as active. A failed write never blocks the page;
+ * the column is display only.
+ */
+async function touchLastActive(
+  profile: Tables<"profiles">,
+): Promise<Tables<"profiles">> {
+  const now = Date.now();
+  const last = profile.last_active_at ? Date.parse(profile.last_active_at) : NaN;
+  if (Number.isFinite(last) && now - last < LAST_ACTIVE_INTERVAL_MS) return profile;
+
+  const lastActiveAt = new Date(now).toISOString();
+  const { error } = await getServiceClient()
+    .from("profiles")
+    .update({ last_active_at: lastActiveAt })
+    .eq("id", profile.id);
+  if (error) {
+    console.error("Failed to update last_active_at", error);
+    return profile;
+  }
+  return { ...profile, last_active_at: lastActiveAt };
+}
 
 /**
  * Persists an admin's dashboard metric selection to their own `profiles` row.

@@ -6,6 +6,8 @@ import {
   type CampMailInfo,
 } from "@/lib/admin/camp-mail-info";
 import { getCampMailInfos } from "@/lib/admin/camp-mail-info-data";
+import { getReleaseSettingsMap } from "@/lib/school-release/data";
+import type { ReleaseSettings } from "@/lib/school-release/types";
 import { writeLog } from "@/lib/admin/data";
 import { getServiceClient } from "@/lib/supabase/server";
 import { addDays, berlinDate, berlinDayStartIso, compareDates } from "@/lib/time/berlin";
@@ -105,8 +107,9 @@ function buildInfoTarget(
   camp: InfoCamp,
   mailInfo: CampMailInfo,
   settings: CampMailSettings,
+  release: ReleaseSettings | null,
 ) {
-  const target = buildMailTarget(registration, camp, settings);
+  const target = buildMailTarget(registration, camp, settings, release);
   const packing = packingUrl();
   const context: InfoMailContext | null =
     target.context && packing
@@ -128,7 +131,10 @@ export async function runInfoMails(
 
   const campId = await currentCampId();
   const candidates = await loadRunCamps(campId, today);
-  const infos = await getCampMailInfos(candidates.map((camp) => camp.id));
+  const [infos, releases] = await Promise.all([
+    getCampMailInfos(candidates.map((camp) => camp.id)),
+    getReleaseSettingsMap(candidates.map((camp) => camp.id)),
+  ]);
   const settingsById = new Map(
     candidates.map((camp) => [camp.id, resolveMailSettings(infos.get(camp.id)!)]),
   );
@@ -168,7 +174,7 @@ export async function runInfoMails(
     const camp = campById.get(row.camp_id)!;
     const mailInfo = infos.get(row.camp_id)!;
     const settings = settingsById.get(row.camp_id)!;
-    const { target, context } = buildInfoTarget(row, camp, mailInfo, settings);
+    const { target, context } = buildInfoTarget(row, camp, mailInfo, settings, releases.get(row.camp_id) ?? null);
     const pastReminders = reminders.get(row.id);
     const pastInfo = sentInfo.get(row.id);
     const registeredDate = berlinDate(new Date(row.registered_at));

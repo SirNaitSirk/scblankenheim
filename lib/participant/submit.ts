@@ -24,12 +24,18 @@ export type TokenRegistration = {
   email: string | null;
   gender: string | null;
   form_data: Json;
+  status: string;
+  payment_status: string;
+  amount_due: number;
+  amount_paid: number;
 };
 
 export async function findRegistrationForToken(token: string): Promise<TokenRegistration | null> {
   const { data, error } = await getServiceClient()
     .from("registrations")
-    .select("id, camp_id, reference, first_name, last_name, email, gender, form_data, deleted")
+    .select(
+      "id, camp_id, reference, first_name, last_name, email, gender, form_data, status, payment_status, amount_due, amount_paid, deleted",
+    )
     .eq("access_token", token)
     .maybeSingle();
   if (error || !data || data.deleted) return null;

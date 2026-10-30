@@ -11,6 +11,7 @@ import {
   type PreviewCamp,
 } from "@/lib/email/preview";
 import { confirmationEmail, reminderEmail } from "@/lib/email/templates";
+import { EMPTY_RELEASE_SETTINGS } from "@/lib/school-release/settings";
 
 const camp: PreviewCamp = {
   name: "Summercamp 2027",
@@ -23,7 +24,7 @@ const camp: PreviewCamp = {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("buildMailPreviews", () => {
-  it("returns the six templates in order", () => {
+  it("returns the eight templates in order", () => {
     expect(buildMailPreviews(camp).map((p) => p.id)).toEqual([
       "confirmation",
       "confirmation_free",
@@ -31,6 +32,8 @@ describe("buildMailPreviews", () => {
       "reminder_1",
       "reminder_2",
       "reminder_3",
+      "school_release",
+      "participant_link",
     ]);
   });
 
@@ -65,6 +68,23 @@ describe("buildMailPreviews", () => {
   it("shows no pay button in the free variant", () => {
     const free = buildMailPreviews(camp)[1]!;
     expect(free.html).not.toContain("Jetzt bezahlen");
+  });
+
+  it("names the configured release dates, else the first camp day", () => {
+    const release = {
+      ...EMPTY_RELEASE_SETTINGS,
+      enabled: true,
+      dates: ["2027-07-24"],
+      signerName: "Campleitung",
+      signaturePath: "camp/signature.png",
+    };
+    const configured = buildMailPreviews(camp, undefined, release).find((p) => p.id === "school_release")!;
+    expect(configured.text).toContain("Samstag, 24. Juli 2027");
+    const [paid, free] = buildMailPreviews(camp, undefined, release);
+    expect(paid!.text).toContain("sobald deine erste Zahlung");
+    expect(free!.text).not.toContain("sobald deine erste Zahlung");
+    const fallback = buildMailPreviews(camp).find((p) => p.id === "school_release")!;
+    expect(fallback.text).toContain("Dienstag, 20. Juli 2027");
   });
 
   it("omits the date without a due date", () => {

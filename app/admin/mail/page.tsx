@@ -18,6 +18,7 @@ import type { InfoMailKind } from "@/lib/email/info-mails";
 import { infoMailCounts, type InfoMailCounts } from "@/lib/email/info-run";
 import type { MailTiming } from "@/lib/email/settings";
 import { buildInfoMailPreviews, buildMailPreviews, type PreviewId } from "@/lib/email/preview";
+import { getReleaseSettings } from "@/lib/school-release/data";
 
 const t = de.mail;
 
@@ -30,6 +31,8 @@ function triggers(timing: MailTiming): Record<PreviewId, string> {
     reminder_1: t.triggers.reminder_1(timing.reminderFirstAfterDays),
     reminder_2: t.triggers.reminder_2(timing.reminderBeforeDueDays),
     reminder_3: t.triggers.reminder_3,
+    school_release: t.triggers.school_release,
+    participant_link: t.triggers.participant_link,
   };
 }
 
@@ -122,7 +125,11 @@ export default async function MailPage() {
     paymentDueDate: camp.paymentDueDate,
     tagline: camp.tagline,
   };
-  const [mailInfo, counts] = await Promise.all([getCampMailInfo(camp.id), infoMailCounts(camp.id)]);
+  const [mailInfo, counts, release] = await Promise.all([
+    getCampMailInfo(camp.id),
+    infoMailCounts(camp.id),
+    getReleaseSettings(camp.id),
+  ]);
   const panelCamp = { ...previewCamp, id: camp.id };
 
   const settingsHref = `/admin/camps/${camp.id}/infomails`;
@@ -134,13 +141,13 @@ export default async function MailPage() {
     : { text: t.remindersOff, settingsHref };
 
   const previews: MailPreviewItem[] = [
-    ...buildMailPreviews(previewCamp, texts).map((preview) => ({
+    ...buildMailPreviews(previewCamp, texts, release).map((preview) => ({
       ...preview,
       name: t.templates[preview.id],
       trigger: mailTriggers[preview.id],
       off: REMINDER_PREVIEWS.has(preview.id) ? remindersOff : undefined,
     })),
-    ...buildInfoMailPreviews(previewCamp, mailInfo).map((preview) => ({
+    ...buildInfoMailPreviews(previewCamp, mailInfo, release).map((preview) => ({
       ...preview,
       name: t.templates[preview.id],
       trigger: infoMailTriggers[preview.id],

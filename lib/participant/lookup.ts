@@ -6,6 +6,7 @@ import { getServiceClient } from "@/lib/supabase/server";
 import { OWN_MESSAGES_SHOWN, PARTICIPANT_THROTTLE_MAX, PARTICIPANT_THROTTLE_WINDOW_MS } from "./limits";
 import { toCampFormField } from "./contact";
 import { buildParticipantView, type ParticipantView } from "./view";
+import { getReleaseSettings, getSchoolRelease } from "@/lib/school-release/data";
 
 /**
  * Server only lookup for the participant page (specs/017-participant-page,
@@ -24,7 +25,7 @@ export async function findParticipantByToken(token: string): Promise<Participant
     .maybeSingle();
   if (error || !registration || registration.deleted) return null;
 
-  const [{ data: camp }, { data: fields }, { data: messages }] = await Promise.all([
+  const [{ data: camp }, { data: fields }, { data: messages }, releaseSettings, releaseData] = await Promise.all([
     supabase
       .from("camps")
       .select("id, name, start_date, end_date, location")
@@ -40,6 +41,8 @@ export async function findParticipantByToken(token: string): Promise<Participant
       .eq("registration_id", registration.id)
       .order("created_at", { ascending: false })
       .limit(OWN_MESSAGES_SHOWN),
+    getReleaseSettings(registration.camp_id),
+    getSchoolRelease(registration.id),
   ]);
   if (!camp) return null;
 
@@ -52,6 +55,16 @@ export async function findParticipantByToken(token: string): Promise<Participant
     calendar,
     campFields: (fields ?? []).map(toCampFormField),
     messages: messages ?? [],
+    release: {
+      settings: releaseSettings,
+      data: releaseData && {
+        teacherName: releaseData.teacherName,
+        schoolName: releaseData.schoolName,
+        schoolAddress: releaseData.schoolAddress,
+        participantAddress: releaseData.participantAddress,
+        className: releaseData.className,
+      },
+    },
   });
 }
 

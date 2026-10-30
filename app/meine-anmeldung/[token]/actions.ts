@@ -26,6 +26,13 @@ import {
 } from "@/lib/participant/submit";
 import { normalizeAccessToken } from "@/lib/participant/token";
 import { getServiceClient } from "@/lib/supabase/server";
+import { lastDeliveryAt } from "@/lib/email/deliveries";
+import { canSendSchoolRelease, sendSchoolRelease } from "@/lib/email/send";
+import { getReleaseSettings, isReleaseThrottled, upsertSchoolRelease } from "@/lib/school-release/data";
+import { RELEASE_DUPLICATE_MS } from "@/lib/school-release/limits";
+import { releaseMessages } from "@/lib/school-release/messages";
+import { fieldErrorsOf, schoolReleaseInputSchema } from "@/lib/school-release/schema";
+import { isReleaseActive, isReleaseUnlocked } from "@/lib/school-release/settings";
 
 /**
  * Public action of the participant page (specs/018-participant-messages,
@@ -148,5 +155,75 @@ export async function sendParticipantMessageAction(
   } catch (error) {
     console.error("[participant] message failed", error);
     return fail(e.generic);
+  }
+}
+
+// --- school release letter (specs/020-school-release, contracts/school-release.md) ---
+
+export type SchoolReleaseState =
+  | { status: "idle" }
+  | { status: "saved"; mail: "queued" | "skipped" }
+  | { status: "error"; error: string; fieldErrors?: Record<string, string> };
+
+const re = releaseMessages.errors;
+
+function readReleaseInput(formData: FormData): Record<string, unknown> {
+  const value = (key: string) => {
+    const raw = formData.get(key);
+    return typeof raw === "string" ? raw : "";
+  };
+  return {
+    teacherName: value("teacherName"),
+    schoolName: value("schoolName"),
+    schoolAddress: value("schoolAddress"),
+    participantAddress: value("participantAddress"),
+    className: value("className"),
+  };
+}
+
+export async function saveSchoolReleaseAction(
+  rawToken: string,
+  _previous: SchoolReleaseState,
+  formData: FormData,
+): Promise<SchoolReleaseState> {
+  try {
+    const token = normalizeAccessToken(rawToken);
+    if (!token) return { status: "error", error: re.invalidLink };
+    if (await isReleaseThrottled(await requestIp())) return { status: "error", error: re.throttled };
+
+    const registration = await findRegistrationForToken(token);
+    if (!registration) return { status: "error", error: re.invalidLink };
+    if (registration.status !== "active") return { status: "error", error: re.unavailable };
+    if (!isReleaseActive(await getReleaseSettings(registration.camp_id))) {
+      return { status: "error", error: re.unavailable };
+    }
+    const payment = {
+      paymentStatus: registration.payment_status,
+      amountDue: registration.amount_due,
+      amountPaid: registration.amount_paid,
+    };
+    if (!isReleaseUnlocked(payment)) return { status: "error", error: re.locked };
+
+    const parsed = schoolReleaseInputSchema.safeParse(readReleaseInput(formData));
+    if (!parsed.success) {
+      return { status: "error", error: re.check, fieldErrors: fieldErrorsOf(parsed.error) };
+    }
+
+    const saved = await upsertSchoolRelease(registration.id, registration.camp_id, parsed.data, "participant");
+    revalidatePath(participantPath(token));
+
+    // Same data again right after saving or a release mail is a double click: no second mail.
+    if (!saved.changed) {
+      const last = (await lastDeliveryAt(registration.id, "school_release")) ?? saved.savedAt;
+      const recent = Math.max(last.getTime(), saved.savedAt.getTime());
+      if (Date.now() - recent < RELEASE_DUPLICATE_MS) return { status: "saved", mail: "queued" };
+    }
+    if (!(await canSendSchoolRelease(registration.email))) return { status: "saved", mail: "skipped" };
+
+    after(() => sendSchoolRelease(registration.id, "participant"));
+    return { status: "saved", mail: "queued" };
+  } catch (error) {
+    console.error("[participant] school release failed", error);
+    return { status: "error", error: re.generic };
   }
 }

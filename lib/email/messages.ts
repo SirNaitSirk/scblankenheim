@@ -80,6 +80,37 @@ export const emailMessages = {
     keepReference: "Bitte bewahre deine Referenznummer auf. Mit ihr findest du deine Anmeldung jederzeit wieder.",
   },
 
+  schoolRelease: {
+    subject: (camp: string) => `Deine Schulbefreiung für das ${camp}`,
+    preheader: "Dein Brief an die Schule liegt als PDF bei.",
+    title: "Deine Schulbefreiung",
+    intro: (camp: string) =>
+      `im Anhang findest du deinen Brief an die Schule mit der Bitte um Unterrichtsbefreiung für das ${camp}.`,
+    dates: (dates: string) => `Er gilt für ${dates}.`,
+    attachment: "Druck ihn aus oder leite ihn an deine Lehrkraft weiter. Den Brief hat die Campleitung bereits unterschrieben.",
+    change: "Stimmt etwas nicht? Auf deiner Seite zur Anmeldung kannst du die Angaben ändern und den Brief neu erstellen:",
+    button: "Zur Schulbefreiung",
+  },
+
+  releaseHint: {
+    title: "Schulbefreiung",
+    intro: (dates: string) =>
+      `Das Camp fällt auf ${dates}. Wenn du an diesem Tag Schule hast, erstellst du dir auf deiner Seite zur Anmeldung in zwei Minuten einen Brief an deine Schule.`,
+    button: "Schulbefreiung erstellen",
+  },
+
+  releaseAfterPayment: "Die Befreiung steht bereit, sobald deine erste Zahlung bei uns eingegangen ist.",
+
+  participantLink: {
+    subject: (camp: string) => `Dein Link zur Anmeldung für das ${camp}`,
+    preheader: "Hier geht es zu deiner Anmeldung und zur Schulbefreiung.",
+    title: "Dein Link zur Anmeldung",
+    intro: (camp: string) =>
+      `du hast auf unserer Website den Link zu deiner Anmeldung zum ${camp} angefordert. Dort kannst du auch deine Schulbefreiung erstellen.`,
+    button: "Zur Schulbefreiung",
+    notYou: "Du hast nichts angefordert? Dann kannst du diese Mail einfach ignorieren.",
+  },
+
   paymentLink: {
     subject: (camp: string) => `Dein Zahlungslink für das ${camp}`,
     preheader: "Hier kannst du deine Anmeldung bezahlen.",

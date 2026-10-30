@@ -8,6 +8,9 @@ import {
   getRegistrationMailsAction,
   getParticipantLinkAction,
   getParticipantMessagesAction,
+  loadSchoolReleaseAction,
+  saveSchoolReleaseAdminAction,
+  sendSchoolReleaseAction,
   resolveParticipantMessageAction,
   renewParticipantLinkAction,
   sendPaymentLinkAction,
@@ -528,6 +531,9 @@ export function RegistrationsManager({
           onRenewParticipantLink={renewParticipantLinkAction}
           onLoadParticipantMessages={getParticipantMessagesAction}
           onResolveParticipantMessage={resolveParticipantMessageAction}
+          onLoadSchoolRelease={loadSchoolReleaseAction}
+          onSaveSchoolRelease={saveSchoolReleaseAdminAction}
+          onSendSchoolRelease={sendSchoolReleaseAction}
         />
       )}
 

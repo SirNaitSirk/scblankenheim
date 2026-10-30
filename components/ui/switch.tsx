@@ -7,14 +7,18 @@ type SwitchProps = {
   onCheckedChange: (checked: boolean) => void;
   label: string;
   id?: string;
+  disabled?: boolean;
 };
 
 /** Accessible toggle. Label sits to the right and is clickable. */
-export function Switch({ checked, onCheckedChange, label, id }: SwitchProps) {
+export function Switch({ checked, onCheckedChange, label, id, disabled = false }: SwitchProps) {
   return (
     <label
       htmlFor={id}
-      className="inline-flex cursor-pointer select-none items-center gap-2.5 text-sm text-foreground"
+      className={cn(
+        "inline-flex select-none items-center gap-2.5 text-sm text-foreground",
+        disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+      )}
     >
       <button
         id={id}
@@ -22,6 +26,7 @@ export function Switch({ checked, onCheckedChange, label, id }: SwitchProps) {
         role="switch"
         aria-checked={checked}
         aria-label={label}
+        disabled={disabled}
         onClick={() => onCheckedChange(!checked)}
         className={cn(
           "relative h-6 w-10 shrink-0 rounded-pill transition-colors duration-150 ease-[var(--ease-out-expo)]",

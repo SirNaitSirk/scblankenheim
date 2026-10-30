@@ -214,6 +214,35 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["participant_messages"]["Insert"]>;
         Relationships: [];
       };
+      // supabase/migrations/0015_school_release.sql
+      school_releases: {
+        Row: {
+          registration_id: string;
+          camp_id: string;
+          teacher_name: string;
+          school_name: string;
+          school_address: string;
+          participant_address: string;
+          class_name: string | null;
+          updated_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          registration_id: string;
+          camp_id: string;
+          teacher_name: string;
+          school_name: string;
+          school_address: string;
+          participant_address: string;
+          class_name?: string | null;
+          updated_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["school_releases"]["Insert"]>;
+        Relationships: [];
+      };
       submission_attempts: {
         Row: {
           id: string;
@@ -517,6 +546,13 @@ export type Database = {
           text_closing: string | null;
           contact_name: string | null;
           contact_phone: string | null;
+          // supabase/migrations/0015_school_release.sql
+          release_enabled: boolean;
+          release_dates: string[];
+          release_signer_name: string | null;
+          release_signer_role: string | null;
+          release_signature_path: string | null;
+          release_address_keys: string[];
         };
         Insert: {
           camp_id: string;
@@ -550,6 +586,12 @@ export type Database = {
           text_closing?: string | null;
           contact_name?: string | null;
           contact_phone?: string | null;
+          release_enabled?: boolean;
+          release_dates?: string[];
+          release_signer_name?: string | null;
+          release_signer_role?: string | null;
+          release_signature_path?: string | null;
+          release_address_keys?: string[];
         };
         Update: Partial<Database["public"]["Tables"]["camp_mail_info"]["Insert"]>;
         Relationships: [];

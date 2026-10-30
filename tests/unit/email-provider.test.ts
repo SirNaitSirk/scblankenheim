@@ -39,6 +39,15 @@ describe("sendEmail", () => {
     expect(body).toMatchObject({ to: ["lena@example.com"], reply_to: "team@example.com" });
   });
 
+  it("sends attachments only when given", async () => {
+    const mock = stubFetch(new Response(JSON.stringify({ id: "msg_2" }), { status: 200 }));
+    await sendEmail(email, "a");
+    await sendEmail({ ...email, attachments: [{ filename: "Brief.pdf", content: "JVBERg==" }] }, "b");
+    const bodies = mock.mock.calls.map((call) => JSON.parse(String((call as unknown as [string, RequestInit])[1].body)));
+    expect(bodies[0]).not.toHaveProperty("attachments");
+    expect(bodies[1].attachments).toEqual([{ filename: "Brief.pdf", content: "JVBERg==" }]);
+  });
+
   it("maps 422 to rejected with the status as detail", async () => {
     stubFetch(new Response("{}", { status: 422 }));
     await expect(sendEmail(email, "k")).resolves.toEqual({

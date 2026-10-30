@@ -17,6 +17,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/supabase/server", () => ({ getServiceClient: vi.fn() }));
 vi.mock("@/lib/admin/data", () => ({ getCurrentCamp: mocks.getCurrentCamp, writeLog: mocks.writeLog }));
 vi.mock("@/lib/admin/camp-mail-info-data", () => ({ getCampMailInfo: mocks.getCampMailInfo }));
+vi.mock("@/lib/school-release/data", () => ({
+  buildReleasePdf: vi.fn(),
+  getReleaseSettings: vi.fn(async () => null),
+}));
 vi.mock("@/lib/email/deliveries", () => ({
   claimDelivery: vi.fn(),
   claimTestDelivery: mocks.claimTestDelivery,

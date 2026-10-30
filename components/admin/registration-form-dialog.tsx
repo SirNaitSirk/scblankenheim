@@ -32,6 +32,8 @@ import type { MailHistoryResult } from "@/lib/email/history";
 import { MailHistory } from "./mail-history";
 import { ParticipantLinkPanel } from "./participant-link-panel";
 import { ParticipantMessagesPanel } from "./participant-messages-panel";
+import { SchoolReleasePanel } from "./school-release-panel";
+import type { AdminSchoolReleaseResult } from "@/lib/school-release/types";
 import { hasPaymentDue, PaymentLinkPanel } from "./payment-link-panel";
 import { CORE_FIELD_KEYS } from "./registration-columns";
 
@@ -185,6 +187,9 @@ export function RegistrationFormDialog({
   onRenewParticipantLink,
   onLoadParticipantMessages,
   onResolveParticipantMessage,
+  onLoadSchoolRelease,
+  onSaveSchoolRelease,
+  onSendSchoolRelease,
 }: {
   open: boolean;
   mode: "create" | "edit";
@@ -207,6 +212,9 @@ export function RegistrationFormDialog({
     id: string,
     input: { action: "done" | "apply" | "dismiss"; confirmOverwrite?: boolean },
   ) => Promise<ResolveMessageResult>;
+  onLoadSchoolRelease?: (reference: string) => Promise<AdminSchoolReleaseResult>;
+  onSaveSchoolRelease?: (reference: string, input: Record<string, string>) => Promise<ActionResult>;
+  onSendSchoolRelease?: (reference: string) => Promise<ActionResult>;
 }) {
   // Initialised from props at mount; the parent remounts via `key` on each open,
   // so state is always fresh without a setState-in-effect reset.
@@ -470,6 +478,21 @@ export function RegistrationFormDialog({
             resolve={onResolveParticipantMessage}
           />
         )}
+
+        {mode === "edit" &&
+          registration &&
+          !registration.deleted &&
+          onLoadSchoolRelease &&
+          onSaveSchoolRelease &&
+          onSendSchoolRelease && (
+            <SchoolReleasePanel
+              reference={registration.id}
+              load={onLoadSchoolRelease}
+              save={onSaveSchoolRelease}
+              send={onSendSchoolRelease}
+              onMailSent={() => setMailsReloadKey((key) => key + 1)}
+            />
+          )}
 
         {mode === "edit" && registration && onLoadMails && (
           <MailHistory reference={registration.id} load={onLoadMails} reloadKey={mailsReloadKey} />

@@ -11,11 +11,15 @@ import type { MailSender } from "./settings";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
+/** File attached to a mail; `content` is base64 (specs/020-school-release, research R2). */
+export type EmailAttachment = { filename: string; content: string };
+
 export type OutgoingEmail = {
   to: string;
   subject: string;
   html: string;
   text: string;
+  attachments?: EmailAttachment[];
 };
 
 export type SendError = "not_configured" | "rejected" | "rate_limited" | "network";
@@ -81,6 +85,7 @@ export async function sendEmail(
         subject: email.subject,
         html: email.html,
         text: email.text,
+        ...(email.attachments?.length ? { attachments: email.attachments } : {}),
       }),
       signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
     });

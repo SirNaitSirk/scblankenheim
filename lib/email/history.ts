@@ -5,7 +5,7 @@
  */
 
 export type MailHistoryStatus = "sent" | "failed" | "sending";
-export type MailHistoryTrigger = "registration" | "cron" | "admin";
+export type MailHistoryTrigger = "registration" | "cron" | "admin" | "participant";
 
 export type MailHistoryEntry = {
   id: string;
@@ -41,7 +41,9 @@ function toStatus(row: DeliveryRow): MailHistoryStatus {
 }
 
 function toTrigger(trigger: string): MailHistoryTrigger {
-  return trigger === "registration" || trigger === "admin" ? trigger : "cron";
+  return trigger === "registration" || trigger === "admin" || trigger === "participant"
+    ? trigger
+    : "cron";
 }
 
 export function toMailHistory(

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getServiceClient } from "@/lib/supabase/server";
+import { berlinDayStartIso } from "@/lib/time/berlin";
 import { isUniqueViolation } from "@/lib/admin/data";
 import { PAYMENT_LINK_COOLDOWN_MS, STALE_SENDING_MS, TEST_SEND_COOLDOWN_MS } from "./limits";
 import type { SendError } from "./provider";
@@ -15,8 +16,14 @@ import type { ReminderKind } from "./templates";
  * runs overlap. No address or body is stored.
  */
 
-export type EmailKind = "confirmation" | "payment_link" | ReminderKind | InfoMailKind;
-export type DeliveryTrigger = "registration" | "cron" | "admin";
+export type EmailKind =
+  | "confirmation"
+  | "payment_link"
+  | ReminderKind
+  | InfoMailKind
+  | "school_release"
+  | "participant_link";
+export type DeliveryTrigger = "registration" | "cron" | "admin" | "participant";
 export type DeliveryError = SendError | "stale";
 
 export const REMINDER_KINDS: readonly ReminderKind[] = ["reminder_1", "reminder_2", "reminder_3"];
@@ -88,6 +95,64 @@ export async function claimTeamDelivery(registrationId: string): Promise<{ id: s
     .single();
   if (error) throw error;
   return { id: data.id };
+}
+
+/**
+ * Claims a mail that may repeat per registration, such as the school release
+ * letter or the participant link (specs/020-school-release, research R7). The
+ * unique index excludes these kinds, so every call gets its own row.
+ */
+export async function claimRepeatableDelivery(input: {
+  registrationId: string;
+  kind: "school_release" | "participant_link";
+  trigger: DeliveryTrigger;
+  actor?: string | null;
+}): Promise<{ id: string }> {
+  const { data, error } = await getServiceClient()
+    .from("email_deliveries")
+    .insert({
+      registration_id: input.registrationId,
+      kind: input.kind,
+      status: "sending",
+      trigger: input.trigger,
+      actor: input.actor ?? null,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return { id: data.id };
+}
+
+/** When the last mail of this kind went out or started; null when never. */
+export async function lastDeliveryAt(registrationId: string, kind: EmailKind): Promise<Date | null> {
+  const { data, error } = await getServiceClient()
+    .from("email_deliveries")
+    .select("created_at")
+    .eq("registration_id", registrationId)
+    .eq("kind", kind)
+    .in("status", ["sending", "sent"])
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (error) throw error;
+  const latest = data?.[0]?.created_at;
+  return latest ? new Date(latest) : null;
+}
+
+/** Mails of this kind for this registration since the start of the Berlin day. */
+export async function countDeliveriesToday(
+  registrationId: string,
+  kind: EmailKind,
+  now: Date = new Date(),
+): Promise<number> {
+  const { count, error } = await getServiceClient()
+    .from("email_deliveries")
+    .select("id", { count: "exact", head: true })
+    .eq("registration_id", registrationId)
+    .eq("kind", kind)
+    .in("status", ["sending", "sent"])
+    .gte("created_at", berlinDayStartIso(now));
+  if (error) throw error;
+  return count ?? 0;
 }
 
 /** Whether this admin sent a test within the cooldown. */

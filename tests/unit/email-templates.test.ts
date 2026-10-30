@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   confirmationEmail,
+  participantLinkEmail,
   paymentLinkEmail,
   reminderEmail,
+  schoolReleaseEmail,
   type EmailContext,
 } from "@/lib/email/templates";
 
@@ -181,5 +183,44 @@ describe("calendar block", () => {
   it("is left out without calendar links and in payment mails", () => {
     expect(confirmationEmail({ ...ctx, calendar: null }).text).not.toContain("Kalender");
     expect(paymentLinkEmail(ctx).text).not.toContain("Apple oder Outlook");
+  });
+});
+
+describe("school release (specs/020-school-release)", () => {
+  const release = {
+    dates: "Freitag, 23. Juli 2027",
+    url: `${ctx.participantUrl}#schulbefreiung`,
+    afterPayment: false,
+  };
+  const afterPaymentLine = "sobald deine erste Zahlung bei uns eingegangen ist";
+
+  it("names the payment as condition only while nothing is paid", () => {
+    expect(confirmationEmail({ ...ctx, schoolRelease: release }).text).not.toContain(afterPaymentLine);
+    const unpaid = { ...ctx, schoolRelease: { ...release, afterPayment: true } };
+    expect(confirmationEmail(unpaid).text).toContain(afterPaymentLine);
+    expect(participantLinkEmail(unpaid, release.url).text).toContain(afterPaymentLine);
+    expect(participantLinkEmail({ ...ctx, schoolRelease: release }, release.url).text).not.toContain(afterPaymentLine);
+  });
+
+  it("shows the hint in the confirmation only when set", () => {
+    const withHint = confirmationEmail({ ...ctx, schoolRelease: release });
+    expect(withHint.html).toContain("Schulbefreiung erstellen");
+    expect(withHint.text).toContain(release.url);
+    expect(withHint.text).toContain(release.dates);
+    expect(confirmationEmail({ ...ctx, schoolRelease: null }).text).not.toContain("#schulbefreiung");
+    expect(confirmationEmail(ctx).text).not.toContain("#schulbefreiung");
+  });
+
+  it("renders the release mail and the link mail without dashes", () => {
+    const mail = schoolReleaseEmail(ctx, release);
+    expect(mail.subject).toContain("Schulbefreiung");
+    expect(mail.text).toContain(release.dates);
+    expect(mail.text).toContain(release.url);
+    const link = participantLinkEmail(ctx, release.url);
+    expect(link.text).toContain(release.url);
+    for (const rendered of [mail, link]) {
+      expect(rendered.text).not.toMatch(DASHES);
+      expect(rendered.subject).not.toMatch(DASHES);
+    }
   });
 });

@@ -5,6 +5,7 @@ import { ProgramHighlights } from "@/components/marketing/program-highlights";
 import { PackingTeaser } from "@/components/marketing/packing-teaser";
 import { ArrivalCommunity } from "@/components/marketing/arrival-community";
 import { PaymentFaq } from "@/components/marketing/payment-faq";
+import { SchoolReleaseSection } from "@/components/marketing/school-release-section";
 import { ClosingCta } from "@/components/marketing/closing-cta";
 import { RegistrationSection } from "@/components/marketing/registration-section";
 import { SiteFooter } from "@/components/marketing/site-footer";
@@ -39,6 +40,7 @@ export default async function Home({ searchParams }: HomeProps) {
       <ProgramHighlights />
       <PackingTeaser />
       <ArrivalCommunity />
+      <SchoolReleaseSection />
       <PaymentFaq />
       <ClosingCta />
       <RegistrationSection invitationToken={invitationToken} />

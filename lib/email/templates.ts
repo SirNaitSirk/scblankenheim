@@ -4,6 +4,7 @@ import { formatGermanDate } from "@/lib/time/berlin";
 import {
   renderButton,
   renderFacts,
+  renderHeading,
   renderLayout,
   renderLinkPair,
   renderParagraph,
@@ -33,6 +34,9 @@ export type EmailContext = {
   participantUrl: string; // private participant page (specs/017-participant-page)
   calendar: CalendarLinks | null; // camp calendar links, null without dates (specs/019-calendar-file)
   texts: MailTexts; // per camp text blocks (specs/016-mail-settings)
+  // Release letter hint with a deep link, null or missing when off (specs/020-school-release).
+  /** `afterPayment`: nothing paid yet, the letter is ready after the first payment (FR-006a). */
+  schoolRelease?: { dates: string; url: string; afterPayment: boolean } | null;
 };
 
 export type ReminderKind = "reminder_1" | "reminder_2" | "reminder_3";
@@ -76,6 +80,19 @@ export function calendarBlock(ctx: EmailContext): { html: string; text: string }
       { label: copy.google, href: ctx.calendar.googleUrl },
     ]),
     text: `${copy.intro}\n${copy.ics}: ${ctx.calendar.icsUrl}\n${copy.google}: ${ctx.calendar.googleUrl}`,
+  };
+}
+
+/** Hint on the school release letter, or null when the release is off for the camp. */
+export function schoolReleaseBlock(ctx: EmailContext): { html: string; text: string } | null {
+  if (!ctx.schoolRelease) return null;
+  const copy = m.releaseHint;
+  const intro = ctx.schoolRelease.afterPayment
+    ? `${copy.intro(ctx.schoolRelease.dates)} ${m.releaseAfterPayment}`
+    : copy.intro(ctx.schoolRelease.dates);
+  return {
+    html: [renderHeading(copy.title), renderParagraph(intro), renderButton(copy.button, ctx.schoolRelease.url)].join("\n"),
+    text: `${copy.title.toUpperCase()}\n${intro}\n${copy.button}: ${ctx.schoolRelease.url}`,
   };
 }
 
@@ -163,11 +180,13 @@ export function confirmationEmail(ctx: EmailContext): RenderedEmail {
 
   const participant = participantBlock(ctx);
   const calendar = calendarBlock(ctx);
+  const release = schoolReleaseBlock(ctx);
   const bodyHtml = [
     ...opening.map(renderParagraph),
     renderParagraph(intro),
     renderFacts(facts),
     calendar?.html ?? "",
+    release?.html ?? "",
     payBlockHtml,
     renderParagraph(m.confirmation.keepReference),
     participant.html,
@@ -187,6 +206,7 @@ export function confirmationEmail(ctx: EmailContext): RenderedEmail {
       intro,
       factsToText(facts),
       calendar?.text ?? "",
+      release?.text ?? "",
       ...payBlockText,
       m.confirmation.keepReference,
       participant.text,
@@ -231,4 +251,62 @@ export function reminderEmail(kind: ReminderKind, ctx: EmailContext): RenderedEm
         extra: m.reminder3.help,
       });
   }
+}
+
+/** Release letter mail with the PDF attached by the sender (specs/020-school-release, US1). */
+export function schoolReleaseEmail(
+  ctx: EmailContext,
+  release: { dates: string; url: string },
+): RenderedEmail {
+  const copy = m.schoolRelease;
+  const opening = openingBlocks(ctx);
+  const closing = closingBlocks(ctx);
+  const intro = copy.intro(ctx.campName);
+  const dates = release.dates ? copy.dates(release.dates) : "";
+  const bodyHtml = [
+    ...opening.map(renderParagraph),
+    renderParagraph(intro),
+    dates ? renderParagraph(dates) : "",
+    renderParagraph(copy.attachment),
+    renderParagraph(copy.change),
+    renderButton(copy.button, release.url),
+    ...closing.map(renderParagraph),
+  ].join("\n");
+
+  return {
+    subject: copy.subject(ctx.campName),
+    html: renderLayout({ preheader: copy.preheader, campName: ctx.campName, title: copy.title, bodyHtml }),
+    text: renderText([
+      ...opening,
+      intro,
+      dates,
+      copy.attachment,
+      copy.change,
+      `${copy.button}: ${release.url}`,
+      ...closing,
+    ]),
+  };
+}
+
+/** Link to the participant page requested on the landing page (specs/020-school-release, US2). */
+export function participantLinkEmail(ctx: EmailContext, url: string): RenderedEmail {
+  const copy = m.participantLink;
+  const opening = openingBlocks(ctx);
+  const closing = closingBlocks(ctx);
+  const intro = ctx.schoolRelease?.afterPayment
+    ? `${copy.intro(ctx.campName)} ${m.releaseAfterPayment}`
+    : copy.intro(ctx.campName);
+  const bodyHtml = [
+    ...opening.map(renderParagraph),
+    renderParagraph(intro),
+    renderButton(copy.button, url),
+    renderParagraph(copy.notYou),
+    ...closing.map(renderParagraph),
+  ].join("\n");
+
+  return {
+    subject: copy.subject(ctx.campName),
+    html: renderLayout({ preheader: copy.preheader, campName: ctx.campName, title: copy.title, bodyHtml }),
+    text: renderText([...opening, intro, `${copy.button}: ${url}`, copy.notYou, ...closing]),
+  };
 }

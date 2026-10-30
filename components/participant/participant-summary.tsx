@@ -1,6 +1,6 @@
 import { CalendarPlus } from "@phosphor-icons/react/dist/ssr";
 import type { ReactNode } from "react";
-import type { ContactState } from "@/app/meine-anmeldung/[token]/actions";
+import type { ContactState, SchoolReleaseState } from "@/app/meine-anmeldung/[token]/actions";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/format";
 import { participantMessages as copy } from "@/lib/participant/messages";
 import type { ParticipantView, PayState } from "@/lib/participant/view";
 import { ParticipantContact } from "./participant-contact";
+import { SchoolReleaseForm } from "./school-release-form";
 import { formatGermanDate } from "@/lib/time/berlin";
 
 /**
@@ -17,10 +18,16 @@ import { formatGermanDate } from "@/lib/time/berlin";
 export function ParticipantSummary({
   view,
   contactAction,
+  release,
 }: {
   view: ParticipantView;
   /** Bound public action (specs/018-participant-messages); omitted in previews. */
   contactAction?: (previous: ContactState, formData: FormData) => Promise<ContactState>;
+  /** Bound release action and PDF link (specs/020-school-release); omitted in previews. */
+  release?: {
+    action: (previous: SchoolReleaseState, formData: FormData) => Promise<SchoolReleaseState>;
+    pdfHref: string;
+  };
 }) {
   return (
     <div className="flex flex-col gap-6">
@@ -37,6 +44,14 @@ export function ParticipantSummary({
       </header>
 
       <StatusCard view={view} />
+      {release && view.schoolRelease && (
+        <SchoolReleaseForm
+          action={release.action}
+          release={view.schoolRelease}
+          pdfHref={release.pdfHref}
+          payHref={view.payHref}
+        />
+      )}
       <CampCard view={view} />
       <AnswersCard view={view} />
       {contactAction && (

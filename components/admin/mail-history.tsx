@@ -24,6 +24,7 @@ const STATUS_STYLE: Record<MailHistoryStatus, { icon: typeof CheckCircle; classN
 function triggerLabel(entry: MailHistoryEntry): string {
   if (entry.trigger === "registration") return t.trigger.registration;
   if (entry.trigger === "cron") return t.trigger.cron;
+  if (entry.trigger === "participant") return t.trigger.participant;
   return entry.actorName ? t.trigger.byAdmin(entry.actorName) : t.trigger.byUnknownAdmin;
 }
 

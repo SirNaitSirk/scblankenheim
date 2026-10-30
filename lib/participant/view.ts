@@ -10,6 +10,8 @@ import { formatGermanDate } from "@/lib/time/berlin";
 import { allowedChangeFields, displayFieldValue, storedFieldValue } from "./contact";
 import { OWN_MESSAGES_SHOWN } from "./limits";
 import { participantMessages as copy } from "./messages";
+import { formatReleaseDates, isReleaseActive, isReleaseUnlocked, prefillAddress } from "@/lib/school-release/settings";
+import type { ReleaseSettings, SchoolReleaseData } from "@/lib/school-release/types";
 
 /**
  * Pure view builder for the participant page (specs/017-participant-page,
@@ -55,6 +57,16 @@ export type OwnMessageInput = {
   status: string;
 };
 
+/** School release card (specs/020-school-release); null when off or cancelled. */
+export type ParticipantRelease = {
+  dates: string;
+  /** Not paid yet: the card shows the hint with the pay button instead of the form (FR-006a). */
+  locked: boolean;
+  participantName: string;
+  data: SchoolReleaseData | null;
+  prefillAddress: string;
+};
+
 export type ParticipantView = {
   firstName: string;
   campName: string;
@@ -68,6 +80,7 @@ export type ParticipantView = {
   rows: ParticipantRow[];
   editableFields: EditableField[];
   messages: OwnMessage[];
+  schoolRelease: ParticipantRelease | null;
 };
 
 export type ParticipantRegistrationInput = {
@@ -209,6 +222,7 @@ export function buildParticipantView(input: {
   calendar?: CalendarLinks | null;
   campFields?: ReadonlyArray<CampFormField>; // with options and required, for change requests
   messages?: ReadonlyArray<OwnMessageInput>;
+  release?: { settings: ReleaseSettings; data: SchoolReleaseData | null } | null;
 }): ParticipantView {
   const { registration, camp, fields } = input;
   const payable: PayableRegistration = {
@@ -238,5 +252,25 @@ export function buildParticipantView(input: {
     rows: [...coreRows(registration), ...fieldRows(registration.form_data, fields)],
     editableFields: editableFields(registration, input.campFields ?? []),
     messages: ownMessages(input.messages ?? [], input.campFields ?? []),
+    schoolRelease: releaseCard(registration, input.release ?? null),
+  };
+}
+
+function releaseCard(
+  registration: ParticipantRegistrationInput,
+  release: { settings: ReleaseSettings; data: SchoolReleaseData | null } | null,
+): ParticipantRelease | null {
+  if (!release || registration.status === "cancelled" || !isReleaseActive(release.settings)) return null;
+  if (registration.payment_status === "refunded") return null;
+  return {
+    dates: formatReleaseDates(release.settings.dates),
+    locked: !isReleaseUnlocked({
+      paymentStatus: registration.payment_status,
+      amountDue: registration.amount_due,
+      amountPaid: registration.amount_paid,
+    }),
+    participantName: `${text(registration.first_name)} ${text(registration.last_name)}`.trim(),
+    data: release.data,
+    prefillAddress: prefillAddress(registration.form_data, release.settings.addressKeys),
   };
 }
