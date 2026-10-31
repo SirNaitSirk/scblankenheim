@@ -13,6 +13,13 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: m.pageTitle,
+  description: m.description,
+  openGraph: {
+    title: m.pageTitle,
+    description: m.description,
+    locale: "de_DE",
+    type: "website",
+  },
   robots: { index: false, follow: false },
 };
 

@@ -16,8 +16,7 @@ import { marketingMessages } from "@/lib/marketing/messages";
 // every request, so admin changes to camp settings are reflected immediately.
 export const dynamic = "force-dynamic";
 
-const description =
-  "Eine unvergessliche Woche voller Gemeinschaft, Abenteuer und Glaube. Melde dich jetzt für das FCG Blankenheim Summercamp an.";
+const description = marketingMessages.share.description;
 const baseUrl = appBaseUrl();
 
 /** The title carries the current camp's start year, read per request. */

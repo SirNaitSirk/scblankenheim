@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Archivo, Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { appBaseUrl } from "@/lib/email/links";
+import { marketingMessages } from "@/lib/marketing/messages";
 import "./globals.css";
 
 // Pre-hydration theme resolution for the admin surface: set `data-admin-theme`
@@ -25,10 +27,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const baseUrl = appBaseUrl();
+
+// Default for every page without its own metadata; link previews read it too.
 export const metadata: Metadata = {
-  title: "FCG Blankenheim Summercamp",
-  description:
-    "Onlineanmeldung und Verwaltung für das FCG Blankenheim Summercamp.",
+  ...(baseUrl ? { metadataBase: new URL(baseUrl) } : {}),
+  title: marketingMessages.share.fallbackName,
+  description: marketingMessages.share.description,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -12,7 +12,8 @@ export const COMING_SOON_RETRY_AFTER_SECONDS = 86400;
 
 /**
  * Paths that are never gated: the admin surface, Clerk pages, the Stripe webhook,
- * cron jobs, the gate page itself and the legal pages (specs/025-legal-pages).
+ * cron jobs, the gate page itself, the legal pages (specs/025-legal-pages) and
+ * the share image, so link previews in messengers show it during the gate.
  * Everything else, including future public pages, is gated (research R2).
  */
 const OPEN_PATH_PREFIXES = [
@@ -25,6 +26,7 @@ const OPEN_PATH_PREFIXES = [
   COMING_SOON_PATH,
   "/impressum",
   "/datenschutz",
+  "/opengraph-image",
 ] as const;
 
 export type GateDecision = "pass" | "rewrite" | "refuse";

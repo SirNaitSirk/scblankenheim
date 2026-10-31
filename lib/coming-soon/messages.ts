@@ -1,6 +1,8 @@
 /** German copy of the coming soon page and refused requests (specs/023-coming-soon). */
 export const COMING_SOON_MESSAGES = {
   pageTitle: "FCG Blankenheim Summercamp · Bald geht es los",
+  description:
+    "Eine unvergessliche Woche voller Gemeinschaft, Abenteuer und Glaube. Die Anmeldung startet bald.",
   eyebrow: "FCG Blankenheim",
   fallbackCampName: "Summercamp",
   lead: "Die Anmeldung startet bald.",

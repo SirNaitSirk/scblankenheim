@@ -107,6 +107,9 @@ export const marketingMessages = {
     alt: "FCG Blankenheim Summercamp: Name und Termin des Camps",
     fallbackName: "FCG Blankenheim Summercamp",
     eyebrow: "Summercamp",
+    /** Link preview text (WhatsApp, Signal, search results), written for participants. */
+    description:
+      "Eine unvergessliche Woche voller Gemeinschaft, Abenteuer und Glaube. Melde dich jetzt für das FCG Blankenheim Summercamp an.",
   },
 } as const;
 

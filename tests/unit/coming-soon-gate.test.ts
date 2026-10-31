@@ -31,6 +31,7 @@ describe("isOpenPath", () => {
       "/demnaechst",
       "/impressum",
       "/datenschutz",
+      "/opengraph-image",
     ]) {
       expect(isOpenPath(path), path).toBe(true);
     }
@@ -74,6 +75,8 @@ describe("decideGate", () => {
     // Legal pages stay readable for everyone (specs/025-legal-pages).
     expect(decideGate({ ...base, pathname: "/impressum" })).toBe("pass");
     expect(decideGate({ ...base, pathname: "/datenschutz" })).toBe("pass");
+    // Messenger link previews fetch the share image during the gate.
+    expect(decideGate({ ...base, pathname: "/opengraph-image" })).toBe("pass");
     expect(decideGate({ ...base, isAdmin: true, method: "POST" })).toBe("pass");
   });
 
