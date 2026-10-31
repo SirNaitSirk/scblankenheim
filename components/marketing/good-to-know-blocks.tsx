@@ -1,4 +1,4 @@
-import { GraduationCap } from "@phosphor-icons/react/dist/ssr";
+import { GraduationCap, MapPin } from "@phosphor-icons/react/dist/ssr";
 import { Reveal } from "@/components/marketing/reveal";
 import { SchoolReleaseLinkForm } from "@/components/marketing/school-release-link-form";
 import { ButtonLink } from "@/components/ui/button";
@@ -50,6 +50,11 @@ function Tag({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Plain link to Google Maps; nothing from Google loads on our page. */
+function mapsUrl(query: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
 export function ArrivalBlock() {
   const arrival = copy.arrival;
   const rows = [
@@ -71,6 +76,17 @@ export function ArrivalBlock() {
           </div>
         ))}
       </dl>
+      <div className="mt-6">
+        <ButtonLink
+          href={mapsUrl(arrival.mapsQuery)}
+          variant="outline"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <MapPin size={18} aria-hidden />
+          {arrival.mapsLink}
+        </ButtonLink>
+      </div>
     </Block>
   );
 }

@@ -55,6 +55,9 @@ export const marketingMessages = {
       meetingPointValue: "FCG Blankenheim, Bahnhofstraße 18",
       carpoolLabel: "Fahrgemeinschaft",
       carpoolValue: "Gemeinsam anreisen? Bei der Anmeldung möglich.",
+      mapsLink: "In Google Maps öffnen",
+      /** Full address for the maps search; the town name alone is ambiguous. */
+      mapsQuery: "Bahnhofstraße 18, 53945 Blankenheim",
     },
     payment: {
       heading: "Sicher bezahlen",
