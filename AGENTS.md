@@ -79,7 +79,7 @@ Rules:
 
 **Public**
 
-- One clean landing page (`/`) with camp info + registration entry. Order: hero, facts, program, youth groups, campfire band, registration, then „Gut zu wissen“ with open blocks for Anreise, Bezahlen, Packliste and Schulbefreiung; registration buttons follow the registration state; content is visible without JavaScript; a generated share image shows camp name and dates (specs/024-landing-structure).
+- One clean landing page (`/`) with camp info + registration entry. Order: hero, facts, program, youth groups, campfire band, registration, then „Gut zu wissen“ with open blocks for Anreise, Bezahlen, Packliste and Schulbefreiung; registration buttons follow the registration state; content is visible without JavaScript; a generated share image shows camp name and dates (specs/024-landing-structure). The hero plays a short muted loop cut from the last camp's recap over its first frame as poster, files in `public/videos/` built by `scripts/build-hero-video.sh`; reduced motion, save data, slow connections and no JavaScript show the poster only; a pause control stops it (specs/026-hero-video).
 - One **config-driven** registration form: fields come from `camp_form_fields` for the current camp (single source of truth — no parallel form components).
 - Payment page (`/bezahlen`, `/bezahlen/danke`) — Stripe checkout + result.
 - Packing list page (`/packzettel`).

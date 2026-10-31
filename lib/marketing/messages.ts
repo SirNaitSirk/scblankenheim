@@ -38,6 +38,19 @@ export const marketingMessages = {
     closeMenu: "Menü schließen",
     home: "Zum Seitenanfang",
   },
+  /** Hero with the recap video (specs/026-hero-video). */
+  hero: {
+    eyebrow: "FCG Blankenheim Summercamp",
+    headlineLead: "Strand, Scheune,",
+    headlineAccent: "Gemeinschaft",
+    lead: "Eine Woche Gemeinschaft, Abenteuer und Glaube an der belgischen Küste. Sichere dir jetzt deinen Platz beim Summercamp.",
+    more: "Mehr erfahren",
+    scrollCue: "Weiter zum Camp",
+    posterAlt:
+      "Szenen vom letzten Summercamp: Spiele vor den Bussen, Volleyball, Saltos am Strand und in den Dünen, Worship und Party in der Scheune.",
+    pauseVideo: "Video anhalten",
+    playVideo: "Video abspielen",
+  },
   footer: {
     camp: "Camp",
     goodToKnow: "Gut zu wissen",
