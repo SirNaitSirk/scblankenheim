@@ -61,8 +61,15 @@ export const marketingMessages = {
   community: {
     heading: "Jugenden aus der ganzen Region",
     text: "Beim Summercamp treffen sich Jugendgruppen aus mehreren Städten. Neue Leute, echte Gemeinschaft, eine gemeinsame Woche.",
-    photoAlt: "Jugendliche gemeinsam draußen im Sonnenlicht",
     groups: ["Blankenheim", "Euskirchen", "C3", "Kall", "Lüdenscheid", "Ludwigshafen"],
+  },
+  /** Alt texts of the camp photos, keys match `CAMP_PHOTOS` (specs/027-camp-photos). */
+  photos: {
+    worship: "Jugendlicher von hinten mit erhobenen Händen beim Lobpreis in der Scheune",
+    inputs: "Gemütlicher Gebetsraum mit Sofas und einer Girlande mit einem Bibelvers",
+    sport: "Volleyball fliegt über das Netz vor einem großen Wolkenhimmel",
+    community: "Jugendliche von hinten vor der lila beleuchteten Bühne beim Lobpreis",
+    campfire: "Lagerfeuer bei Nacht, Jugendliche sitzen im Kreis darum",
   },
   goodToKnow: {
     heading: "Gut zu wissen",

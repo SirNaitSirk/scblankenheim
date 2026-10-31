@@ -1,11 +1,11 @@
 import { ButtonLink } from "@/components/ui/button";
 import { Reveal } from "@/components/marketing/reveal";
 import { ParallaxImage } from "@/components/marketing/parallax-image";
+import { CAMP_PHOTOS } from "@/lib/marketing/camp-photos";
+import { marketingMessages } from "@/lib/marketing/messages";
 import type { RegistrationCta } from "@/lib/register/registration-cta";
 
-// TODO: swap for real campfire / golden-hour camp photo.
-const CAMPFIRE_PHOTO =
-  "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?auto=format&fit=crop&w=2400&q=80";
+const photo = CAMP_PHOTOS.campfire;
 
 /**
  * Emotional lead-in (Persuade) directly above the registration section. The one
@@ -17,8 +17,9 @@ export function ClosingCta({ cta }: { cta: RegistrationCta }) {
   return (
     <section className="relative overflow-hidden border-t border-border bg-sand-900">
       <ParallaxImage
-        src={CAMPFIRE_PHOTO}
-        alt="Lagerfeuer im Camp bei Abendlicht"
+        src={photo.src}
+        alt={marketingMessages.photos.campfire}
+        imageClassName={photo.focusClass}
         sizes="100vw"
         strength={70}
         kenBurns

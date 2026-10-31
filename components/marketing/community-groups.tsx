@@ -1,12 +1,11 @@
 import Image from "next/image";
 import { Reveal } from "@/components/marketing/reveal";
+import { cn } from "@/lib/cn";
+import { CAMP_PHOTOS } from "@/lib/marketing/camp-photos";
 import { marketingMessages } from "@/lib/marketing/messages";
 
-// TODO: swap for real photo of the camp community (warm outdoor light).
-const COMMUNITY_PHOTO =
-  "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=2400&q=80";
-
 const copy = marketingMessages.community;
+const photo = CAMP_PHOTOS.community;
 
 /**
  * Youth groups (Persuade): one full width photo band naming the participating
@@ -16,11 +15,11 @@ export function CommunityGroups() {
   return (
     <section className="relative overflow-hidden border-t border-border bg-sand-900">
       <Image
-        src={COMMUNITY_PHOTO}
-        alt={copy.photoAlt}
+        src={photo.src}
+        alt={marketingMessages.photos.community}
         fill
         sizes="100vw"
-        className="object-cover"
+        className={cn("object-cover", photo.focusClass)}
       />
       <div className="absolute inset-0 bg-gradient-to-r from-ink-950/85 via-ink-950/55 to-ink-950/10" />
       <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-amber-400/20" />

@@ -3,19 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Lets phones in the local network use the dev server (HMR, Server Actions).
   allowedDevOrigins: ["192.168.2.226"],
-  images: {
-    // TODO: replace remote placeholders with real camp photography under /public.
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "picsum.photos",
-      },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
-    ],
-  },
   experimental: {
     // Prefetched and visited admin tabs are reused in the browser for 30s, so
     // switching tabs feels instant. Every admin Server Action calls
