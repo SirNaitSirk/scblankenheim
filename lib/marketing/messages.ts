@@ -59,6 +59,7 @@ export const marketingMessages = {
     packingList: "Packliste",
   },
   community: {
+    eyebrow: "Wer dabei ist",
     heading: "Jugenden aus der ganzen Region",
     text: "Beim Summercamp treffen sich Jugendgruppen aus mehreren Städten. Neue Leute, echte Gemeinschaft, eine gemeinsame Woche.",
     groups: ["Blankenheim", "Euskirchen", "C3", "Kall", "Lüdenscheid", "Ludwigshafen"],
@@ -68,8 +69,14 @@ export const marketingMessages = {
     worship: "Jugendlicher von hinten mit erhobenen Händen beim Lobpreis in der Scheune",
     inputs: "Gemütlicher Gebetsraum mit Sofas und einer Girlande mit einem Bibelvers",
     sport: "Volleyball fliegt über das Netz vor einem großen Wolkenhimmel",
-    community: "Jugendliche von hinten vor der lila beleuchteten Bühne beim Lobpreis",
+    teamwork: "Jugendliche stehen Arm in Arm im Kreis am Volleyballnetz",
+    beach: "Zwei Jugendliche von hinten am Strand mit Blick aufs Meer",
     campfire: "Lagerfeuer bei Nacht, Jugendliche sitzen im Kreis darum",
+  },
+  /** Campfire band right before the registration (specs/028-community-section). */
+  closing: {
+    heading: "Ein Kreis ums Feuer. Und du gehörst dazu.",
+    questions: "Bei Fragen schreib uns",
   },
   goodToKnow: {
     heading: "Gut zu wissen",

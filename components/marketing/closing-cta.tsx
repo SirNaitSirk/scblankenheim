@@ -6,12 +6,14 @@ import { marketingMessages } from "@/lib/marketing/messages";
 import type { RegistrationCta } from "@/lib/register/registration-cta";
 
 const photo = CAMP_PHOTOS.campfire;
+const copy = marketingMessages.closing;
 
 /**
  * Emotional lead-in (Persuade) directly above the registration section. The one
  * deliberate cinematic dark moment on the page: a warm campfire photo band with
  * parallax, nudging the visitor into the `#anmelden` section below. Its button
- * label follows the registration state (specs/024-landing-structure R5).
+ * label follows the registration state (specs/024-landing-structure R5); copy
+ * per specs/028-community-section.
  */
 export function ClosingCta({ cta }: { cta: RegistrationCta }) {
   return (
@@ -30,7 +32,7 @@ export function ClosingCta({ cta }: { cta: RegistrationCta }) {
       <div className="relative mx-auto max-w-[1400px] px-6 py-28 md:px-10 lg:py-36">
         <Reveal className="text-center">
           <h2 className="mx-auto max-w-[16ch] text-balance font-display text-5xl font-black leading-[0.98] tracking-tight text-on-inverse md:text-6xl">
-            Sei dabei und erlebe den Sommer deines Lebens
+            {copy.heading}
           </h2>
         </Reveal>
 
@@ -46,7 +48,7 @@ export function ClosingCta({ cta }: { cta: RegistrationCta }) {
             variant="outline"
             className="border-on-inverse/40 bg-on-inverse/5 text-on-inverse backdrop-blur-sm hover:border-on-inverse/60 hover:bg-on-inverse/15"
           >
-            Bei Fragen schreib uns
+            {copy.questions}
           </ButtonLink>
         </Reveal>
       </div>

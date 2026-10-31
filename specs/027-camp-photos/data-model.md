@@ -26,3 +26,7 @@ Alt texts live in `marketingMessages.photos` with the same keys (German, describ
 
 Limits: long edge 2400 px, each file at most 600 KB, no metadata.
 
+## Change in specs/028-community-section
+
+`community` (`IMG_3491`) is replaced by `teamwork` (`IMG_3265.JPG`, long edge 1600 px) and `beach`
+(`IMG_3450.JPG`, long edge 1600 px). The script accepts an optional long edge per photo.
