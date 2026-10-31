@@ -1,7 +1,8 @@
 import { CalendarBlank, MapPin, Ticket } from "@phosphor-icons/react/dist/ssr";
 import { Reveal } from "@/components/marketing/reveal";
 import { formatCurrency } from "@/lib/format";
-import { getLandingCamp } from "@/lib/marketing/current-camp";
+import { formatCampDateRange } from "@/lib/marketing/camp-dates";
+import { getLandingCamp, type LandingCamp } from "@/lib/marketing/current-camp";
 
 type Fact = {
   label: string;
@@ -11,17 +12,22 @@ type Fact = {
 };
 
 /*
- * "Wann" and "Wo" are still placeholders (replaced by spec 002). The fee comes
- * from the current camp's public base price so no hidden tier price can ever
- * show up here (constitution VI); without a camp the tile is left out.
+ * "Wann" shows the current camp's dates and falls back to a neutral season
+ * without a camp or dates. "Wo" is still static. The fee comes from the current
+ * camp's public base price so no hidden tier price can ever show up here
+ * (constitution VI); without a camp the tile is left out.
  */
-const staticFacts: Fact[] = [
-  {
+function whenFact(camp: LandingCamp | null): Fact {
+  const dates = camp ? formatCampDateRange(camp.startDate, camp.endDate) : null;
+  return {
     label: "Wann",
-    value: "Sommer 2027",
+    value: dates ?? "Im Sommer",
     note: "Eine Woche in den Ferien",
     Icon: CalendarBlank,
-  },
+  };
+}
+
+const staticFacts: Fact[] = [
   {
     label: "Wo",
     value: "Belgien",
@@ -45,7 +51,11 @@ function feeFact(basePrice: number): Fact {
  */
 export async function IntroFacts() {
   const camp = await getLandingCamp();
-  const facts = camp ? [...staticFacts, feeFact(camp.basePrice)] : staticFacts;
+  const facts = [
+    whenFact(camp),
+    ...staticFacts,
+    ...(camp ? [feeFact(camp.basePrice)] : []),
+  ];
 
   return (
     <section id="camp" className="border-t border-border bg-sand-50">

@@ -21,7 +21,14 @@ export const marketingMessages = {
   brand: {
     short: "FCG Summercamp",
     full: "FCG Blankenheim Summercamp",
-    season: "Sommer 2027 in Belgien",
+    /** Footer line; the year comes from the current camp's start date. */
+    season: (year: number | null) =>
+      year ? `Sommer ${year} in Belgien` : "Im Sommer in Belgien",
+    /** Vertical tag in the hero. */
+    heroTag: (year: number | null) => (year ? `Sommer ${year} · Belgien` : "Sommer · Belgien"),
+    /** Page title of the landing page. */
+    pageTitle: (year: number | null) =>
+      year ? `FCG Blankenheim Summercamp · Sommer ${year}` : "FCG Blankenheim Summercamp",
   },
   nav: {
     camp: "Camp",

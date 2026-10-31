@@ -8,6 +8,7 @@ import { RegistrationSection } from "@/components/marketing/registration-section
 import { GoodToKnow } from "@/components/marketing/good-to-know";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { appBaseUrl } from "@/lib/email/links";
+import { campYear } from "@/lib/marketing/camp-dates";
 import { getLandingState } from "@/lib/marketing/landing-state";
 import { marketingMessages } from "@/lib/marketing/messages";
 
@@ -15,24 +16,28 @@ import { marketingMessages } from "@/lib/marketing/messages";
 // every request, so admin changes to camp settings are reflected immediately.
 export const dynamic = "force-dynamic";
 
-const title = "FCG Blankenheim Summercamp · Sommer 2027";
 const description =
   "Eine unvergessliche Woche voller Gemeinschaft, Abenteuer und Glaube. Melde dich jetzt für das FCG Blankenheim Summercamp an.";
 const baseUrl = appBaseUrl();
 
-export const metadata: Metadata = {
-  ...(baseUrl ? { metadataBase: new URL(baseUrl) } : {}),
-  title,
-  description,
-  openGraph: {
+/** The title carries the current camp's start year, read per request. */
+export async function generateMetadata(): Promise<Metadata> {
+  const { camp } = await getLandingState();
+  const title = marketingMessages.brand.pageTitle(campYear(camp?.startDate ?? null));
+  return {
+    ...(baseUrl ? { metadataBase: new URL(baseUrl) } : {}),
     title,
     description,
-    locale: "de_DE",
-    type: "website",
-    siteName: marketingMessages.share.fallbackName,
-  },
-  twitter: { card: "summary_large_image", title, description },
-};
+    openGraph: {
+      title,
+      description,
+      locale: "de_DE",
+      type: "website",
+      siteName: marketingMessages.share.fallbackName,
+    },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 type HomeProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -47,19 +52,20 @@ function readInvitationToken(value: string | string[] | undefined): string | und
 /** Section order per specs/024-landing-structure/contracts/landing-ui.md. */
 export default async function Home({ searchParams }: HomeProps) {
   const invitationToken = readInvitationToken((await searchParams).einladung);
-  const { cta, schoolRelease } = await getLandingState();
+  const { camp, cta, schoolRelease } = await getLandingState();
   const showSchoolRelease = schoolRelease !== null;
+  const year = campYear(camp?.startDate ?? null);
 
   return (
     <main id="start">
-      <MountainHero cta={cta} showSchoolRelease={showSchoolRelease} />
+      <MountainHero cta={cta} showSchoolRelease={showSchoolRelease} campYear={year} />
       <IntroFacts />
       <ProgramHighlights />
       <CommunityGroups />
       <ClosingCta cta={cta} />
       <RegistrationSection invitationToken={invitationToken} />
       <GoodToKnow />
-      <SiteFooter showSchoolRelease={showSchoolRelease} />
+      <SiteFooter showSchoolRelease={showSchoolRelease} campYear={year} />
     </main>
   );
 }

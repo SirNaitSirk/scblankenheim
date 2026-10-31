@@ -1,5 +1,5 @@
 /**
- * German date range of a camp for the share image (specs/024-landing-structure,
+ * German date range of a camp for the share image and the facts tile (specs/024-landing-structure,
  * data-model.md). Works on `YYYY-MM-DD` strings only, so no time zone can shift
  * a day. Pure.
  */
@@ -35,6 +35,11 @@ function dayMonth({ day, month }: DateParts): string {
 
 function full(parts: DateParts): string {
   return `${dayMonth(parts)} ${parts.year}`;
+}
+
+/** Year of the camp start for season labels; null without a valid start. */
+export function campYear(start: string | null): number | null {
+  return (start ? parse(start) : null)?.year ?? null;
 }
 
 /**

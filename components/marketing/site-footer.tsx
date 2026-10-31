@@ -8,9 +8,16 @@ const legal = legalMessages.links;
 /**
  * Minimal marketing footer, also used on the packing list and payment pages,
  * so every target is absolute. The landing page passes `showSchoolRelease`
- * to mirror its nav (specs/024-landing-structure R9).
+ * to mirror its nav (specs/024-landing-structure R9) and the current camp's
+ * start year for the season line; other pages show it without a year.
  */
-export function SiteFooter({ showSchoolRelease = false }: { showSchoolRelease?: boolean }) {
+export function SiteFooter({
+  showSchoolRelease = false,
+  campYear = null,
+}: {
+  showSchoolRelease?: boolean;
+  campYear?: number | null;
+}) {
   const links = [
     { label: copy.camp, href: "/#camp" },
     { label: copy.goodToKnow, href: "/#gut-zu-wissen" },
@@ -26,7 +33,7 @@ export function SiteFooter({ showSchoolRelease = false }: { showSchoolRelease?: 
           <span className="font-display text-lg font-extrabold tracking-tight text-foreground">
             {marketingMessages.brand.full}
           </span>
-          <p className="mt-1 text-sm text-muted-foreground">{marketingMessages.brand.season}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{marketingMessages.brand.season(campYear)}</p>
         </div>
 
         <nav className="flex flex-wrap gap-6">

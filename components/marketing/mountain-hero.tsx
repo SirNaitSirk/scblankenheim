@@ -2,6 +2,7 @@ import { CaretDown } from "@phosphor-icons/react/dist/ssr";
 import { SiteNav } from "@/components/marketing/site-nav";
 import { ParallaxImage } from "@/components/marketing/parallax-image";
 import { ButtonLink } from "@/components/ui/button";
+import { marketingMessages } from "@/lib/marketing/messages";
 import type { RegistrationCta } from "@/lib/register/registration-cta";
 
 // TODO: swap for real camp photography (warm golden-hour mountain/valley).
@@ -17,9 +18,12 @@ const HERO_PHOTO =
 export function MountainHero({
   cta,
   showSchoolRelease,
+  campYear = null,
 }: {
   cta: RegistrationCta;
   showSchoolRelease: boolean;
+  /** Start year of the current camp, null without camp or start date. */
+  campYear?: number | null;
 }) {
   return (
     <section className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-sand-900">
@@ -38,7 +42,7 @@ export function MountainHero({
       <div className="absolute inset-0 bg-gradient-to-br from-ink-950/45 via-transparent to-amber-400/15" />
 
       <span className="absolute right-6 top-1/2 hidden -translate-y-1/2 rotate-90 text-[10px] font-medium uppercase tracking-[0.35em] text-on-inverse/60 lg:block">
-        Sommer 2027 · Belgien
+        {marketingMessages.brand.heroTag(campYear)}
       </span>
 
       <SiteNav
