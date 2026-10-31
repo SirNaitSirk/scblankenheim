@@ -21,7 +21,7 @@ export const marketingMessages = {
   brand: {
     short: "FCG Summercamp",
     full: "FCG Blankenheim Summercamp",
-    season: "Sommer 2027 in Blankenheim",
+    season: "Sommer 2027 in Belgien",
   },
   nav: {
     camp: "Camp",
@@ -49,15 +49,15 @@ export const marketingMessages = {
     intro: "Anreise, Bezahlen, Packliste und alles, was du vor dem Camp brauchst.",
     arrival: {
       heading: "So kommst du ins Camp",
-      checkInLabel: "Check in",
-      checkInValue: "ab 16 Uhr",
-      meetingPointLabel: "Treffpunkt",
-      meetingPointValue: "FCG Blankenheim, Bahnhofstraße 18",
+      busDepartureLabel: "Busabfahrt",
+      busDepartureValue: "16 Uhr, FCG Blankenheim, Bahnhofstraße 18",
+      campSiteLabel: "Campgelände",
+      campSiteValue: "Pannenhoeve Bivak, Groenestraat 76, 8691 Belgien",
       carpoolLabel: "Fahrgemeinschaft",
       carpoolValue: "Gemeinsam anreisen? Bei der Anmeldung möglich.",
-      mapsLink: "In Google Maps öffnen",
-      /** Full address for the maps search; the town name alone is ambiguous. */
-      mapsQuery: "Bahnhofstraße 18, 53945 Blankenheim",
+      mapsLink: "Campgelände in Google Maps",
+      /** Full camp site address for the maps search. */
+      mapsQuery: "Pannenhoeve Bivak, Groenestraat 76, 8691 Belgium",
     },
     payment: {
       heading: "Sicher bezahlen",

@@ -38,7 +38,7 @@ export function MountainHero({
       <div className="absolute inset-0 bg-gradient-to-br from-ink-950/45 via-transparent to-amber-400/15" />
 
       <span className="absolute right-6 top-1/2 hidden -translate-y-1/2 rotate-90 text-[10px] font-medium uppercase tracking-[0.35em] text-on-inverse/60 lg:block">
-        Sommer 2027 · Blankenheim
+        Sommer 2027 · Belgien
       </span>
 
       <SiteNav

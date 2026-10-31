@@ -58,8 +58,8 @@ function mapsUrl(query: string): string {
 export function ArrivalBlock() {
   const arrival = copy.arrival;
   const rows = [
-    { label: arrival.checkInLabel, value: arrival.checkInValue },
-    { label: arrival.meetingPointLabel, value: arrival.meetingPointValue },
+    { label: arrival.busDepartureLabel, value: arrival.busDepartureValue },
+    { label: arrival.campSiteLabel, value: arrival.campSiteValue },
     { label: arrival.carpoolLabel, value: arrival.carpoolValue },
   ];
 

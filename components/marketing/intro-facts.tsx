@@ -24,8 +24,8 @@ const staticFacts: Fact[] = [
   },
   {
     label: "Wo",
-    value: "Blankenheim",
-    note: "Check-in ab 16 Uhr, Bahnhofstraße 18",
+    value: "Belgien",
+    note: "Pannenhoeve Bivak, Groenestraat 76",
     Icon: MapPin,
   },
 ];
