@@ -21,7 +21,7 @@ import {
   updateFieldAction,
 } from "@/app/admin/camps/[campId]/felder/actions";
 import { FieldFormDialog } from "@/components/admin/field-form-dialog";
-import { FieldPreview } from "@/components/admin/field-preview";
+import { ConditionBadge, FieldPreview } from "@/components/admin/field-preview";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/states";
 import { Badge } from "@/components/ui/badge";
@@ -289,6 +289,7 @@ export function FieldsManager({
                       <span className="truncate font-medium text-foreground">{field.label}</span>
                       <Badge tone="neutral">{typeLabel(field.fieldType)}</Badge>
                       {field.required && <Badge tone="pending">{de.fields.requiredShort}</Badge>}
+                      <ConditionBadge field={field} fields={fields} />
                     </div>
                     <span className="truncate font-mono text-xs text-muted-foreground">
                       {field.key}
@@ -361,6 +362,7 @@ export function FieldsManager({
         mode={dialog?.mode ?? "create"}
         initialType={dialog?.type}
         field={dialog?.field ?? null}
+        fields={fields}
         onClose={() => setDialog(null)}
         onSubmit={submitField}
         onSuccess={onFormSuccess}

@@ -318,6 +318,18 @@ export async function createRegistration(
   throw new Error("could not generate a unique registration reference");
 }
 
+/** Camp of a registration, or null when the reference is unknown. */
+export async function getRegistrationCampId(reference: string): Promise<string | null> {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("registrations")
+    .select("camp_id")
+    .eq("reference", reference)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.camp_id ?? null;
+}
+
 /** Updates a registration identified by its unique `reference`. */
 export async function updateRegistration(
   reference: string,

@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from "motion/react";
 import { PencilSimple } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
+import { visibleFields } from "@/lib/register/conditions";
 import { registerMessages } from "@/lib/register/messages";
 import type { FormStep } from "@/lib/register/steps";
 import type { FieldValue } from "@/lib/register/validation";
@@ -123,7 +124,7 @@ export function ReviewList({
             </button>
           </div>
           <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-            {step.fields.map((field) => {
+            {visibleFields(step.fields, values).map((field) => {
               const shown = formatValue(field.fieldType, values[field.key]);
               return (
                 <div key={field.key} className="contents">

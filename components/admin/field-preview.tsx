@@ -1,11 +1,14 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { de } from "@/lib/admin/messages";
 import type { CampFormField } from "@/lib/admin/types";
+import { conditionSummary } from "@/lib/register/conditions";
 import { LONG_STEP_HINT, buildSteps, questionFields } from "@/lib/register/steps";
+import { mergeFields } from "@/lib/register/validation";
 
 // `options`/`config` arrive as `unknown`/`Record<string, unknown>` from the row;
 // read them defensively so a malformed value never breaks the preview.
@@ -107,7 +110,10 @@ export function FieldPreview({ fields }: { fields: CampFormField[] }) {
           )}
           <div className="flex flex-col gap-4 border-l border-border pl-4">
             {step.fields.map((field) => (
-              <PreviewField key={field.id} field={field} />
+              <div key={field.id} className="flex flex-col items-start gap-1.5 [&>*:first-child]:self-stretch">
+                <PreviewField field={field} />
+                <ConditionBadge field={field} fields={fields} />
+              </div>
             ))}
           </div>
           {step.fields.length > LONG_STEP_HINT && (
@@ -117,4 +123,11 @@ export function FieldPreview({ fields }: { fields: CampFormField[] }) {
       ))}
     </ol>
   );
+}
+
+/** „Nur bei Jugend: Eingeladen“ for conditional fields (specs/037). */
+export function ConditionBadge({ field, fields }: { field: CampFormField; fields: CampFormField[] }) {
+  const summary = conditionSummary(field, mergeFields(fields));
+  if (!summary) return null;
+  return <Badge tone="neutral">{de.fields.conditionBadge(summary.trigger, summary.values)}</Badge>;
 }

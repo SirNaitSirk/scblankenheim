@@ -34,7 +34,7 @@ export async function findParticipantByToken(token: string): Promise<Participant
       .maybeSingle(),
     supabase
       .from("camp_form_fields")
-      .select("id, camp_id, key, label, field_type, required, options, sort_order")
+      .select("id, camp_id, key, label, field_type, required, options, sort_order, config")
       .eq("camp_id", registration.camp_id),
     supabase
       .from("participant_messages")

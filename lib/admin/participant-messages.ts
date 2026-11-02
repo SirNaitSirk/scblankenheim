@@ -4,7 +4,7 @@ import type { AdminParticipantMessage } from "@/lib/admin/types";
 import type { Json } from "@/lib/database.types";
 import {
   allowedChangeFields,
-  changePatch,
+  visibleChangePatch,
   checkChangeRequest,
   displayFieldValue,
   sameFieldValue,
@@ -33,7 +33,7 @@ function toResolution(value: string | null): AdminParticipantMessage["resolution
 async function campFields(campId: string) {
   const { data, error } = await getServiceClient()
     .from("camp_form_fields")
-    .select("id, camp_id, key, label, field_type, required, options, sort_order")
+    .select("id, camp_id, key, label, field_type, required, options, sort_order, config")
     .eq("camp_id", campId);
   if (error) throw error;
   return allowedChangeFields((data ?? []).map(toCampFormField));
@@ -162,7 +162,8 @@ export async function applyParticipantChange(
   if (error) throw error;
   if (!registration || registration.deleted) return { ok: false, reason: "not_found" };
 
-  const field = (await campFields(registration.camp_id)).find((candidate) => candidate.key === row.field_key);
+  const fields = await campFields(registration.camp_id);
+  const field = fields.find((candidate) => candidate.key === row.field_key);
   if (!field) return { ok: false, reason: "field_gone" };
 
   const proposed = asFieldValue(row.proposed_value);
@@ -175,9 +176,13 @@ export async function applyParticipantChange(
     return { ok: false, reason: "conflict", current: displayFieldValue(field, stored) };
   }
 
+  // Answers the change hides are removed; a field hidden by now is gone (specs/037).
+  const patch = visibleChangePatch(registration, field.key, proposed, fields);
+  if (!patch) return { ok: false, reason: "field_gone" };
+
   const { error: updateError } = await supabase
     .from("registrations")
-    .update({ ...changePatch(registration, field.key, proposed), updated_at: new Date().toISOString() })
+    .update({ ...patch, updated_at: new Date().toISOString() })
     .eq("id", row.registration_id);
   if (updateError) throw updateError;
 

@@ -15,6 +15,8 @@ import {
   de,
 } from "@/lib/admin/messages";
 import { splitCampFields } from "@/lib/admin/form-layout";
+import { visibleFields } from "@/lib/register/conditions";
+import { GENDER_OPTIONS as GENDER_FORM_VALUES } from "@/lib/register/validation";
 import type {
   ActionResult,
   ParticipantLinkResult,
@@ -95,6 +97,15 @@ function dynamicFields(fields: CampFormField[]): CampFormField[] {
   return fields.filter((f) => !CORE_FIELD_KEYS.has(f.key));
 }
 
+/**
+ * The camp's own fields shown for the current answers: conditional fields
+ * (specs/037) only while their trigger matches; gender compares as German text.
+ */
+function shownDynamicFields(fields: CampFormField[], values: RegistrationFormValues): CampFormField[] {
+  const gender = values.gender ? GENDER_FORM_VALUES[values.gender] : undefined;
+  return visibleFields(dynamicFields(fields), { ...values.formData, gender });
+}
+
 function initialDynamicValue(field: CampFormField): DynamicValue {
   return field.fieldType === "checkbox" ? false : "";
 }
@@ -163,7 +174,7 @@ function validate(
   else if (!EMAIL_RE.test(email)) errors.email = de.registrations.errors.emailInvalid;
   if (!isAmount(values.amountDue)) errors.amountDue = de.registrations.errors.amountInvalid;
   if (!isAmount(values.amountPaid)) errors.amountPaid = de.registrations.errors.amountInvalid;
-  for (const field of dynamicFields(fields)) {
+  for (const field of shownDynamicFields(fields, values)) {
     const message = validateDynamic(field, values.formData[field.key]);
     if (message) errors[field.key] = message;
   }
@@ -238,7 +249,7 @@ export function RegistrationFormDialog({
   const [mailsReloadKey, setMailsReloadKey] = useState(0);
 
   const dynamic = dynamicFields(formFields);
-  const campFields = splitCampFields(dynamic);
+  const campFields = splitCampFields(shownDynamicFields(formFields, values));
 
   function clearError(key: string) {
     setErrors((prev) => {

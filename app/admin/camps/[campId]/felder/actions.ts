@@ -24,6 +24,7 @@ import { mappingProblem } from "@/lib/bus/rules";
 import { busSettingsInputSchema, type BusSettingsInput } from "@/lib/bus/schema";
 import { de } from "@/lib/admin/messages";
 import { registerMessages } from "@/lib/register/messages";
+import { newConditionProblems, type ConditionProblem } from "@/lib/register/conditions";
 import { questionFields } from "@/lib/register/steps";
 import {
   mergeFields,
@@ -34,6 +35,8 @@ import {
 import type {
   ActionResult,
   AdminUser,
+  CampFormField,
+  FieldCondition,
   FieldFormValues,
   FieldInput,
 } from "@/lib/admin/types";
@@ -71,6 +74,8 @@ const fieldSchema = z
     helpText: z.string(),
     capacityOption: z.string(),
     capacityLimit: z.string(),
+    showWhenField: z.string(),
+    showWhenValues: z.array(z.string()),
   })
   .superRefine((values, ctx) => {
     if (values.label.trim() === "") {
@@ -102,6 +107,13 @@ const fieldSchema = z
         code: "custom",
         path: ["options"],
         message: de.fields.errors.optionsRequired,
+      });
+    }
+    if (values.showWhenField.trim() !== "" && cleanValues(values.showWhenValues).length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["showWhenValues"],
+        message: de.fields.errors.condition.no_values,
       });
     }
     // Capacity only applies to select fields with a chosen option.
@@ -151,9 +163,21 @@ const fieldSchema = z
         placeholder: nullify(values.placeholder),
         helpText: nullify(values.helpText),
         capacity,
+        showWhen: readShowWhen(values.showWhenField, values.showWhenValues),
       },
     };
   });
+
+// Trims, drops blanks, dedupes while preserving order.
+function cleanValues(values: string[]): string[] {
+  return [...new Set(values.map((value) => value.trim()).filter((value) => value !== ""))];
+}
+
+// The stored condition (specs/037); null when the admin switched it off.
+function readShowWhen(fieldKey: string, values: string[]): FieldCondition | null {
+  const key = fieldKey.trim();
+  return key === "" ? null : { fieldKey: key, values: cleanValues(values) };
+}
 
 // One choice per line; trims, drops blanks, dedupes while preserving order.
 function parseOptions(raw: string): string[] {
@@ -234,6 +258,43 @@ async function freeStepKey(campId: string, label: string): Promise<string> {
   return key;
 }
 
+// --- conditions (specs/037-conditional-form-fields) -------------------------
+
+function asField(id: string, campId: string, input: FieldInput, sortOrder: number): CampFormField {
+  return { id, campId, sortOrder, ...input };
+}
+
+const VALUE_REASONS: ReadonlySet<ConditionProblem["reason"]> = new Set(["no_values", "value_missing"]);
+
+function quoted(problems: ConditionProblem[]): string {
+  return [...new Set(problems.map((problem) => `„${problem.fieldLabel}“`))].join(", ");
+}
+
+/**
+ * Rejects a change that breaks a condition. Problems on the edited field
+ * become field errors; problems on other fields mean they depend on this one.
+ */
+function conditionResult(
+  current: CampFormField[],
+  next: CampFormField[],
+  editedKey: string | null,
+): ActionResult | null {
+  const problems = newConditionProblems(mergeFields(current), mergeFields(next));
+  if (problems.length === 0) return null;
+
+  const others = problems.filter((problem) => problem.fieldKey !== editedKey);
+  if (others.length > 0) {
+    return { ok: false, error: de.fields.errors.dependentBlocked(quoted(others)) };
+  }
+  const own = problems[0];
+  const path = VALUE_REASONS.has(own.reason) ? "showWhenValues" : "showWhenField";
+  return {
+    ok: false,
+    error: de.fields.toast.error,
+    fieldErrors: { [path]: de.fields.errors.condition[own.reason] },
+  };
+}
+
 function keyTakenResult(): ActionResult {
   return {
     ok: false,
@@ -256,6 +317,11 @@ export async function createFieldAction(
       ? parsed.data
       : { ...parsed.data, key: await freeStepKey(campId, parsed.data.label) };
     if (await keyTaken(campId, input.key)) return keyTakenResult();
+
+    const current = await getCampFormFields(campId);
+    const next = [...current, asField("new", campId, input, current.length)];
+    const blocked = conditionResult(current, next, input.key);
+    if (blocked) return blocked;
 
     try {
       const id = await createFormField(campId, input);
@@ -284,6 +350,13 @@ export async function updateFieldAction(
 
     if (await keyTaken(campId, parsed.data.key, id)) return keyTakenResult();
 
+    const current = await getCampFormFields(campId);
+    const next = current.map((field) =>
+      field.id === id ? asField(id, campId, parsed.data, field.sortOrder) : field,
+    );
+    const blocked = conditionResult(current, next, parsed.data.key);
+    if (blocked) return blocked;
+
     try {
       await updateFormField(id, parsed.data);
       await writeLog({
@@ -305,6 +378,14 @@ export async function deleteFieldAction(
   id: string,
 ): Promise<ActionResult> {
   return runGuarded(async (admin) => {
+    const current = await getCampFormFields(campId);
+    const blocked = conditionResult(
+      current,
+      current.filter((field) => field.id !== id),
+      null,
+    );
+    if (blocked) return blocked;
+
     await deleteFormField(id);
     await writeLog({
       level: "warning",

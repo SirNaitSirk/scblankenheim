@@ -909,6 +909,7 @@ export const de = {
       description:
         "Lege das erste Formularfeld an, damit sich Teilnehmende anmelden können.",
     },
+    conditionBadge: (trigger: string, values: string[]) => `Nur bei ${trigger}: ${values.join(", ")}`,
     preview: {
       title: "Vorschau",
       description: "So sehen Teilnehmende das Anmeldeformular.",
@@ -950,6 +951,17 @@ export const de = {
         "Begrenzt eine Option auf eine feste Anzahl Plätze. Der freie Rest wird im Formular angezeigt.",
       capacityLimit: "Max. Plätze",
       capacityLimitPlaceholder: "z. B. 60",
+      // Conditional fields (specs/037-conditional-form-fields).
+      showWhenToggle: "Nur anzeigen, wenn",
+      showWhenField: "Auslöserfeld",
+      showWhenFieldPlaceholder: "Auswahlfeld wählen",
+      showWhenFieldHint: "Nur Auswahlfelder ohne eigene Bedingung.",
+      showWhenValues: "Bei diesen Antworten",
+      showWhenValuesHint: "Das Feld erscheint, sobald eine davon gewählt ist, und ist nur dann Pflicht.",
+      showWhenNoTriggers: "Lege zuerst ein Auswahlfeld an, das als Auslöser dienen kann.",
+      showWhenOrderHint: "Dieses Feld steht vor seinem Auslöserfeld. Sinnvoller ist es danach.",
+      showWhenLocked: (labels: string) =>
+        `${labels} hängt an diesem Feld. Deshalb kann es selbst keine Bedingung bekommen.`,
       save: "Speichern",
       cancel: "Abbrechen",
       saving: "Wird gespeichert …",
@@ -983,6 +995,17 @@ export const de = {
       capacityOptionInvalid:
         "Die begrenzte Option muss eine der Optionen dieses Felds sein.",
       capacityLimitInvalid: "Bitte gib eine ganze Zahl größer als 0 ein.",
+      condition: {
+        no_values: "Bitte wähle mindestens eine Antwort.",
+        trigger_missing: "Das Auslöserfeld gibt es nicht mehr.",
+        trigger_not_select: "Der Auslöser muss ein Auswahlfeld sein.",
+        trigger_self: "Ein Feld kann nicht an sich selbst hängen.",
+        trigger_conditional: "Das Auslöserfeld hat selbst eine Bedingung. Bedingungen haben nur eine Ebene.",
+        value_missing: "Mindestens eine gewählte Antwort gibt es beim Auslöserfeld nicht mehr.",
+        not_allowed: "Dieses Feld kann keine Bedingung haben.",
+      },
+      dependentBlocked: (labels: string) =>
+        `${labels} hängt an diesem Feld oder seinen Antworten. Passe zuerst dessen Bedingung an.`,
     },
   },
   logs: {

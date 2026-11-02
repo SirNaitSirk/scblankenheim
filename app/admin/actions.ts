@@ -5,7 +5,9 @@ import { z } from "zod";
 import {
   createRegistration,
   getAccessToken,
+  getCampFormFields,
   getCurrentCamp,
+  getRegistrationCampId,
   renewAccessToken,
   setRegistrationDeleted,
   setRegistrationPayment,
@@ -52,6 +54,8 @@ import {
 import { participantPath, participantUrl } from "@/lib/email/links";
 import { sendPaymentLinkEmail, type PaymentLinkOutcome } from "@/lib/email/send";
 import { de } from "@/lib/admin/messages";
+import { dropHiddenAnswers } from "@/lib/register/conditions";
+import { GENDER_OPTIONS } from "@/lib/register/validation";
 import type {
   ActionResult,
   AdminUser,
@@ -191,6 +195,15 @@ function nameLabel(input: RegistrationInput): string {
   return `${input.firstName} ${input.lastName}`.trim() || input.email;
 }
 
+// Answers of fields hidden by their condition are removed before saving
+// (specs/037-conditional-form-fields); the dialog hides them the same way.
+async function withoutHiddenAnswers(campId: string, input: RegistrationInput): Promise<RegistrationInput> {
+  const fields = await getCampFormFields(campId);
+  const gender = input.gender ? GENDER_OPTIONS[input.gender] : undefined;
+  const formData = dropHiddenAnswers(fields, input.formData, { ...input.formData, gender });
+  return { ...input, formData };
+}
+
 // --- actions ----------------------------------------------------------------
 
 export async function createRegistrationAction(
@@ -205,7 +218,7 @@ export async function createRegistrationAction(
       return { ok: false, error: de.registrations.errors.noCurrentCamp };
     }
 
-    const reference = await createRegistration(camp.id, parsed.data);
+    const reference = await createRegistration(camp.id, await withoutHiddenAnswers(camp.id, parsed.data));
     await writeLog({
       actor: actorLabel(admin),
       action: "registration.create",
@@ -224,7 +237,8 @@ export async function updateRegistrationAction(
     const parsed = registrationSchema.safeParse(values);
     if (!parsed.success) return fieldErrorResult(parsed.error);
 
-    await updateRegistration(reference, parsed.data);
+    const campId = await getRegistrationCampId(reference);
+    await updateRegistration(reference, campId ? await withoutHiddenAnswers(campId, parsed.data) : parsed.data);
     // Cancelled or gender changed: the room may no longer fit (specs/008), a
     // changed gender may no longer fit the tent circle (specs/011).
     await syncRoomAssignment({ reference });

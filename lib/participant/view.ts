@@ -8,7 +8,7 @@ import {
   type PayableRegistration,
 } from "@/lib/payment/eligibility";
 import { formatGermanDate } from "@/lib/time/berlin";
-import { allowedChangeFields, displayFieldValue, storedFieldValue } from "./contact";
+import { allowedChangeFields, displayFieldValue, hiddenFieldKeys, storedFieldValue } from "./contact";
 import { OWN_MESSAGES_SHOWN } from "./limits";
 import { participantMessages as copy } from "./messages";
 import { formatReleaseDates, isReleaseActive, isReleaseUnlocked, prefillAddress } from "@/lib/school-release/settings";
@@ -164,13 +164,14 @@ function coreRows(registration: ParticipantRegistrationInput): ParticipantRow[] 
 function fieldRows(
   formData: unknown,
   fields: ReadonlyArray<ParticipantFieldInput>,
+  hidden: ReadonlySet<string>,
 ): ParticipantRow[] {
   const answers =
     formData && typeof formData === "object" && !Array.isArray(formData)
       ? (formData as Record<string, unknown>)
       : {};
   return [...fields]
-    .filter((field) => field.field_type !== "step" && !CORE_KEYS.has(field.key))
+    .filter((field) => field.field_type !== "step" && !CORE_KEYS.has(field.key) && !hidden.has(field.key))
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((field) => ({ label: field.label, value: formatAnswer(field, answers[field.key]) }))
     .filter((row) => row.value !== "");
@@ -179,19 +180,22 @@ function fieldRows(
 function editableFields(
   registration: ParticipantRegistrationInput,
   campFields: ReadonlyArray<CampFormField>,
+  hidden: ReadonlySet<string>,
 ): EditableField[] {
-  return allowedChangeFields(campFields).map((field) => {
-    const current = storedFieldValue(registration, field.key);
-    return {
-      key: field.key,
-      label: field.label,
-      type: field.fieldType,
-      options: Array.isArray(field.options) ? field.options.map(String) : null,
-      required: field.required,
-      current,
-      currentDisplay: displayFieldValue(field, current),
-    };
-  });
+  return allowedChangeFields(campFields)
+    .filter((field) => !hidden.has(field.key))
+    .map((field) => {
+      const current = storedFieldValue(registration, field.key);
+      return {
+        key: field.key,
+        label: field.label,
+        type: field.fieldType,
+        options: Array.isArray(field.options) ? field.options.map(String) : null,
+        required: field.required,
+        current,
+        currentDisplay: displayFieldValue(field, current),
+      };
+    });
 }
 
 function ownMessages(
@@ -237,6 +241,7 @@ export function buildParticipantView(input: {
     deleted: registration.deleted,
   };
   const payState = payStateOf(payable);
+  const hidden = hiddenFieldKeys(registration, input.campFields ?? []);
 
   return {
     firstName: text(registration.first_name),
@@ -253,8 +258,8 @@ export function buildParticipantView(input: {
     },
     payState,
     payHref: payState === "pay" ? paymentPath(registration.reference) : null,
-    rows: [...coreRows(registration), ...fieldRows(registration.form_data, fields)],
-    editableFields: editableFields(registration, input.campFields ?? []),
+    rows: [...coreRows(registration), ...fieldRows(registration.form_data, fields, hidden)],
+    editableFields: editableFields(registration, input.campFields ?? [], hidden),
     messages: ownMessages(input.messages ?? [], input.campFields ?? []),
     schoolRelease: releaseCard(registration, input.release ?? null),
     busTicket: registration.status === "cancelled" ? null : (input.busTicket ?? null),

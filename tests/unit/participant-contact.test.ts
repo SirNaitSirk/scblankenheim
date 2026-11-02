@@ -5,9 +5,11 @@ import {
   changePatch,
   checkChangeRequest,
   displayFieldValue,
+  hiddenFieldKeys,
   parseFieldInput,
   participantMessageInputSchema,
   storedFieldValue,
+  visibleChangePatch,
   type ChangeableRegistration,
 } from "@/lib/participant/contact";
 
@@ -120,5 +122,52 @@ describe("displayFieldValue", () => {
     expect(displayFieldValue(photos, false)).toBe("Nein");
     expect(displayFieldValue(birthday, "2010-05-04")).toBe("04.05.2010");
     expect(displayFieldValue(shirt, null)).toBe("");
+  });
+});
+
+describe("conditional fields (specs/037)", () => {
+  const youth = field({ key: "jugend", label: "Jugend", fieldType: "select", options: ["Ort", "Eingeladen"] });
+  const invitedBy = field({
+    key: "eingeladen_von",
+    label: "Eingeladen von",
+    required: true,
+    config: { showWhen: { fieldKey: "jugend", values: ["Eingeladen"] } },
+  });
+  const sisters = field({
+    key: "zimmer_wunsch",
+    label: "Zimmerwunsch",
+    config: { showWhen: { fieldKey: "gender", values: ["Weiblich"] } },
+  });
+  const fields = [youth, invitedBy, sisters];
+  const invited: ChangeableRegistration = {
+    ...registration,
+    form_data: { jugend: "Eingeladen", eingeladen_von: "Max", zimmer_wunsch: "Anna" },
+  };
+
+  it("hides fields whose condition the stored answers do not match", () => {
+    expect([...hiddenFieldKeys(invited, fields)]).toEqual([]);
+    expect([...hiddenFieldKeys({ ...invited, form_data: { jugend: "Ort" } }, fields)]).toEqual(["eingeladen_von"]);
+    expect([...hiddenFieldKeys({ ...invited, gender: "male" }, fields)]).toEqual(["zimmer_wunsch"]);
+  });
+
+  it("removes answers a change hides", () => {
+    expect(visibleChangePatch(invited, "jugend", "Ort", fields)).toEqual({
+      form_data: { jugend: "Ort", zimmer_wunsch: "Anna" },
+    });
+    expect(visibleChangePatch(invited, "gender", "Männlich", fields)).toEqual({
+      gender: "male",
+      form_data: { jugend: "Eingeladen", eingeladen_von: "Max" },
+    });
+  });
+
+  it("refuses a change to a field that is hidden", () => {
+    const local = { ...invited, form_data: { jugend: "Ort" } };
+    expect(visibleChangePatch(local, "eingeladen_von", "Max", fields)).toBeNull();
+  });
+
+  it("keeps the plain patch when nothing gets hidden", () => {
+    expect(visibleChangePatch(invited, "eingeladen_von", "Moritz", fields)).toEqual(
+      changePatch(invited, "eingeladen_von", "Moritz"),
+    );
   });
 });

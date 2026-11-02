@@ -9,6 +9,7 @@ import {
   allowedChangeFields,
   checkChangeRequest,
   displayFieldValue,
+  hiddenFieldKeys,
   parseFieldInput,
   participantMessageInputSchema,
   storedFieldValue,
@@ -103,13 +104,17 @@ export async function sendParticipantMessageAction(
     } else {
       const { data: rows, error } = await getServiceClient()
         .from("camp_form_fields")
-        .select("id, camp_id, key, label, field_type, required, options, sort_order")
+        .select("id, camp_id, key, label, field_type, required, options, sort_order, config")
         .eq("camp_id", registration.camp_id);
       if (error) throw error;
-      const field = allowedChangeFields((rows ?? []).map(toCampFormField)).find(
+      const campFields = (rows ?? []).map(toCampFormField);
+      const field = allowedChangeFields(campFields).find(
         (candidate) => candidate.key === input.fieldKey,
       );
-      if (!field) return fail(e.fieldUnavailable);
+      // A field hidden by its condition is not offered (specs/037).
+      if (!field || hiddenFieldKeys(registration, campFields).has(field.key)) {
+        return fail(e.fieldUnavailable);
+      }
 
       const stored = storedFieldValue(registration, field.key);
       const value = parseFieldInput(field, input.value);

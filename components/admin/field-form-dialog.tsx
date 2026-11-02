@@ -14,7 +14,14 @@ import {
   slugifyKey,
   type FieldType,
 } from "@/lib/admin/field-types";
+import { cn } from "@/lib/cn";
 import { de } from "@/lib/admin/messages";
+import {
+  dependentsOf,
+  newConditionProblems,
+  readCondition,
+} from "@/lib/register/conditions";
+import { CORE_FIELDS, mergeFields } from "@/lib/register/validation";
 import type {
   ActionResult,
   CampFormField,
@@ -33,6 +40,8 @@ const EMPTY: FieldFormValues = {
   helpText: "",
   capacityOption: "",
   capacityLimit: "",
+  showWhenField: "",
+  showWhenValues: [],
 };
 
 function readOptionLines(value: unknown): string {
@@ -77,6 +86,7 @@ function parseOptionLines(raw: string): string[] {
 
 function fromField(field: CampFormField): FieldFormValues {
   const capacity = readCapacity(field.config);
+  const condition = readCondition(field);
   return {
     key: field.key,
     label: field.label,
@@ -89,6 +99,41 @@ function fromField(field: CampFormField): FieldFormValues {
     helpText: readConfigString(field.config, "helpText"),
     capacityOption: capacity.option,
     capacityLimit: capacity.limit,
+    showWhenField: condition?.fieldKey ?? "",
+    showWhenValues: condition?.values ?? [],
+  };
+}
+
+const GENDER_FIELD = CORE_FIELDS.filter((field) => field.key === "gender");
+
+// Select fields that may show or hide other fields (specs/037): no own
+// condition, never the edited field itself; the gender core field included.
+function triggerCandidates(fields: CampFormField[], selfId: string | null): CampFormField[] {
+  return [...GENDER_FIELD, ...fields].filter(
+    (field) => field.fieldType === "select" && field.id !== selfId && !readCondition(field),
+  );
+}
+
+function optionList(field: CampFormField | undefined): string[] {
+  return Array.isArray(field?.options) ? field.options.filter((o): o is string => typeof o === "string") : [];
+}
+
+// The edited field as it would be saved; mirrors the server transform closely
+// enough for the condition check (the server stays authoritative).
+function draftField(values: FieldFormValues, base: CampFormField | null): CampFormField {
+  return {
+    id: base?.id ?? "new",
+    campId: base?.campId ?? "",
+    sortOrder: base?.sortOrder ?? Number.MAX_SAFE_INTEGER,
+    key: values.key.trim(),
+    label: values.label.trim(),
+    fieldType: values.fieldType,
+    required: values.required,
+    options: isChoiceType(values.fieldType) ? parseOptionLines(values.options) : null,
+    config: {
+      showWhen:
+        values.showWhenField === "" ? null : { fieldKey: values.showWhenField, values: values.showWhenValues },
+    },
   };
 }
 
@@ -102,6 +147,7 @@ export function FieldFormDialog({
   open,
   mode,
   field,
+  fields,
   onClose,
   onSubmit,
   onSuccess,
@@ -110,6 +156,8 @@ export function FieldFormDialog({
   open: boolean;
   mode: Mode;
   field: CampFormField | null;
+  /** All fields of the camp, for the condition (specs/037). */
+  fields: CampFormField[];
   onClose: () => void;
   onSubmit: (values: FieldFormValues) => Promise<ActionResult>;
   onSuccess: () => void;
@@ -142,6 +190,11 @@ export function FieldFormDialog({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (saving) return;
+    const blocked = dependentProblem();
+    if (blocked) {
+      setErrors({ form: blocked });
+      return;
+    }
     setSaving(true);
     setErrors({});
     const result = await onSubmit(values);
@@ -149,8 +202,20 @@ export function FieldFormDialog({
       onSuccess();
       return;
     }
-    setErrors(result.fieldErrors ?? {});
+    setErrors({ ...(result.fieldErrors ?? {}), ...(result.fieldErrors ? {} : { form: result.error }) });
     setSaving(false);
+  }
+
+  // Same rule as the server: does this edit break a condition of another field?
+  function dependentProblem(): string | null {
+    if (mode !== "edit" || !field) return null;
+    const next = fields.map((candidate) => (candidate.id === field.id ? draftField(values, field) : candidate));
+    const others = newConditionProblems(mergeFields(fields), mergeFields(next)).filter(
+      (problem) => problem.fieldKey !== values.key.trim(),
+    );
+    if (others.length === 0) return null;
+    const labels = [...new Set(others.map((problem) => `„${problem.fieldLabel}“`))].join(", ");
+    return de.fields.errors.dependentBlocked(labels);
   }
 
   const showOptions = isChoiceType(values.fieldType);
@@ -166,6 +231,31 @@ export function FieldFormDialog({
   // Choices offered as the limited option — the current options, plus the saved
   // one if the admin has since removed it from the list (so it stays visible).
   const parsedOptions = parseOptionLines(values.options);
+
+  const triggers = triggerCandidates(fields, field?.id ?? null);
+  const trigger = triggers.find((candidate) => candidate.key === values.showWhenField);
+  const triggerOptions = optionList(trigger);
+  // A trigger of other fields cannot itself be conditional (one level only).
+  const dependents = field ? dependentsOf(fields, field.key) : [];
+  const conditionOn = values.showWhenField !== "";
+  const beforeTrigger =
+    conditionOn && trigger !== undefined && field !== null && !trigger.id.startsWith("core-") &&
+    trigger.sortOrder > field.sortOrder;
+
+  const toggleCondition = (on: boolean) =>
+    setValues((prev) => ({
+      ...prev,
+      showWhenField: on ? (triggers[0]?.key ?? "") : "",
+      showWhenValues: [],
+    }));
+
+  const toggleValue = (value: string) =>
+    setValues((prev) => ({
+      ...prev,
+      showWhenValues: prev.showWhenValues.includes(value)
+        ? prev.showWhenValues.filter((item) => item !== value)
+        : [...prev.showWhenValues, value],
+    }));
   const capacityOptions =
     values.capacityOption !== "" && !parsedOptions.includes(values.capacityOption)
       ? [values.capacityOption, ...parsedOptions]
@@ -351,6 +441,80 @@ export function FieldFormDialog({
               autoComplete="off"
             />
           </Field>
+
+          <div className="flex flex-col gap-4 border-t border-border pt-4">
+            <Switch
+              id="field-show-when"
+              checked={conditionOn}
+              onCheckedChange={toggleCondition}
+              label={t.showWhenToggle}
+              disabled={dependents.length > 0 || (!conditionOn && triggers.length === 0)}
+            />
+            {dependents.length > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                {t.showWhenLocked(dependents.map((d) => `„${d.label}“`).join(", "))}
+              </p>
+            ) : !conditionOn && triggers.length === 0 ? (
+              <p className="text-xs text-muted-foreground">{t.showWhenNoTriggers}</p>
+            ) : null}
+
+            {conditionOn && (
+              <>
+                <Field
+                  label={t.showWhenField}
+                  htmlFor="field-show-when-field"
+                  hint={t.showWhenFieldHint}
+                  error={errors.showWhenField}
+                >
+                  <Select
+                    id="field-show-when-field"
+                    value={values.showWhenField}
+                    onChange={(e) =>
+                      setValues((prev) => ({ ...prev, showWhenField: e.target.value, showWhenValues: [] }))
+                    }
+                    aria-invalid={Boolean(errors.showWhenField)}
+                    options={[
+                      ...(trigger ? [] : [{ value: values.showWhenField, label: t.showWhenFieldPlaceholder }]),
+                      ...triggers.map((candidate) => ({ value: candidate.key, label: candidate.label })),
+                    ]}
+                  />
+                </Field>
+
+                <Field label={t.showWhenValues} hint={t.showWhenValuesHint} error={errors.showWhenValues}>
+                  <div className="flex flex-wrap gap-2">
+                    {triggerOptions.map((option) => {
+                      const selected = values.showWhenValues.includes(option);
+                      return (
+                        <button
+                          key={option}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() => toggleValue(option)}
+                          className={cn(
+                            "inline-flex min-h-9 items-center rounded-pill border px-3 py-1.5 text-sm transition-colors",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                            selected
+                              ? "border-accent bg-accent/10 text-foreground"
+                              : "border-ink-200 text-muted-foreground hover:border-ink-300",
+                          )}
+                        >
+                          {option}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+
+                {beforeTrigger && <p className="text-xs text-muted-foreground">{t.showWhenOrderHint}</p>}
+              </>
+            )}
+          </div>
+
+          {errors.form && (
+            <p role="alert" className="text-sm text-danger">
+              {errors.form}
+            </p>
+          )}
         </form>
       )}
     </Dialog>

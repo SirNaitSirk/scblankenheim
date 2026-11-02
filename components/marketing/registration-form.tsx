@@ -17,6 +17,7 @@ import {
 } from "@/components/marketing/registration-steps";
 import { cn } from "@/lib/cn";
 import { registerMessages } from "@/lib/register/messages";
+import { isFieldVisible, visibleFields } from "@/lib/register/conditions";
 import { buildSteps, stepIndexOf, type FormStep } from "@/lib/register/steps";
 import {
   validateField,
@@ -64,13 +65,13 @@ function emptyValues(fields: CampFormField[]): Record<string, FieldValue> {
   return Object.fromEntries(fields.map((f) => [f.key, initialValue(f)]));
 }
 
-/** Per key messages for the given fields; empty when all are valid. */
+/** Per key messages for the visible given fields; empty when all are valid. */
 function validateStep(
   fields: CampFormField[],
   values: Record<string, FieldValue>,
 ): Record<string, string> {
   const errors: Record<string, string> = {};
-  for (const field of fields) {
+  for (const field of visibleFields(fields, values)) {
     const message = validateField(field, values[field.key]);
     if (message) errors[field.key] = message;
   }
@@ -208,12 +209,25 @@ export function RegistrationForm({
   }
 
   function setValue(key: string, value: FieldValue) {
-    setValues((prev) => ({ ...prev, [key]: value }));
+    const nextValues = { ...values, [key]: value };
+    // Conditional fields (specs/037): announce the ones this answer reveals,
+    // forget errors of the ones it hides. Focus stays on the trigger.
+    const shown = allFields.filter(
+      (field) => !isFieldVisible(field, values) && isFieldVisible(field, nextValues),
+    );
+    const hidden = new Set(
+      allFields.filter((field) => !isFieldVisible(field, nextValues)).map((field) => field.key),
+    );
+    if (shown.length > 0) {
+      setAnnouncement(shown.map((field) => copy.steps.fieldShown(field.label)).join(" "));
+    }
+    setValues(nextValues);
     setServerError(null);
     setErrors((prev) => {
-      if (!prev[key]) return prev;
+      const keys = Object.keys(prev).filter((errorKey) => errorKey === key || hidden.has(errorKey));
+      if (keys.length === 0) return prev;
       const next = { ...prev };
-      delete next[key];
+      for (const errorKey of keys) delete next[errorKey];
       return next;
     });
   }
@@ -471,7 +485,7 @@ export function RegistrationForm({
               <div className="mt-6">
                 {step ? (
                   <div className="flex flex-col gap-5">
-                    {step.fields.map((field) => (
+                    {visibleFields(step.fields, values).map((field) => (
                       <FormField
                         key={field.id}
                         field={field}

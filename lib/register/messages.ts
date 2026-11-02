@@ -116,6 +116,8 @@ export const registerMessages = {
     progress: (n: number, total: number) => `Schritt ${n} von ${total}`,
     announce: (n: number, total: number, title: string) =>
       `Schritt ${n} von ${total}: ${title}`,
+    // Screen reader notice when a conditional field appears (specs/037).
+    fieldShown: (label: string) => `Neues Feld: ${label}`,
     yes: "Ja",
     no: "Nein",
     empty: "Keine Angabe",

@@ -7,6 +7,7 @@ import {
   readFieldCapacity,
 } from "@/lib/marketing/availability";
 import { findValidTier } from "@/lib/register/invitation";
+import { visibleFields } from "@/lib/register/conditions";
 import { questionFields } from "@/lib/register/steps";
 import {
   REGISTRATION_CEILING_WINDOW_MS,
@@ -217,7 +218,8 @@ function splitValues(
   };
   const formData: Record<string, FieldValue> = {};
 
-  for (const field of fields) {
+  // Hidden conditional fields never reach `form_data` (specs/037).
+  for (const field of visibleFields(fields, values)) {
     const value = values[field.key];
     if (isCoreKey(field.key)) {
       const text = typeof value === "string" ? value.trim() : "";

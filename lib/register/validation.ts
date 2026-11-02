@@ -1,5 +1,6 @@
 import { registerMessages } from "@/lib/register/messages";
 import type { CampFormField } from "@/lib/admin/types";
+import { visibleFields } from "@/lib/register/conditions";
 
 /**
  * Shared field rules for the public registration form. Isomorphic: the client
@@ -103,13 +104,16 @@ export function validateField(
   return null;
 }
 
-/** Validates every field; returns per key messages (empty when all valid). */
+/**
+ * Validates every visible field; hidden conditional fields are never required
+ * (specs/037). Returns per key messages (empty when all valid).
+ */
 export function validateFields(
   fields: CampFormField[],
   values: Record<string, FieldValue>,
 ): Record<string, string> {
   const errors: Record<string, string> = {};
-  for (const field of fields) {
+  for (const field of visibleFields(fields, values)) {
     const message = validateField(field, values[field.key]);
     if (message) errors[field.key] = message;
   }

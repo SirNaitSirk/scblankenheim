@@ -212,6 +212,17 @@ export type FieldConfig = {
   placeholder: string | null;
   helpText: string | null;
   capacity?: FieldCapacity | null;
+  showWhen?: FieldCondition | null;
+};
+
+/**
+ * Shows a field only while the select field `fieldKey` holds one of `values`
+ * (specs/037-conditional-form-fields). Values are the form values: option text,
+ * for gender the German option text.
+ */
+export type FieldCondition = {
+  fieldKey: string;
+  values: string[];
 };
 
 /**
@@ -230,6 +241,8 @@ export type FieldFormValues = {
   helpText: string;
   capacityOption: string; // limited option value, or "" for none (select only)
   capacityLimit: string; // max seats for that option (only when capacityOption set)
+  showWhenField: string; // trigger field key, or "" for no condition
+  showWhenValues: string[]; // trigger answers that show this field
 };
 
 /** Validated, row-ready form-field payload (output of the Zod schema). */

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { isQuestionType } from "@/lib/admin/field-types";
 import type { CampFormField } from "@/lib/admin/types";
 import type { Json } from "@/lib/database.types";
+import { isFieldVisible, type FormValues } from "@/lib/register/conditions";
 import {
   GENDER_OPTIONS,
   genderFromOption,
@@ -77,6 +78,23 @@ export function storedFieldValue(
   }
 }
 
+/**
+ * Keys of the camp's fields that the stored answers hide (specs/037): their
+ * condition does not match, so the page neither shows nor offers them.
+ */
+export function hiddenFieldKeys(
+  registration: ChangeableRegistration,
+  campFields: ReadonlyArray<CampFormField>,
+): Set<string> {
+  const values: FormValues = { gender: storedFieldValue(registration, "gender") ?? undefined };
+  for (const [key, value] of Object.entries(formData(registration))) {
+    if (typeof value === "string" || typeof value === "boolean") values[key] = value;
+  }
+  return new Set(
+    campFields.filter((field) => !isFieldVisible(field, values)).map((field) => field.key),
+  );
+}
+
 /** Raw form input as the field's value type (checkbox inputs arrive as "true" or "false"). */
 export function parseFieldInput(field: CampFormField, raw: string): FieldValue {
   return field.fieldType === "checkbox" ? raw === "true" : raw.trim();
@@ -131,6 +149,27 @@ export function changePatch(
   return { form_data: { ...answers, [key]: value } };
 }
 
+/**
+ * `changePatch` that also removes answers the change hides (specs/037), or
+ * null when the changed field itself is hidden after the change.
+ */
+export function visibleChangePatch(
+  registration: ChangeableRegistration,
+  key: string,
+  value: FieldValue,
+  campFields: ReadonlyArray<CampFormField>,
+): ChangePatch | null {
+  const patch = changePatch(registration, key, value);
+  const patched: ChangeableRegistration = { ...registration, ...patch };
+  const hidden = hiddenFieldKeys(patched, campFields);
+  if (hidden.has(key)) return null;
+
+  const answers = formData(patched) as { [key: string]: Json | undefined };
+  if (!Object.keys(answers).some((answerKey) => hidden.has(answerKey))) return patch;
+  const kept = Object.fromEntries(Object.entries(answers).filter(([answerKey]) => !hidden.has(answerKey)));
+  return { ...patch, form_data: kept };
+}
+
 /** Value as people read it: Ja or Nein, German dates, plain text otherwise. */
 export function displayFieldValue(field: Pick<CampFormField, "fieldType">, value: unknown): string {
   if (field.fieldType === "checkbox") {
@@ -154,6 +193,7 @@ export function toCampFormField(row: {
   required: boolean;
   options: unknown;
   sort_order: number;
+  config?: unknown;
 }): CampFormField {
   return {
     id: row.id,
@@ -164,6 +204,10 @@ export function toCampFormField(row: {
     required: row.required,
     options: row.options,
     sortOrder: row.sort_order,
-    config: {},
+    // Only the condition matters here (specs/037); placeholders stay unused.
+    config:
+      row.config && typeof row.config === "object" && !Array.isArray(row.config)
+        ? (row.config as Record<string, unknown>)
+        : {},
   };
 }
