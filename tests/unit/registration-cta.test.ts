@@ -13,13 +13,13 @@ describe("registrationCta", () => {
   it("names the opening day during the countdown", () => {
     const cta = registrationCta("countdown", "2026-11-30T09:00:00Z");
     expect(cta.label).toBe("Anmeldung ab 30. November");
-    expect(cta.shortLabel).toBe("Ab 30.11.");
+    expect(cta.shortLabel).toBe("Anmeldung ab 30.11.");
   });
 
   it("uses the Berlin day for an opening shortly before midnight UTC", () => {
     const cta = registrationCta("countdown", "2026-11-29T23:30:00Z");
     expect(cta.label).toBe("Anmeldung ab 30. November");
-    expect(cta.shortLabel).toBe("Ab 30.11.");
+    expect(cta.shortLabel).toBe("Anmeldung ab 30.11.");
   });
 
   it("falls back without a valid opening date", () => {

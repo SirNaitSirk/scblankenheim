@@ -23,8 +23,8 @@ const dayMonth = new Intl.DateTimeFormat("de-DE", {
 });
 
 const dayMonthNumeric = new Intl.DateTimeFormat("de-DE", {
-  day: "2-digit",
-  month: "2-digit",
+  day: "numeric",
+  month: "numeric",
   timeZone: "Europe/Berlin",
 });
 

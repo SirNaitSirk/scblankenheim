@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
+import { CopyReference } from "@/components/marketing/copy-reference";
+import { RegistrationReassurance } from "@/components/marketing/registration-reassurance";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -313,8 +315,9 @@ export function RegistrationForm({
       <Notice
         tone="success"
         title={copy.form.successTitle}
-        body={free ? copy.form.successFree(reference) : copy.form.successBody(reference)}
+        body={free ? copy.form.successFree : copy.form.successBody}
       >
+        <CopyReference reference={reference} />
         {!free && (
           <ButtonLink
             href={`/bezahlen?ref=${encodeURIComponent(reference)}`}
@@ -447,6 +450,8 @@ export function RegistrationForm({
           {serverError}
         </p>
       )}
+
+      {isReview && <RegistrationReassurance />}
 
       <div
         className={cn(

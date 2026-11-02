@@ -33,7 +33,6 @@ export const marketingMessages = {
   nav: {
     camp: "Camp",
     goodToKnow: "Gut zu wissen",
-    schoolRelease: "Schulbefreiung",
     openMenu: "Menü öffnen",
     closeMenu: "Menü schließen",
     home: "Zum Seitenanfang",
@@ -95,7 +94,7 @@ export const marketingMessages = {
     },
     payment: {
       heading: "Sicher bezahlen",
-      text: "Die Bezahlung läuft sicher online direkt bei der Anmeldung. Im Teilnahmebeitrag sind Übernachtung und Verpflegung für die ganze Woche enthalten.",
+      text: "Du bezahlst sicher online, direkt nach der Anmeldung oder später über den persönlichen Link aus deiner Bestätigungsmail. Im Teilnahmebeitrag sind Übernachtung und Verpflegung für die ganze Woche enthalten.",
     },
     packing: {
       heading: "Was du mitbringst",

@@ -47,7 +47,7 @@ export function SchoolReleaseLinkForm() {
           className="h-12 text-base"
         />
       </Field>
-      <Button type="submit" size="lg" disabled={pending} className="w-full">
+      <Button type="submit" size="lg" variant="outline" disabled={pending} className="w-full">
         {pending ? copy.submitting : copy.submit}
       </Button>
     </form>

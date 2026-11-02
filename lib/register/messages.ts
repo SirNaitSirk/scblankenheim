@@ -35,15 +35,12 @@ export const registerMessages = {
     contactHref: "mailto:info@fcg-blankenheim.de",
   },
   countdown: {
-    reopenHint: "Anmeldung öffnet am",
     reachedTitle: "Es geht los!",
     reachedBody: "Die Anmeldung wird gerade geöffnet. Einen Moment bitte.",
-    units: {
-      days: "Tage",
-      hours: "Std.",
-      minutes: "Min.",
-      seconds: "Sek.",
-    },
+    opensAtTime: (time: string) => `ab ${time} Uhr`,
+    remainingDays: (n: number) => (n === 1 ? "Noch 1 Tag" : `Noch ${n} Tage`),
+    remainingHours: (n: number) => (n === 1 ? "Noch 1 Stunde" : `Noch ${n} Stunden`),
+    remainingUnderHour: "In weniger als einer Stunde",
   },
   fields: {
     firstName: "Vorname",
@@ -73,10 +70,15 @@ export const registerMessages = {
     submit: "Anmeldung absenden",
     submitting: "Wird gesendet …",
     successTitle: "Anmeldung eingegangen!",
-    successBody: (reference: string) =>
-      `Wir haben deine Anmeldung erhalten. Deine Referenznummer lautet ${reference}. Bewahre sie gut auf. Mit ihr kannst du jederzeit online bezahlen.`,
-    successFree: (reference: string) =>
-      `Für dich fällt kein Beitrag an. Du bist dabei! Deine Referenznummer lautet ${reference}.`,
+    successBody:
+      "Wir haben deine Anmeldung erhalten. Mit deiner Referenznummer kannst du jederzeit online bezahlen.",
+    successFree: "Für dich fällt kein Beitrag an. Du bist dabei!",
+    referenceLabel: "Referenznummer",
+    referenceMailHint: "Du findest sie auch in deiner Bestätigungsmail.",
+    copy: "Kopieren",
+    copied: "Kopiert",
+    copiedStatus: "Referenznummer kopiert",
+    copyFailed: "Kopieren nicht möglich",
     payNow: "Jetzt bezahlen",
     redirectingTitle: "Weiter zur Bezahlung …",
     redirectingBody:
@@ -94,6 +96,17 @@ export const registerMessages = {
     edit: "Ändern",
     editStep: (title: string) => `${title} ändern`,
     submit: "Verbindlich anmelden",
+    // Only what the system really does; no deadlines, fees or refunds (specs/031 FR-007).
+    reassurance: {
+      title: "So geht es weiter",
+      items: [
+        "Falls ein Beitrag anfällt, geht es direkt weiter zur sicheren Bezahlseite.",
+        "Du bekommst eine Bestätigungsmail mit deinem persönlichen Link.",
+        "Über diesen Link kannst du auch später bezahlen.",
+      ],
+      contactLead: "Falls du doch nicht kannst, schreib uns an",
+      contactEmail: "info@fcg-blankenheim.de",
+    },
     progress: (n: number, total: number) => `Schritt ${n} von ${total}`,
     announce: (n: number, total: number, title: string) =>
       `Schritt ${n} von ${total}: ${title}`,
@@ -106,7 +119,7 @@ export const registerMessages = {
     open: "Jetzt anmelden",
     openShort: "Anmelden",
     countdown: (dayMonth: string) => `Anmeldung ab ${dayMonth}`,
-    countdownShort: (numeric: string) => `Ab ${numeric}`,
+    countdownShort: (numeric: string) => `Anmeldung ab ${numeric}`,
     countdownUndated: "Anmeldung bald",
     closed: "Anmeldung geschlossen",
     full: "Ausgebucht",

@@ -57,7 +57,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <main id="start">
-      <MountainHero cta={cta} showSchoolRelease={showSchoolRelease} campYear={year} />
+      <MountainHero cta={cta} campYear={year} />
       <IntroFacts />
       <ProgramHighlights />
       <CommunityGroups />

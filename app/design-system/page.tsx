@@ -58,7 +58,7 @@ export default function DesignSystemPage() {
   return (
     <main className="bg-canvas">
       {/* Hero — the Persuade surface */}
-      <MountainHero cta={registrationCta("open", null)} showSchoolRelease={false} />
+      <MountainHero cta={registrationCta("open", null)} />
 
       {/* Palette */}
       <Section title="Farben">

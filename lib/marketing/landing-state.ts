@@ -28,9 +28,8 @@ export type LandingState = {
   schoolRelease: ReleaseSettings | null;
 };
 
-/** Active count only matters when a capacity is set; failures count as zero. */
-async function loadActiveCount(campId: string, capacity: number | null): Promise<number> {
-  if (capacity === null) return 0;
+/** Active registrations of the camp; failures count as zero. */
+async function loadActiveCount(campId: string): Promise<number> {
   try {
     return await getActiveRegistrationCount(campId);
   } catch {
@@ -38,9 +37,8 @@ async function loadActiveCount(campId: string, capacity: number | null): Promise
   }
 }
 
-/** Release settings when the block should show (spec 020 rule), else null. */
-async function loadSchoolRelease(camp: LandingCamp | null, now: Date): Promise<ReleaseSettings | null> {
-  if (!camp) return null;
+/** Release settings when active by the spec 020 rule, else null. */
+async function loadActiveRelease(camp: LandingCamp, now: Date): Promise<ReleaseSettings | null> {
   if (camp.endDate && camp.endDate < berlinDate(now)) return null;
   try {
     const settings = await getReleaseSettings(camp.id);
@@ -53,10 +51,12 @@ async function loadSchoolRelease(camp: LandingCamp | null, now: Date): Promise<R
 async function loadLandingState(): Promise<LandingState> {
   const now = new Date();
   const camp = await getLandingCamp();
-  const [activeCount, schoolRelease] = await Promise.all([
-    camp ? loadActiveCount(camp.id, camp.capacity) : Promise.resolve(0),
-    loadSchoolRelease(camp, now),
-  ]);
+  const activeRelease = camp ? await loadActiveRelease(camp, now) : null;
+  // One count serves both the capacity check and the release rule.
+  const needsCount = camp !== null && (camp.capacity !== null || activeRelease !== null);
+  const activeCount = needsCount ? await loadActiveCount(camp.id) : 0;
+  // The release block only helps people already registered (specs/031 FR-011).
+  const schoolRelease = activeCount > 0 ? activeRelease : null;
   const registrationState = getRegistrationState(camp, now, activeCount);
   const opensAt = camp?.opensAt ?? null;
 

@@ -18,11 +18,9 @@ const copy = marketingMessages.hero;
  */
 export function MountainHero({
   cta,
-  showSchoolRelease,
   campYear = null,
 }: {
   cta: RegistrationCta;
-  showSchoolRelease: boolean;
   /** Start year of the current camp, null without camp or start date. */
   campYear?: number | null;
 }) {
@@ -33,7 +31,6 @@ export function MountainHero({
       <SiteNav
         variant="overlay"
         cta={{ label: cta.shortLabel, href: cta.href }}
-        showSchoolRelease={showSchoolRelease}
       />
       <section className="relative isolate flex min-h-[100dvh] flex-col overflow-hidden bg-sand-900">
         <div className="absolute inset-0 -z-20">

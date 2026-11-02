@@ -25,11 +25,9 @@ const DEFAULT_CTA: NavCta = { label: registerMessages.cta.openShort, href: "/#an
 export function SiteNav({
   variant = "solid",
   cta = DEFAULT_CTA,
-  showSchoolRelease = false,
 }: {
   variant?: NavVariant;
   cta?: NavCta;
-  showSchoolRelease?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -64,10 +62,11 @@ export function SiteNav({
     };
   }, [open]);
 
+  // The school release stays out of the nav: it only serves people already
+  // registered and must not compete with registering (specs/031 US3).
   const items = [
     { label: copy.camp, href: "#camp" },
     { label: copy.goodToKnow, href: "#gut-zu-wissen" },
-    ...(showSchoolRelease ? [{ label: copy.schoolRelease, href: "#schulbefreiung" }] : []),
   ];
 
   // Transparent over the photo only while overlay AND above the fold; otherwise solid.
