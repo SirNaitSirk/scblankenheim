@@ -2,7 +2,7 @@
 export const COMING_SOON_MESSAGES = {
   pageTitle: "FCG Blankenheim Summercamp · Bald geht es los",
   description:
-    "Eine unvergessliche Woche voller Gemeinschaft, Abenteuer und Glaube. Die Anmeldung startet bald.",
+    "Eine Woche an der belgischen Küste mit Jugendgruppen aus mehreren Städten. Die Anmeldung startet bald.",
   eyebrow: "FCG Blankenheim",
   fallbackCampName: "Summercamp",
   lead: "Die Anmeldung startet bald.",

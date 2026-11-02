@@ -40,7 +40,7 @@ export const marketingMessages = {
     eyebrow: "FCG Blankenheim Summercamp",
     headlineLead: "Strand, Scheune,",
     headlineAccent: "Gemeinschaft",
-    lead: "Eine Woche Gemeinschaft, Abenteuer und Glaube an der belgischen Küste. Sichere dir jetzt deinen Platz beim Summercamp.",
+    lead: "Eine Woche an der belgischen Küste mit sechs Jugendgruppen. Tagsüber Strand und Volleyball, abends Lobpreis in der Scheune.",
     more: "Mehr erfahren",
     scrollCue: "Weiter zum Camp",
     posterAlt:
@@ -52,26 +52,26 @@ export const marketingMessages = {
   intro: {
     headingLead: "Eine Woche, die du",
     headingAccent: "nicht vergisst",
-    lead: "Ein Camp voller Gemeinschaft, Abenteuer und Glaube. Zusammen mit Jugendlichen aus der ganzen Region erlebst du eine unvergessliche Woche voller Spaß, echter Begegnungen und Zeit mit Gott. Wir freuen uns auf dich und deine Gruppe.",
+    lead: "Du lernst Leute aus anderen Städten kennen, spielst, betest und hast Zeit, über deinen Glauben zu reden. Wir freuen uns auf dich und deine Gruppe.",
     when: { label: "Wann", fallback: "Termin folgt", note: "Eine Woche in den Ferien" },
     where: { label: "Wo", value: "Belgien", note: "Pannenhoeve Bivak, Groenestraat 76" },
     fee: { label: "Beitrag", note: "Übernachtung und Verpflegung inklusive" },
   },
   /** Program bento (three highlights). */
   program: {
-    heading: "Glaube, Spaß und Gemeinschaft",
+    heading: "Was wir die Woche über machen",
     worship: {
       kicker: "Worship Sessions",
       title: "Gemeinsam Gott begegnen",
-      text: "Abende voller Musik, Anbetung und Momente, die bleiben. Zeit, um durchzuatmen und Gott ganz neu zu erleben.",
+      text: "Abends Musik und Lobpreis in der Scheune. Wer danach Ruhe sucht, findet sie im Gebetsraum.",
     },
     inputs: {
-      title: "Inspirierende Inputs",
-      text: "Ehrliche Predigten und interaktive Workshops, die zum Nachdenken anregen und dich weiterbringen.",
+      title: "Predigten und Workshops",
+      text: "Predigten, die ehrlich sind, und Workshops, in denen du mitredest.",
     },
     sport: {
-      title: "Sport, Lagerfeuer und Geländespiel bei Nacht",
-      text: "Turniere am Tag, Lagerfeuer am Abend und ein Geländespiel, das dich die Komfortzone verlassen lässt.",
+      title: "Sport und Geländespiel",
+      text: "Tagsüber Turniere, abends Lagerfeuer und nachts das Geländespiel.",
     },
   },
   footer: {
@@ -83,8 +83,8 @@ export const marketingMessages = {
   },
   community: {
     eyebrow: "Wer dabei ist",
-    heading: "Jugenden aus der ganzen Region",
-    text: "Beim Summercamp treffen sich Jugendgruppen aus mehreren Städten. Neue Leute, echte Gemeinschaft, eine gemeinsame Woche.",
+    heading: "Jugendgruppen aus mehreren Städten",
+    text: "Beim Summercamp treffen sich Gruppen aus sechs Gemeinden. Du lernst Leute kennen, die du sonst nie getroffen hättest.",
     groups: ["Blankenheim", "Euskirchen", "C3", "Kall", "Lüdenscheid", "Ludwigshafen"],
   },
   /** Alt texts of the camp photos, keys match `CAMP_PHOTOS` (specs/027-camp-photos). */
@@ -98,7 +98,7 @@ export const marketingMessages = {
   },
   /** Campfire band right before the registration (specs/028-community-section). */
   closing: {
-    heading: "Ein Kreis ums Feuer. Und du gehörst dazu.",
+    heading: "Am Feuer ist noch Platz für dich.",
     questions: "Bei Fragen schreib uns",
   },
   goodToKnow: {
@@ -117,8 +117,8 @@ export const marketingMessages = {
       mapsQuery: "Pannenhoeve Bivak, Groenestraat 76, 8691 Belgium",
     },
     payment: {
-      heading: "Sicher bezahlen",
-      text: "Du bezahlst sicher online, direkt nach der Anmeldung oder später über den persönlichen Link aus deiner Bestätigungsmail. Im Teilnahmebeitrag sind Übernachtung und Verpflegung für die ganze Woche enthalten.",
+      heading: "Bezahlen",
+      text: "Du bezahlst online, direkt nach der Anmeldung oder später über den Link in deiner Bestätigungsmail. Übernachtung und Verpflegung für die ganze Woche sind im Beitrag enthalten.",
     },
     packing: {
       heading: "Was du mitbringst",
@@ -132,7 +132,7 @@ export const marketingMessages = {
     eyebrow: "Summercamp",
     /** Link preview text (WhatsApp, Signal, search results), written for participants. */
     description:
-      "Eine unvergessliche Woche voller Gemeinschaft, Abenteuer und Glaube. Melde dich jetzt für das FCG Blankenheim Summercamp an.",
+      "Eine Woche an der belgischen Küste mit Jugendgruppen aus mehreren Städten. Jetzt für das FCG Blankenheim Summercamp anmelden.",
   },
 } as const;
 
