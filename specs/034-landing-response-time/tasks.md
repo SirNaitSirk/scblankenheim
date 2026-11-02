@@ -32,8 +32,8 @@ description: "Task list for 034-landing-response-time"
 
 - [x] T004 [US1] Regel in AGENTS.md Abschnitt 2 (Tech stack) ergänzen: Vercel Funktionen laufen in der Region der Supabase Datenbank (`arn1`, gesetzt in vercel.json), Verweis auf specs/034-landing-response-time
 - [x] T005 [US1] `npm run lint`, `npm test`, `npm run build` ausführen und Ausgabe wörtlich berichten
-- [ ] T006 [US1] Nach Freigabe des Nutzers committen und deployen; danach quickstart.md Schritte 1 bis 3 gegen Produktion ausführen und Messwerte in specs/034-landing-response-time/quickstart.md eintragen
-- [ ] T007 [US1] Liegt der Median über 300 ms: nichts improvisieren, Befund melden und Stufe 2 (gemeinsame Daten kurz zwischenspeichern, research.md R4) als Planergänzung zur Freigabe vorlegen
+- [x] T006 [US1] Nach Freigabe des Nutzers committen und deployen; danach quickstart.md Schritte 1 bis 3 gegen Produktion ausführen und Messwerte in specs/034-landing-response-time/quickstart.md eintragen
+- [x] T007 [US1] Liegt der Median über 300 ms: nichts improvisieren, Befund melden und Stufe 2 (gemeinsame Daten kurz zwischenspeichern, research.md R4) als Planergänzung zur Freigabe vorlegen (nicht nötig: Median warm 0,26 bis 0,29 s)
 
 ## Phase 4: User Story 2 · Der Anmeldestatus bleibt aktuell (P1)
 
@@ -41,7 +41,7 @@ description: "Task list for 034-landing-response-time"
 
 **Independent Test**: spec.md User Story 2, Szenarien 1 bis 4.
 
-- [ ] T008 [US2] Bestätigen, dass `export const dynamic = "force-dynamic"` in app/page.tsx und die Live Abfragen in lib/marketing/landing-state.ts unverändert sind (kein Cache eingeführt), Startseite mit dem Stand vor dem Deployment vergleichen (quickstart.md Schritt 4)
+- [x] T008 [US2] Bestätigen, dass `export const dynamic = "force-dynamic"` in app/page.tsx und die Live Abfragen in lib/marketing/landing-state.ts unverändert sind (kein Cache eingeführt), Startseite mit dem Stand vor dem Deployment vergleichen (quickstart.md Schritt 4)
 
 ## Phase 5: User Story 3 · Persönliche Einladungslinks bleiben persönlich (P1)
 
@@ -49,11 +49,11 @@ description: "Task list for 034-landing-response-time"
 
 **Independent Test**: spec.md User Story 3.
 
-- [ ] T009 [US3] Mit gültigem `?einladung=` Link Sonderpreis prüfen, danach in anderem Browser ohne Link nur öffentlichen Preis; `cache-control` der Startseite bleibt `private, no-store` (quickstart.md Schritt 4)
+- [ ] T009 [US3] Mit gültigem `?einladung=` Link Sonderpreis prüfen, danach in anderem Browser ohne Link nur öffentlichen Preis; `cache-control` der Startseite bleibt `private, no-store` (quickstart.md Schritt 4) (offen: ungültiger Code geprüft, gültiger Link braucht einen echten Einladungscode)
 
 ## Phase 6: Polish
 
-- [ ] T010 Admin, Teilnehmerseite und `/bezahlen` öffnen; am nächsten Morgen Cron Läufe und den nächsten Stripe Webhook in den Vercel Logs auf 2xx prüfen (quickstart.md Schritt 5)
+- [ ] T010 Admin, Teilnehmerseite und `/bezahlen` öffnen; am nächsten Morgen Cron Läufe und den nächsten Stripe Webhook in den Vercel Logs auf 2xx prüfen (quickstart.md Schritt 5) (offen: Seiten und Cron 401 geprüft, Cron Läufe und Webhook stehen aus)
 
 ## Dependencies & Execution Order
 

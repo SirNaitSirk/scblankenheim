@@ -43,4 +43,13 @@ Mobil und Desktop je zweimal, Score mobil ≥ 95, Desktop ≥ 97.
 | Zeitpunkt | Region (`x-vercel-id`) | Median erstes Byte (10 warme Aufrufe) | Min | Max |
 |---|---|---|---|---|
 | 2026-11-02, vor der Änderung | `fra1::iad1` | 0,955 s | 0,793 s | 1,306 s |
-| nach dem Deployment | offen | offen | offen | offen |
+| 2026-11-02, direkt nach dem Deployment (Instanzen noch kalt) | `fra1::arn1` | 0,430 s | 0,252 s | 1,195 s |
+| 2026-11-02, warm (3 × 20 Aufrufe) | `fra1::arn1` | 0,259 bis 0,294 s | 0,237 s | 0,573 s |
+
+Lighthouse nach dem Deployment (je 2 Läufe): mobil 96 und 97 (vorher 95 bis 96), Desktop 100 und 100
+(vorher 97). CLS 0.
+
+Weitere Prüfungen am 2026-11-02: Titel „FCG Blankenheim Summercamp 2027“ unverändert, alle Abschnitte im
+HTML ohne JavaScript, `cache-control: private, no-store`, ungültiger Einladungscode verhält sich wie
+ohne Code. `/bezahlen` 200, `/packzettel` 200, `/datenschutz` 200, `/admin` leitet ohne Anmeldung auf
+`/sign-in` weiter, Cron Route ohne Secret 401.
