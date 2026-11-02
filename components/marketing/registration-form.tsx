@@ -134,6 +134,7 @@ export function RegistrationForm({
   const [reference, setReference] = useState<string | null>(null);
   const [free, setFree] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -269,6 +270,7 @@ export function RegistrationForm({
         // the success notice offers paying later (constitution VI).
         if (data.checkoutUrl) {
           setRedirecting(true);
+          setCheckoutUrl(data.checkoutUrl);
           window.location.assign(data.checkoutUrl);
         }
         setFree(data.free === true);
@@ -303,16 +305,20 @@ export function RegistrationForm({
   if (reference && redirecting) {
     return (
       <Notice
+        key="redirecting"
         tone="muted"
         title={copy.form.redirectingTitle}
         body={copy.form.redirectingBody}
-      />
+      >
+        {checkoutUrl && <RedirectFallback href={checkoutUrl} />}
+      </Notice>
     );
   }
 
   if (reference) {
     return (
       <Notice
+        key="success"
         tone="success"
         title={copy.form.successTitle}
         body={free ? copy.form.successFree : copy.form.successBody}
@@ -626,25 +632,58 @@ function Notice({
   body: string;
   children?: React.ReactNode;
 }) {
+  // The form unmounts on submit: move focus to the result and bring it into
+  // view, so keyboard and screen reader users land on it (specs/033 US1).
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const reduceMotion = useReducedMotion();
+  useEffect(() => {
+    const heading = headingRef.current;
+    if (!heading) return;
+    heading.focus({ preventScroll: true });
+    heading.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
+    // Only on mount: a later motion preference change must not steal focus again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div
+      role="status"
       className={cn(
         "rounded-card border bg-surface p-8 text-center shadow-card",
         tone === "success" ? "border-accent/40" : "border-border",
       )}
     >
-      <p
+      <h3
+        ref={headingRef}
+        tabIndex={-1}
         className={cn(
-          "font-display text-2xl font-extrabold tracking-tight",
+          "font-display text-2xl font-extrabold tracking-tight outline-none",
           tone === "success" ? "text-accent-strong" : "text-foreground",
         )}
       >
         {title}
-      </p>
+      </h3>
       <p className="mx-auto mt-3 max-w-[46ch] text-sm leading-relaxed text-muted-foreground">
         {body}
       </p>
       {children}
     </div>
+  );
+}
+
+const REDIRECT_FALLBACK_MS = 5000;
+
+/** Manual way on to the payment page when the automatic redirect stalls (specs/033 FR-002). */
+function RedirectFallback({ href }: { href: string }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setVisible(true), REDIRECT_FALLBACK_MS);
+    return () => clearTimeout(id);
+  }, []);
+  if (!visible) return null;
+  return (
+    <ButtonLink href={href} size="lg" variant="outline" className="mt-6">
+      {copy.form.toPayment}
+    </ButtonLink>
   );
 }

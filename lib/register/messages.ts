@@ -17,7 +17,7 @@ export const registerMessages = {
       eyebrow: "Bald geht's los",
       heading: "Die Anmeldung öffnet in Kürze",
       intro:
-        "Merk dir den Termin vor. Sobald der Countdown abgelaufen ist, kannst du dich hier anmelden.",
+        "Merk dir den Termin vor. Ab dann kannst du dich hier anmelden.",
     },
     closed: {
       eyebrow: "Anmeldung",
@@ -84,6 +84,7 @@ export const registerMessages = {
     redirectingBody:
       "Deine Anmeldung ist gespeichert. Du wirst gleich zur sicheren Bezahlseite weitergeleitet.",
     registerAnother: "Noch jemanden anmelden",
+    toPayment: "Zur Bezahlseite",
   },
   steps: {
     coreTitle: "Deine Daten",

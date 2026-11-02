@@ -51,7 +51,7 @@ export async function RegistrationSection({
     <section id="anmelden" className="border-t border-border bg-sand-50">
       <div className="mx-auto max-w-[1400px] px-6 py-24 md:px-10 lg:py-32">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <span className="eyebrow text-amber-600">{heading.eyebrow}</span>
+          <span className="eyebrow text-amber-700">{heading.eyebrow}</span>
           <h2 className="mx-auto mt-4 max-w-[20ch] text-balance font-display text-4xl font-black leading-[1.02] tracking-tight text-foreground md:text-5xl">
             {heading.heading}
           </h2>

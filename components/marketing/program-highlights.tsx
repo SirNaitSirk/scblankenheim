@@ -76,7 +76,7 @@ export function ProgramHighlights() {
             tintClass="to-amber-400/20"
             className="min-h-[22rem] md:row-span-2 md:min-h-[30rem]"
           >
-            <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-300">
+            <span className="font-mono text-xs uppercase tracking-[0.22em] text-amber-300">
               {copy.worship.kicker}
             </span>
             <h3 className="mt-3 font-display text-3xl font-extrabold tracking-tight text-on-inverse">

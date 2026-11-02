@@ -122,7 +122,7 @@ export function SiteNav({
           aria-expanded={open}
           aria-controls="site-nav-menu"
           onClick={() => setOpen((v) => !v)}
-          className="flex h-10 w-10 items-center justify-center md:hidden"
+          className="flex h-11 w-11 items-center justify-center md:hidden"
         >
           <span className="flex flex-col gap-1.5">
             <span className="block h-px w-6 bg-current" />

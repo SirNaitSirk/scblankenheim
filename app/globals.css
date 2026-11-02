@@ -311,7 +311,7 @@ body {
 /* mono uppercase label — used sparingly (eyebrow restraint) */
 .eyebrow {
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
   letter-spacing: 0.22em;
   text-transform: uppercase;
