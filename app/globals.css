@@ -6,7 +6,10 @@
    Monochrome ink foundation + one warm amber accent. Locked page-wide.
    ========================================================================== */
 
-:root {
+/* `.marketing-scope` restores the light landing tokens inside the dark admin
+   theme, used by the admin form test view (specs/036-form-test-preview). */
+:root,
+.marketing-scope {
   /* --- primitive: ink scale (cool near-black -> white) --- */
   --ink-950: #0a0a0b;
   --ink-900: #141416;

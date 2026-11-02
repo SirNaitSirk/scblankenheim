@@ -18,7 +18,11 @@ import {
 import { cn } from "@/lib/cn";
 import { registerMessages } from "@/lib/register/messages";
 import { buildSteps, stepIndexOf, type FormStep } from "@/lib/register/steps";
-import { validateField, type FieldValue } from "@/lib/register/validation";
+import {
+  validateField,
+  type FieldValue,
+  type TestSubmitResult,
+} from "@/lib/register/validation";
 import type { CampFormField } from "@/lib/admin/types";
 import type { FieldAvailability } from "@/lib/marketing/availability";
 
@@ -109,6 +113,7 @@ export function RegistrationForm({
   availability = {},
   invitationToken,
   formToken,
+  testSubmit,
 }: {
   fields: CampFormField[];
   availability?: Record<string, FieldAvailability>;
@@ -116,6 +121,11 @@ export function RegistrationForm({
   invitationToken?: string;
   /** Signed render time from the server; sent back unchanged (specs/029). */
   formToken: string;
+  /**
+   * Admin form test view only (specs/036): replaces the real submission with a
+   * validation that stores, sends and charges nothing.
+   */
+  testSubmit?: (values: Record<string, FieldValue>) => Promise<TestSubmitResult>;
 }) {
   // Trap field for bots, read only on submit; people never see or reach it.
   const trapRef = useRef<HTMLInputElement>(null);
@@ -137,6 +147,7 @@ export function RegistrationForm({
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [testPassed, setTestPassed] = useState(false);
 
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -188,6 +199,7 @@ export function RegistrationForm({
     setReference(null);
     setFree(false);
     setRedirecting(false);
+    setTestPassed(false);
     navigated.current = false;
     setStepIndex(0);
     setDirection(1);
@@ -246,6 +258,18 @@ export function RegistrationForm({
 
     setSubmitting(true);
     setServerError(null);
+    if (testSubmit) {
+      try {
+        const result = await testSubmit(values);
+        if (result.ok) setTestPassed(true);
+        else showServerErrors(result.error, result.fieldErrors);
+      } catch {
+        setServerError(copy.api.generic);
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
     try {
       const response = await fetch("/api/register", {
         method: "POST",
@@ -277,20 +301,24 @@ export function RegistrationForm({
         setReference(data.reference);
         return;
       }
-      setServerError(data.error ?? copy.api.generic);
-      // Field errors send the person to the step that holds the field (FR-008).
-      if (data.fieldErrors && Object.keys(data.fieldErrors).length > 0) {
-        setErrors(data.fieldErrors);
-        const fieldTarget = firstErrorTarget(steps, Object.keys(data.fieldErrors));
-        if (fieldTarget) {
-          setReturnToReview(true);
-          goTo(fieldTarget.index, -1, fieldTarget.key);
-        }
-      }
+      showServerErrors(data.error ?? copy.api.generic, data.fieldErrors);
     } catch {
       setServerError(copy.api.generic);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function showServerErrors(message: string, fieldErrors?: Record<string, string>) {
+    setServerError(message);
+    // Field errors send the person to the step that holds the field (FR-008).
+    if (fieldErrors && Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors);
+      const fieldTarget = firstErrorTarget(steps, Object.keys(fieldErrors));
+      if (fieldTarget) {
+        setReturnToReview(true);
+        goTo(fieldTarget.index, -1, fieldTarget.key);
+      }
     }
   }
 
@@ -300,6 +328,21 @@ export function RegistrationForm({
     if (submitting) return;
     if (step) advance(step);
     else void submit();
+  }
+
+  if (testPassed) {
+    return (
+      <Notice
+        key="test"
+        tone="success"
+        title={copy.form.testSuccessTitle}
+        body={copy.form.testSuccessBody}
+      >
+        <Button type="button" size="lg" variant="outline" onClick={resetForm} className="mt-6">
+          {copy.form.testAgain}
+        </Button>
+      </Notice>
+    );
   }
 
   if (reference && redirecting) {

@@ -9,6 +9,11 @@ import type { CampFormField } from "@/lib/admin/types";
 
 export type FieldValue = string | boolean;
 
+/** Answer of a test submission from the admin form test view (specs/036). */
+export type TestSubmitResult =
+  | { ok: true }
+  | { ok: false; error: string; fieldErrors?: Record<string, string> };
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const CORE_KEYS = ["first_name", "last_name", "email", "gender"] as const;

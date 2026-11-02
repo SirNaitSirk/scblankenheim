@@ -17,11 +17,20 @@ import {
   isQuestionType,
   slugifyKey,
 } from "@/lib/admin/field-types";
-import { AuthError, requirePermission } from "@/lib/admin/guard";
+import { canSeeTab } from "@/lib/admin/access";
+import { AuthError, requireAdmin, requirePermission } from "@/lib/admin/guard";
 import { busCounts, saveBusSettings } from "@/lib/bus/data";
 import { mappingProblem } from "@/lib/bus/rules";
 import { busSettingsInputSchema, type BusSettingsInput } from "@/lib/bus/schema";
 import { de } from "@/lib/admin/messages";
+import { registerMessages } from "@/lib/register/messages";
+import { questionFields } from "@/lib/register/steps";
+import {
+  mergeFields,
+  validateFields,
+  type FieldValue,
+  type TestSubmitResult,
+} from "@/lib/register/validation";
 import type {
   ActionResult,
   AdminUser,
@@ -365,5 +374,43 @@ export async function saveBusSettingsAction(input: BusSettingsInput): Promise<Sa
   } catch (error) {
     console.error("[bus] save settings failed", error);
     return { ok: false, error: copy.error };
+  }
+}
+
+// --- form test (specs/036-form-test-preview) ----------------------------------
+
+const testValuesSchema = z.record(z.string(), z.union([z.string(), z.boolean()]));
+
+/**
+ * Validates a test submission exactly like a real registration, but stores,
+ * sends and charges nothing: no registration row, no submission attempt, no
+ * mail, no Stripe. Seeing the Camps tab is enough, since nothing is written.
+ */
+export async function testRegistrationAction(
+  campId: string,
+  values: Record<string, FieldValue>,
+): Promise<TestSubmitResult> {
+  try {
+    const admin = await requireAdmin();
+    if (!canSeeTab(admin, "/admin/camps")) throw new AuthError("forbidden");
+  } catch (error) {
+    if (error instanceof AuthError) return { ok: false, error: de.fields.toast.unauthorized };
+    console.error("[fields] form test auth check failed", error);
+    return { ok: false, error: de.fields.toast.error };
+  }
+
+  const parsed = testValuesSchema.safeParse(values);
+  if (!parsed.success) return { ok: false, error: registerMessages.api.badRequest };
+
+  try {
+    const fields = mergeFields(questionFields(await getCampFormFields(campId)));
+    const fieldErrors = validateFields(fields, parsed.data);
+    if (Object.keys(fieldErrors).length > 0) {
+      return { ok: false, error: registerMessages.api.invalid, fieldErrors };
+    }
+    return { ok: true };
+  } catch (error) {
+    console.error("[fields] form test failed", error);
+    return { ok: false, error: registerMessages.api.generic };
   }
 }

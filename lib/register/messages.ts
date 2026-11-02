@@ -85,6 +85,11 @@ export const registerMessages = {
       "Deine Anmeldung ist gespeichert. Du wirst gleich zur sicheren Bezahlseite weitergeleitet.",
     registerAnother: "Noch jemanden anmelden",
     toPayment: "Zur Bezahlseite",
+    // Admin form test view only (specs/036-form-test-preview).
+    testSuccessTitle: "Test erfolgreich",
+    testSuccessBody:
+      "So würde die Anmeldung angenommen. Es wurde nichts gespeichert und nichts verschickt.",
+    testAgain: "Noch einmal testen",
   },
   steps: {
     coreTitle: "Deine Daten",

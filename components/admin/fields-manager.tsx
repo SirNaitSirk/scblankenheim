@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowUp,
   DotsSixVertical,
+  Flask,
   ListPlus,
   PencilSimple,
   Plus,
@@ -24,7 +25,7 @@ import { FieldPreview } from "@/components/admin/field-preview";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/states";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
@@ -339,6 +340,15 @@ export function FieldsManager({
             </h2>
             <p className="text-sm text-muted-foreground">{de.fields.preview.description}</p>
           </div>
+          <ButtonLink
+            href={`/admin/camps/${campId}/felder/test`}
+            variant="outline"
+            size="sm"
+            className="self-start"
+          >
+            <Flask size={16} weight="bold" aria-hidden />
+            {de.fields.preview.test}
+          </ButtonLink>
           <div className="border-t border-border pt-4">
             <FieldPreview fields={fields} />
           </div>

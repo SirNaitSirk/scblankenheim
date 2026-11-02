@@ -915,6 +915,13 @@ export const de = {
       empty: "Sobald du Felder anlegst, erscheinen sie hier in der Vorschau.",
       selectPlaceholder: "Bitte wählen …",
       checkboxFallback: "Ich stimme zu.",
+      test: "Formular testen",
+    },
+    // Full form test view (specs/036-form-test-preview).
+    test: {
+      title: (camp: string) => `Formular testen: ${camp}`,
+      banner: "Testmodus: Es wird nichts gespeichert und nichts verschickt.",
+      back: "Zurück zu den Feldern",
     },
     form: {
       createTitle: "Feld hinzufügen",
