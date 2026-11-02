@@ -34,7 +34,7 @@ export function StepProgress({
 
   return (
     <div className="flex flex-col gap-3">
-      <span className="text-xs font-medium text-accent-strong">
+      <span className="text-xs font-medium text-amber-700">
         {copy.progress(current + 1, total)}
       </span>
 
@@ -66,8 +66,8 @@ export function StepProgress({
                 index === current
                   ? "font-semibold text-foreground"
                   : index < current
-                    ? "text-muted-foreground"
-                    : "text-ink-300",
+                    ? "text-ink-700"
+                    : "text-muted-foreground",
               )}
             >
               {title}
@@ -116,7 +116,7 @@ export function ReviewList({
               type="button"
               onClick={() => onEdit(index)}
               aria-label={copy.editStep(step.title)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-pill px-3 text-xs font-medium text-accent-strong transition-colors duration-150 hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex h-8 items-center gap-1.5 rounded-pill px-3 text-xs font-medium text-amber-700 transition-colors duration-150 hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <PencilSimple size={14} weight="bold" aria-hidden />
               {copy.edit}
@@ -133,7 +133,7 @@ export function ReviewList({
                   <dd
                     className={cn(
                       "mb-1 break-words sm:mb-0",
-                      shown === copy.empty ? "text-ink-300" : "text-foreground",
+                      shown === copy.empty ? "text-muted-foreground italic" : "text-foreground",
                     )}
                   >
                     {shown}

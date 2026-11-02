@@ -36,7 +36,7 @@ export function SiteFooter({
           <p className="mt-1 text-sm text-muted-foreground">{marketingMessages.brand.season(campYear)}</p>
         </div>
 
-        <nav className="flex flex-wrap gap-x-6 gap-y-1 md:gap-y-6">
+        <nav aria-label={marketingMessages.footer.navLabel} className="flex flex-wrap gap-x-6 gap-y-1 md:gap-y-6">
           {links.map((link) => (
             <a
               key={link.href}

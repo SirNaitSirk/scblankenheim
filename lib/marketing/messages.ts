@@ -34,6 +34,8 @@ export const marketingMessages = {
     openMenu: "Menü öffnen",
     closeMenu: "Menü schließen",
     home: "Zum Seitenanfang",
+    label: "Hauptnavigation",
+    skipToContent: "Zum Inhalt springen",
   },
   /** Hero with the recap video (specs/026-hero-video). */
   hero: {
@@ -80,6 +82,7 @@ export const marketingMessages = {
     schoolRelease: "Schulbefreiung",
     register: "Anmelden",
     packingList: "Packliste",
+    navLabel: "Seiten",
   },
   community: {
     eyebrow: "Wer dabei ist",

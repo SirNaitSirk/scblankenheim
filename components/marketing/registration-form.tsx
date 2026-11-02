@@ -606,7 +606,7 @@ function SeatNote({ availability }: { availability: FieldAvailability }) {
     <span
       className={cn(
         "mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium",
-        soldOut ? "text-danger" : "text-accent-strong",
+        soldOut ? "text-danger" : "text-amber-700",
       )}
     >
       <span

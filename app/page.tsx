@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { MountainHero } from "@/components/marketing/mountain-hero";
+import { SiteNav } from "@/components/marketing/site-nav";
 import { IntroFacts } from "@/components/marketing/intro-facts";
 import { ProgramHighlights } from "@/components/marketing/program-highlights";
 import { CommunityGroups } from "@/components/marketing/community-groups";
@@ -56,16 +57,30 @@ export default async function Home({ searchParams }: HomeProps) {
   const year = campYear(camp?.startDate ?? null);
   const dateRange = camp ? formatCampDateRange(camp.startDate, camp.endDate) : null;
 
+  // Nav and footer sit outside <main> so they keep their banner and
+  // contentinfo landmarks. The nav also stays outside the isolated hero: inside
+  // it, the fixed nav's z-index would only count within the hero.
   return (
-    <main id="start">
-      <MountainHero cta={cta} dateRange={dateRange} />
-      <IntroFacts />
-      <ProgramHighlights />
-      <CommunityGroups />
-      <ClosingCta cta={cta} />
-      <RegistrationSection invitationToken={invitationToken} />
-      <GoodToKnow />
+    <>
+      <a
+        href="#start"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-pill focus:bg-surface focus:px-4 focus:py-3 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-pop focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        {marketingMessages.nav.skipToContent}
+      </a>
+      <header>
+        <SiteNav variant="overlay" cta={{ label: cta.shortLabel, href: cta.href }} />
+      </header>
+      <main id="start">
+        <MountainHero cta={cta} dateRange={dateRange} />
+        <IntroFacts />
+        <ProgramHighlights />
+        <CommunityGroups />
+        <ClosingCta cta={cta} />
+        <RegistrationSection invitationToken={invitationToken} />
+        <GoodToKnow />
+      </main>
       <SiteFooter showSchoolRelease={showSchoolRelease} campYear={year} />
-    </main>
+    </>
   );
 }

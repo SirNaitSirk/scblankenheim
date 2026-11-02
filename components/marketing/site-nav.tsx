@@ -76,6 +76,7 @@ export function SiteNav({
   return (
     <nav
       ref={navRef}
+      aria-label={copy.label}
       className={cn(
         overlay ? "fixed inset-x-0 top-0 z-30" : "relative z-20 w-full",
         "transition-colors duration-300 ease-[var(--ease-out-expo)]",
