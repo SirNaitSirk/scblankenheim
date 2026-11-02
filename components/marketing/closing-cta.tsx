@@ -3,6 +3,7 @@ import { Reveal } from "@/components/marketing/reveal";
 import { ParallaxImage } from "@/components/marketing/parallax-image";
 import { CAMP_PHOTOS } from "@/lib/marketing/camp-photos";
 import { marketingMessages } from "@/lib/marketing/messages";
+import { registerMessages } from "@/lib/register/messages";
 import type { RegistrationCta } from "@/lib/register/registration-cta";
 
 const photo = CAMP_PHOTOS.campfire;
@@ -43,7 +44,7 @@ export function ClosingCta({ cta }: { cta: RegistrationCta }) {
             {cta.label}
           </ButtonLink>
           <ButtonLink
-            href="mailto:info@fcg-blankenheim.de"
+            href={registerMessages.section.contactHref}
             size="lg"
             variant="outline"
             className="border-on-inverse/40 bg-on-inverse/5 text-on-inverse backdrop-blur-sm hover:border-on-inverse/60 hover:bg-on-inverse/15"

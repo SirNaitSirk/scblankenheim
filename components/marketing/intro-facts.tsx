@@ -3,6 +3,9 @@ import { Reveal } from "@/components/marketing/reveal";
 import { formatCurrency } from "@/lib/format";
 import { formatCampDateRange } from "@/lib/marketing/camp-dates";
 import { getLandingCamp, type LandingCamp } from "@/lib/marketing/current-camp";
+import { marketingMessages } from "@/lib/marketing/messages";
+
+const copy = marketingMessages.intro;
 
 type Fact = {
   label: string;
@@ -20,27 +23,27 @@ type Fact = {
 function whenFact(camp: LandingCamp | null): Fact {
   const dates = camp ? formatCampDateRange(camp.startDate, camp.endDate) : null;
   return {
-    label: "Wann",
-    value: dates ?? "Termin folgt",
-    note: "Eine Woche in den Ferien",
+    label: copy.when.label,
+    value: dates ?? copy.when.fallback,
+    note: copy.when.note,
     Icon: CalendarBlank,
   };
 }
 
 const staticFacts: Fact[] = [
   {
-    label: "Wo",
-    value: "Belgien",
-    note: "Pannenhoeve Bivak, Groenestraat 76",
+    label: copy.where.label,
+    value: copy.where.value,
+    note: copy.where.note,
     Icon: MapPin,
   },
 ];
 
 function feeFact(basePrice: number): Fact {
   return {
-    label: "Beitrag",
+    label: copy.fee.label,
     value: formatCurrency(basePrice),
-    note: "Übernachtung & Verpflegung inklusive",
+    note: copy.fee.note,
     Icon: Ticket,
   };
 }
@@ -62,18 +65,15 @@ export async function IntroFacts() {
       <div className="mx-auto grid max-w-[1400px] gap-12 px-6 py-24 md:grid-cols-[1.1fr_0.9fr] md:px-10 lg:py-32">
         <Reveal>
           <h2 className="max-w-[16ch] font-display text-4xl font-black leading-[1.02] tracking-tight text-foreground md:text-5xl">
-            Eine Woche, die du{" "}
-            <span className="text-amber-600">nicht vergisst</span>.
+            {copy.headingLead}{" "}
+            <span className="text-amber-600">{copy.headingAccent}</span>.
           </h2>
           <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-muted-foreground">
-            Ein Camp voller Gemeinschaft, Abenteuer und Glaube. Zusammen mit
-            Jugendlichen aus der ganzen Region erlebst du eine unvergessliche
-            Woche voller Spaß, echter Begegnungen und Zeit mit Gott. Wir freuen
-            uns auf dich und deine Gruppe.
+            {copy.lead}
           </p>
         </Reveal>
 
-        <div className="flex flex-col divide-y divide-border overflow-hidden rounded-card border border-amber-100 bg-surface shadow-warm">
+        <div className="flex flex-col divide-y divide-border overflow-hidden rounded-card border border-amber-100 bg-surface">
           {facts.map((fact) => (
             <Reveal
               key={fact.label}

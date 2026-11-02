@@ -18,11 +18,11 @@ const copy = marketingMessages.hero;
  */
 export function MountainHero({
   cta,
-  campYear = null,
+  dateRange = null,
 }: {
   cta: RegistrationCta;
-  /** Start year of the current camp, null without camp or start date. */
-  campYear?: number | null;
+  /** Dates of the current camp, null without camp or start date. */
+  dateRange?: string | null;
 }) {
   return (
     <>
@@ -53,13 +53,10 @@ export function MountainHero({
         {/* On phones the copy spans the full width up into the bright sky. */}
         <div className="absolute inset-0 bg-ink-950/35 md:hidden" />
 
-        <span className="absolute right-6 top-1/2 hidden -translate-y-1/2 rotate-90 text-[10px] font-medium uppercase tracking-[0.35em] text-on-inverse/60 lg:block">
-          {marketingMessages.brand.heroTag(campYear)}
-        </span>
-
         <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-6 pb-24 pt-8 md:px-10">
-          <p className="animate-rise mb-5 text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">
-            {copy.eyebrow}
+          {/* The camp dates as the first fact, not the brand name again (specs/032). */}
+          <p className="animate-rise mb-5 text-sm font-semibold text-amber-300 md:text-base">
+            {dateRange ?? copy.eyebrow}
           </p>
           <h1 className="max-w-[16ch] text-balance font-display text-[clamp(2.25rem,11vw,3rem)] font-black leading-[0.92] tracking-tight text-on-inverse [text-shadow:0_2px_30px_rgba(10,10,11,0.35)] sm:text-6xl md:text-7xl lg:text-8xl">
             {copy.headlineLead}{" "}

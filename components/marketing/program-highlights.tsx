@@ -6,6 +6,8 @@ import { cn } from "@/lib/cn";
 import { CAMP_PHOTOS, type CampPhotoKey } from "@/lib/marketing/camp-photos";
 import { marketingMessages } from "@/lib/marketing/messages";
 
+const copy = marketingMessages.program;
+
 /**
  * One program tile: a camp photo under a dark bottom scrim with the copy on
  * top (specs/027-camp-photos). The warm tint gives each tile its accent.
@@ -63,7 +65,7 @@ export function ProgramHighlights() {
       <div className="mx-auto max-w-[1400px] px-6 py-24 md:px-10 lg:py-32">
         <Reveal>
           <h2 className="max-w-[18ch] text-balance font-display text-4xl font-black leading-[1.02] tracking-tight text-foreground md:text-5xl">
-            Glaube, Spaß und Gemeinschaft
+            {copy.heading}
           </h2>
         </Reveal>
 
@@ -75,14 +77,13 @@ export function ProgramHighlights() {
             className="min-h-[22rem] md:row-span-2 md:min-h-[30rem]"
           >
             <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-300">
-              Worship Sessions
+              {copy.worship.kicker}
             </span>
             <h3 className="mt-3 font-display text-3xl font-extrabold tracking-tight text-on-inverse">
-              Gemeinsam Gott begegnen
+              {copy.worship.title}
             </h3>
             <p className="mt-3 max-w-[32ch] text-on-inverse/80">
-              Abende voller Musik, Anbetung und Momente, die bleiben. Zeit,
-              um durchzuatmen und Gott ganz neu zu erleben.
+              {copy.worship.text}
             </p>
           </PhotoTile>
 
@@ -91,11 +92,10 @@ export function ProgramHighlights() {
               <ChatsCircle size={24} weight="duotone" />
             </TileIcon>
             <h3 className="font-display text-2xl font-extrabold tracking-tight text-on-inverse">
-              Inspirierende Inputs
+              {copy.inputs.title}
             </h3>
             <p className="mt-3 max-w-[38ch] text-on-inverse/80">
-              Ehrliche Predigten und interaktive Workshops, die zum Nachdenken
-              anregen und dich weiterbringen.
+              {copy.inputs.text}
             </p>
           </PhotoTile>
 
@@ -104,11 +104,10 @@ export function ProgramHighlights() {
               <Confetti size={24} weight="duotone" />
             </TileIcon>
             <h3 className="font-display text-2xl font-extrabold tracking-tight text-on-inverse">
-              Sport, Lagerfeuer & Nacht-Geländespiel
+              {copy.sport.title}
             </h3>
             <p className="mt-3 max-w-[38ch] text-on-inverse/80">
-              Turniere am Tag, Lagerfeuer am Abend und ein Geländespiel, das
-              dich die Komfortzone verlassen lässt.
+              {copy.sport.text}
             </p>
           </PhotoTile>
         </div>

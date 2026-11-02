@@ -8,7 +8,7 @@ import { RegistrationSection } from "@/components/marketing/registration-section
 import { GoodToKnow } from "@/components/marketing/good-to-know";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { appBaseUrl } from "@/lib/email/links";
-import { campYear } from "@/lib/marketing/camp-dates";
+import { campYear, formatCampDateRange } from "@/lib/marketing/camp-dates";
 import { getLandingState } from "@/lib/marketing/landing-state";
 import { marketingMessages } from "@/lib/marketing/messages";
 
@@ -54,10 +54,11 @@ export default async function Home({ searchParams }: HomeProps) {
   const { camp, cta, schoolRelease } = await getLandingState();
   const showSchoolRelease = schoolRelease !== null;
   const year = campYear(camp?.startDate ?? null);
+  const dateRange = camp ? formatCampDateRange(camp.startDate, camp.endDate) : null;
 
   return (
     <main id="start">
-      <MountainHero cta={cta} campYear={year} />
+      <MountainHero cta={cta} dateRange={dateRange} />
       <IntroFacts />
       <ProgramHighlights />
       <CommunityGroups />

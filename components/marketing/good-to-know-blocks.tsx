@@ -97,11 +97,10 @@ export function PaymentBlock() {
       <p className="mt-4 max-w-[52ch] leading-relaxed text-muted-foreground">
         {copy.payment.text}
       </p>
-      <ul className="mt-6 flex flex-wrap gap-2">
-        {paymentMethods.map((method) => (
-          <Tag key={method}>{method}</Tag>
-        ))}
-      </ul>
+      {/* One quiet line: the methods are information, not choices (specs/032). */}
+      <p className="mt-5 text-sm font-medium text-foreground/80">
+        {paymentMethods.join(" · ")}
+      </p>
     </Block>
   );
 }

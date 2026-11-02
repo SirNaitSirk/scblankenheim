@@ -24,8 +24,6 @@ export const marketingMessages = {
     /** Footer line; the year comes from the current camp's start date. */
     season: (year: number | null) =>
       year ? `${year} in Belgien` : "In Belgien",
-    /** Vertical tag in the hero. */
-    heroTag: (year: number | null) => (year ? `${year} · Belgien` : "Belgien"),
     /** Page title of the landing page. */
     pageTitle: (year: number | null) =>
       year ? `FCG Blankenheim Summercamp ${year}` : "FCG Blankenheim Summercamp",
@@ -49,6 +47,32 @@ export const marketingMessages = {
       "Szenen vom letzten Summercamp: Spiele vor den Bussen, Volleyball, Saltos am Strand und in den Dünen, Worship und Party in der Scheune.",
     pauseVideo: "Video anhalten",
     playVideo: "Video abspielen",
+  },
+  /** Intro section with the facts card (`#camp`). */
+  intro: {
+    headingLead: "Eine Woche, die du",
+    headingAccent: "nicht vergisst",
+    lead: "Ein Camp voller Gemeinschaft, Abenteuer und Glaube. Zusammen mit Jugendlichen aus der ganzen Region erlebst du eine unvergessliche Woche voller Spaß, echter Begegnungen und Zeit mit Gott. Wir freuen uns auf dich und deine Gruppe.",
+    when: { label: "Wann", fallback: "Termin folgt", note: "Eine Woche in den Ferien" },
+    where: { label: "Wo", value: "Belgien", note: "Pannenhoeve Bivak, Groenestraat 76" },
+    fee: { label: "Beitrag", note: "Übernachtung und Verpflegung inklusive" },
+  },
+  /** Program bento (three highlights). */
+  program: {
+    heading: "Glaube, Spaß und Gemeinschaft",
+    worship: {
+      kicker: "Worship Sessions",
+      title: "Gemeinsam Gott begegnen",
+      text: "Abende voller Musik, Anbetung und Momente, die bleiben. Zeit, um durchzuatmen und Gott ganz neu zu erleben.",
+    },
+    inputs: {
+      title: "Inspirierende Inputs",
+      text: "Ehrliche Predigten und interaktive Workshops, die zum Nachdenken anregen und dich weiterbringen.",
+    },
+    sport: {
+      title: "Sport, Lagerfeuer und Geländespiel bei Nacht",
+      text: "Turniere am Tag, Lagerfeuer am Abend und ein Geländespiel, das dich die Komfortzone verlassen lässt.",
+    },
   },
   footer: {
     camp: "Camp",
