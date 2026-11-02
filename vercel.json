@@ -1,4 +1,5 @@
 {
+  "regions": ["arn1"],
   "crons": [
     { "path": "/api/cron/payment-reminders", "schedule": "0 6 * * *" },
     { "path": "/api/cron/info-mails", "schedule": "30 6 * * *" }

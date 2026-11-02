@@ -37,7 +37,7 @@ Build only what is in the **Scope** (section 4). Do not add features that are no
 - **Tailwind CSS** — styling
 - **shadcn/ui** (Radix + CVA) — UI components
 - **Stripe** — payments, driven through Next.js server route handlers + a webhook route
-- **Vercel** — hosting
+- **Vercel** — hosting. Functions run in `arn1` (Stockholm), next to the Supabase database in `eu-north-1`, set by `regions` in `vercel.json`. Keep both in the same region: every page reads the database several times in a row (specs/034-landing-response-time).
 - **Vercel Cron** — scheduled jobs (e.g. payment reminders), protected by `CRON_SECRET`
 
 Also expected (project conventions, not headline stack): **TanStack Query** for client data fetching, **react-hook-form** + **Zod** for forms/validation.
