@@ -1,9 +1,10 @@
 import { after, NextResponse } from "next/server";
 import { z } from "zod";
-import { writeLog } from "@/lib/admin/data";
+import { generateReference, writeLog } from "@/lib/admin/data";
 import { sendConfirmationEmail } from "@/lib/email/send";
 import { registerMessages } from "@/lib/register/messages";
 import { submitRegistration } from "@/lib/register/service";
+import { checkSubmission, recordBotAttempt } from "@/lib/register/form-token-server";
 import {
   createCheckoutForRegistration,
   resolveOrigin,
@@ -16,11 +17,16 @@ export const runtime = "nodejs";
 // registration the response carries a Stripe Checkout URL; a Stripe failure
 // never fails the registration (tolerant fallback, constitution VI). The
 // confirmation mail is sent after the response (specs/007-transactional-emails),
-// so the redirect never waits for the mail provider.
+// so the redirect never waits for the mail provider. Bot protection runs first
+// (specs/029-registration-bot-protection): a filled trap or a missing, forged or
+// too young form token gets a success shaped answer while nothing is stored.
 
 const payloadSchema = z.object({
   values: z.record(z.string(), z.union([z.string(), z.boolean()])),
   priceTierToken: z.string().trim().min(1).optional(),
+  // Optional on purpose: a missing value is rejected silently, not with a 400.
+  formToken: z.string().max(256).optional(),
+  trap: z.string().max(1000).optional(),
 });
 
 const api = registerMessages.api;
@@ -44,10 +50,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: api.badRequest }, { status: 400 });
   }
 
+  const ip = clientIp(request);
+  const verdict = checkSubmission(parsed.data.trap, parsed.data.formToken);
+  if (verdict.kind === "silent") {
+    await recordBotAttempt(verdict.reason, ip);
+    return NextResponse.json(
+      { reference: generateReference(), free: true, checkoutUrl: null },
+      { status: 200 },
+    );
+  }
+  if (verdict.kind === "expired") {
+    return NextResponse.json({ error: api.formExpired }, { status: 409 });
+  }
+
   const result = await submitRegistration({
     values: parsed.data.values,
     priceTierToken: parsed.data.priceTierToken,
-    ip: clientIp(request),
+    ip,
   });
 
   if (result.ok) {
@@ -93,6 +112,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: api.closed }, { status: 409 });
     case "throttled":
       return NextResponse.json({ error: api.throttled }, { status: 429 });
+    case "busy":
+      return NextResponse.json({ error: api.busy }, { status: 429 });
     default:
       return NextResponse.json({ error: api.generic }, { status: 500 });
   }

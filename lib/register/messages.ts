@@ -121,6 +121,9 @@ export const registerMessages = {
     campFull: "Das Camp ist inzwischen ausgebucht.",
     closed: "Die Anmeldung ist derzeit geschlossen.",
     throttled: "Zu viele Versuche. Bitte warte einen Moment und versuche es erneut.",
+    formExpired:
+      "Das Formular war zu lange geöffnet. Bitte lade die Seite neu und sende es noch einmal ab.",
+    busy: "Gerade gehen sehr viele Anmeldungen ein. Bitte versuche es in einer Stunde noch einmal.",
     generic: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
   },
 } as const;

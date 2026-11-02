@@ -106,12 +106,17 @@ export function RegistrationForm({
   fields,
   availability = {},
   invitationToken,
+  formToken,
 }: {
   fields: CampFormField[];
   availability?: Record<string, FieldAvailability>;
   /** Already validated on the server; kept across "Noch jemanden anmelden". */
   invitationToken?: string;
+  /** Signed render time from the server; sent back unchanged (specs/029). */
+  formToken: string;
 }) {
+  // Trap field for bots, read only on submit; people never see or reach it.
+  const trapRef = useRef<HTMLInputElement>(null);
   const steps = useMemo(() => buildSteps(fields), [fields]);
   const allFields = useMemo(() => steps.flatMap((step) => step.fields), [steps]);
   const reviewIndex = steps.length;
@@ -242,9 +247,12 @@ export function RegistrationForm({
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          invitationToken ? { values, priceTierToken: invitationToken } : { values },
-        ),
+        body: JSON.stringify({
+          values,
+          ...(invitationToken ? { priceTierToken: invitationToken } : {}),
+          formToken,
+          trap: trapRef.current?.value ?? "",
+        }),
       });
       const data = (await response.json().catch(() => ({}))) as {
         reference?: string;
@@ -355,6 +363,17 @@ export function RegistrationForm({
       className="scroll-mt-24 rounded-card border border-border bg-surface p-6 shadow-card sm:p-8"
     >
       <StepProgress titles={titles} current={stepIndex} />
+
+      <div aria-hidden className="pointer-events-none absolute -left-[9999px] top-0 h-px w-px overflow-hidden">
+        <input
+          ref={trapRef}
+          type="text"
+          name="fcg_extra_note"
+          tabIndex={-1}
+          autoComplete="off"
+          defaultValue=""
+        />
+      </div>
 
       <p aria-live="polite" className="sr-only">
         {announcement}

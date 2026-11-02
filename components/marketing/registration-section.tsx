@@ -6,6 +6,7 @@ import { getCampAvailability } from "@/lib/marketing/availability";
 import { getCountdownTarget } from "@/lib/marketing/current-camp";
 import { getLandingState } from "@/lib/marketing/landing-state";
 import { priceLine } from "@/lib/marketing/messages";
+import { issueFormToken } from "@/lib/register/form-token-server";
 import { resolveInvitation } from "@/lib/register/invitation";
 import { registerMessages } from "@/lib/register/messages";
 import { formatOpeningDay } from "@/lib/register/registration-cta";
@@ -43,6 +44,9 @@ export async function RegistrationSection({
         : undefined
       : undefined;
 
+  // Signed render time for the bot protection (specs/029-registration-bot-protection).
+  const formToken = state === "open" ? issueFormToken() : "";
+
   return (
     <section id="anmelden" className="border-t border-border bg-sand-50">
       <div className="mx-auto max-w-[1400px] px-6 py-24 md:px-10 lg:py-32">
@@ -68,6 +72,7 @@ export async function RegistrationSection({
               fields={camp.fields}
               availability={availability}
               invitationToken={validToken}
+              formToken={formToken}
             />
           ) : state === "countdown" && target ? (
             <CountdownPanel target={target.toISOString()} />

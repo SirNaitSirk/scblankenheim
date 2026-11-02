@@ -8,6 +8,10 @@ import {
 } from "@/lib/marketing/availability";
 import { findValidTier } from "@/lib/register/invitation";
 import { questionFields } from "@/lib/register/steps";
+import {
+  REGISTRATION_CEILING_WINDOW_MS,
+  REGISTRATION_HOURLY_CEILING,
+} from "@/lib/register/limits";
 import { registerMessages } from "@/lib/register/messages";
 import {
   getRegistrationState,
@@ -54,6 +58,7 @@ export type RegistrationResult =
   | { ok: false; reason: "closed" }
   | { ok: false; reason: "camp_full" }
   | { ok: false; reason: "throttled" }
+  | { ok: false; reason: "busy" }
   | { ok: false; reason: "invalid"; fieldErrors: Record<string, string> }
   | { ok: false; reason: "full"; fieldErrors: Record<string, string> }
   | { ok: false; reason: "error" };
@@ -307,6 +312,48 @@ async function settleNewRegistration(
   return data.id;
 }
 
+/**
+ * Hourly ceiling across all ips (specs/029-registration-bot-protection, research R7).
+ * Counts public attempts with valid fields for the camp; admin created
+ * registrations never write these rows. Writes at most one warning per window.
+ * A failing count never blocks a registration.
+ */
+async function isOverCeiling(campId: string): Promise<boolean> {
+  const supabase = getServiceClient();
+  const since = new Date(Date.now() - REGISTRATION_CEILING_WINDOW_MS).toISOString();
+  try {
+    const { count, error } = await supabase
+      .from("submission_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("kind", "registration")
+      .eq("camp_id", campId)
+      .gte("created_at", since);
+    if (error) throw error;
+    if ((count ?? 0) < REGISTRATION_HOURLY_CEILING) return false;
+
+    const { count: warned } = await supabase
+      .from("logs")
+      .select("id", { count: "exact", head: true })
+      .eq("action", "registration.ceiling")
+      .gte("created_at", since);
+    if ((warned ?? 0) === 0) {
+      await writeLog({
+        level: "warning",
+        action: "registration.ceiling",
+        message: `Obergrenze von ${REGISTRATION_HOURLY_CEILING} Anmeldungen pro Stunde erreicht, weitere werden abgewiesen.`,
+      });
+    }
+    return true;
+  } catch (error) {
+    await writeLog({
+      level: "error",
+      action: "registration.ceiling_check_failed",
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+}
+
 // --- entry point ------------------------------------------------------------
 
 export async function submitRegistration(
@@ -336,6 +383,8 @@ export async function submitRegistration(
     return { ok: false, reason: "invalid", fieldErrors };
 
   const { core, formData } = splitValues(fields, payload.values);
+
+  if (await isOverCeiling(camp.id)) return { ok: false, reason: "busy" };
 
   if (await isThrottled(camp.id, core.email, payload.ip))
     return { ok: false, reason: "throttled" };
