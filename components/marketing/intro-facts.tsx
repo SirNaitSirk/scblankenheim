@@ -12,7 +12,7 @@ type Fact = {
 };
 
 /*
- * "Wann" shows the current camp's dates and falls back to a neutral season
+ * "Wann" shows the current camp's dates and falls back to a neutral hint
  * without a camp or dates. "Wo" is still static. The fee comes from the current
  * camp's public base price so no hidden tier price can ever show up here
  * (constitution VI); without a camp the tile is left out.
@@ -21,7 +21,7 @@ function whenFact(camp: LandingCamp | null): Fact {
   const dates = camp ? formatCampDateRange(camp.startDate, camp.endDate) : null;
   return {
     label: "Wann",
-    value: dates ?? "Im Sommer",
+    value: dates ?? "Termin folgt",
     note: "Eine Woche in den Ferien",
     Icon: CalendarBlank,
   };

@@ -23,12 +23,12 @@ export const marketingMessages = {
     full: "FCG Blankenheim Summercamp",
     /** Footer line; the year comes from the current camp's start date. */
     season: (year: number | null) =>
-      year ? `Sommer ${year} in Belgien` : "Im Sommer in Belgien",
+      year ? `${year} in Belgien` : "In Belgien",
     /** Vertical tag in the hero. */
-    heroTag: (year: number | null) => (year ? `Sommer ${year} · Belgien` : "Sommer · Belgien"),
+    heroTag: (year: number | null) => (year ? `${year} · Belgien` : "Belgien"),
     /** Page title of the landing page. */
     pageTitle: (year: number | null) =>
-      year ? `FCG Blankenheim Summercamp · Sommer ${year}` : "FCG Blankenheim Summercamp",
+      year ? `FCG Blankenheim Summercamp ${year}` : "FCG Blankenheim Summercamp",
   },
   nav: {
     camp: "Camp",
