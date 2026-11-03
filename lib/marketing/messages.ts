@@ -55,7 +55,7 @@ export const marketingMessages = {
     headingLead: "Eine Woche, die du",
     headingAccent: "nicht vergisst",
     lead: "Du lernst Leute aus anderen Städten kennen, spielst, betest und hast Zeit, über deinen Glauben zu reden. Wir freuen uns auf dich und deine Gruppe.",
-    when: { label: "Wann", fallback: "Termin folgt", note: "Eine Woche in den Ferien" },
+    when: { label: "Wann", fallback: "Termin folgt" },
     where: { label: "Wo", value: "Belgien", note: "Pannenhoeve Bivak, Groenestraat 76" },
     fee: { label: "Beitrag", note: "Übernachtung und Verpflegung inklusive" },
   },

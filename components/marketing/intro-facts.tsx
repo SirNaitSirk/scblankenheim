@@ -10,7 +10,7 @@ const copy = marketingMessages.intro;
 type Fact = {
   label: string;
   value: string;
-  note: string;
+  note?: string;
   Icon: typeof Ticket;
 };
 
@@ -25,7 +25,6 @@ function whenFact(camp: LandingCamp | null): Fact {
   return {
     label: copy.when.label,
     value: dates ?? copy.when.fallback,
-    note: copy.when.note,
     Icon: CalendarBlank,
   };
 }
@@ -90,9 +89,11 @@ export async function IntroFacts() {
                   </p>
                 </div>
               </div>
-              <p className="pl-15 text-sm leading-snug text-muted-foreground sm:max-w-[18ch] sm:pl-0 sm:text-right">
-                {fact.note}
-              </p>
+              {fact.note && (
+                <p className="pl-15 text-sm leading-snug text-muted-foreground sm:max-w-[18ch] sm:pl-0 sm:text-right">
+                  {fact.note}
+                </p>
+              )}
             </Reveal>
           ))}
         </div>
