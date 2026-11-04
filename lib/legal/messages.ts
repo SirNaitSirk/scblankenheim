@@ -134,7 +134,7 @@ const privacySections: LegalSection[] = [
       ),
       sub("Cookies und lokaler Speicher"),
       p(
-        "Besucherinnen und Besuchern der öffentlichen Seiten setzen wir keine Cookies. Nur im Adminbereich und auf den Anmeldeseiten des Teams ist der Anmeldedienst Clerk eingebunden. Er setzt dort technisch notwendige Cookies, die eine Anmeldung des Teams erkennen und absichern. Die Packliste merkt sich deine Häkchen nur im Speicher deines Browsers, sie werden nicht an uns übertragen.",
+        "Besucherinnen und Besuchern der öffentlichen Seiten setzen wir keine Cookies, mit einer Ausnahme: Nach dem Absenden des Campfeedbacks merkt sich ein Cookie für 365 Tage, dass von diesem Browser schon Feedback kam. Es enthält nur diesen Vermerk und nichts über dich. Nur im Adminbereich und auf den Anmeldeseiten des Teams ist der Anmeldedienst Clerk eingebunden. Er setzt dort technisch notwendige Cookies, die eine Anmeldung des Teams erkennen und absichern. Die Packliste merkt sich deine Häkchen nur im Speicher deines Browsers, sie werden nicht an uns übertragen.",
       ),
       p(
         "Für technisch notwendige Cookies und Speicher brauchen wir keine Einwilligung (§ 25 Abs. 2 Nr. 2 TDDDG). Deshalb gibt es kein Cookie Banner.",
@@ -232,6 +232,18 @@ const privacySections: LegalSection[] = [
     ],
   },
   {
+    id: "feedback",
+    heading: "Campfeedback",
+    blocks: [
+      p(
+        "Am Ende des Camps kannst du über einen QR Code freiwillig und anonym Feedback geben. Wir speichern nur deine Antworten und zu welchem Camp sie gehören. Name, Mailadresse, Anmeldung, IP Adresse und Zeitpunkt speichern wir zu den Antworten nicht. Bitte nenne in Freitexten keine Namen, sonst sind sie nicht mehr anonym.",
+      ),
+      p(
+        `Zum Schutz vor massenhaften Eingaben speichern wir wie bei anderen Formularen IP Adresse und Zeitpunkt getrennt von den Antworten und löschen sie nach ${retentionDays}. Rechtsgrundlage ist unser berechtigtes Interesse nach Art. 6 Abs. 1 lit. f DSGVO, das Camp zu verbessern.`,
+      ),
+    ],
+  },
+  {
     id: "organisation",
     heading: "Organisation vor Ort",
     blocks: [
@@ -275,6 +287,7 @@ const privacySections: LegalSection[] = [
         ["Löscht das Team eine Anmeldung, entfernen wir Schulbefreiung und Busticket sofort; die übrigen Daten folgen mit dem Camp."],
         ["Zahlungsbelege bewahren wir nach den steuerlichen Vorschriften bis zu zehn Jahre auf."],
         [`Daten zum Schutz vor Missbrauch löschen wir nach ${retentionDays}.`],
+        ["Anonyme Feedbackantworten bewahren wir auf, um die Camps über die Jahre vergleichen zu können. Sie lassen sich keiner Person zuordnen und werden mit dem Camp gelöscht."],
         ["Konten des Teams löschen wir, wenn jemand das Team verlässt."],
       ),
     ],

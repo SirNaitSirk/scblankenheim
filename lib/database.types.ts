@@ -307,6 +307,68 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["bus_boardings"]["Insert"]>;
         Relationships: [];
       };
+      camp_feedback_settings: {
+        Row: {
+          camp_id: string;
+          open: boolean;
+          link_code: string;
+          updated_by: string;
+          updated_at: string;
+        };
+        Insert: {
+          camp_id: string;
+          open?: boolean;
+          link_code: string;
+          updated_by: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["camp_feedback_settings"]["Insert"]>;
+        Relationships: [];
+      };
+      camp_feedback_questions: {
+        Row: {
+          id: string;
+          camp_id: string;
+          key: string;
+          label: string;
+          type: string;
+          required: boolean;
+          options: string[];
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          camp_id: string;
+          key: string;
+          label: string;
+          type: string;
+          required?: boolean;
+          options?: string[];
+          sort_order: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["camp_feedback_questions"]["Insert"]>;
+        Relationships: [];
+      };
+      feedback_responses: {
+        Row: {
+          id: string;
+          camp_id: string;
+          nonce: string;
+          answers: Json;
+        };
+        Insert: {
+          id?: string;
+          camp_id: string;
+          nonce: string;
+          answers: Json;
+        };
+        Update: Partial<Database["public"]["Tables"]["feedback_responses"]["Insert"]>;
+        Relationships: [];
+      };
       submission_attempts: {
         Row: {
           id: string;

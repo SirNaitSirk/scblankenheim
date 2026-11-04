@@ -1,0 +1,70 @@
+import { describe, expect, it } from "vitest";
+import { feedbackMessages } from "@/lib/feedback/messages";
+import type { PublicFeedbackQuestion } from "@/lib/feedback/types";
+import { validateFeedback } from "@/lib/feedback/validation";
+
+const questions: PublicFeedbackQuestion[] = [
+  { key: "overall", label: "Wie war das Camp?", type: "rating", required: true, options: [] },
+  { key: "liked", label: "Was hat dir gefallen?", type: "multi", required: false, options: ["Lobpreis", "Workshops", "Essen"] },
+  { key: "again", label: "Kommst du wieder?", type: "single", required: false, options: ["Ja", "Nein"] },
+  { key: "better", label: "Was sollen wir besser machen?", type: "text", required: false, options: [] },
+];
+
+const t = feedbackMessages.errors;
+
+describe("validateFeedback", () => {
+  it("accepts a full answer and keeps labels and types", () => {
+    const result = validateFeedback(questions, {
+      overall: "4",
+      liked: ["Essen", "Lobpreis"],
+      again: "Ja",
+      better: "  Mehr Schlaf  ",
+    });
+    expect(result).toEqual({
+      ok: true,
+      answers: [
+        { key: "overall", label: "Wie war das Camp?", type: "rating", value: 4 },
+        { key: "liked", label: "Was hat dir gefallen?", type: "multi", value: ["Lobpreis", "Essen"] },
+        { key: "again", label: "Kommst du wieder?", type: "single", value: "Ja" },
+        { key: "better", label: "Was sollen wir besser machen?", type: "text", value: "Mehr Schlaf" },
+      ],
+    });
+  });
+
+  it("omits unanswered optional questions and drops unknown keys", () => {
+    const result = validateFeedback(questions, { overall: 5, unknown: "x", better: "   " });
+    expect(result).toEqual({ ok: true, answers: [{ key: "overall", label: "Wie war das Camp?", type: "rating", value: 5 }] });
+  });
+
+  it("requires required questions", () => {
+    expect(validateFeedback(questions, { again: "Ja" })).toEqual({ ok: false, errors: { overall: t.required } });
+  });
+
+  it("rejects ratings outside 1 to 5 and non integers", () => {
+    for (const value of [0, 6, 2.5, "abc", "7"]) {
+      expect(validateFeedback(questions, { overall: value })).toEqual({ ok: false, errors: { overall: t.rating } });
+    }
+  });
+
+  it("rejects unknown options", () => {
+    expect(validateFeedback(questions, { overall: 3, again: "Vielleicht" })).toEqual({ ok: false, errors: { again: t.option } });
+    expect(validateFeedback(questions, { overall: 3, liked: ["Essen", "Baden"] })).toEqual({ ok: false, errors: { liked: t.option } });
+  });
+
+  it("dedupes multi answers and accepts a single string", () => {
+    const result = validateFeedback(questions, { overall: 3, liked: "Essen" });
+    expect(result.ok && result.answers[1]).toEqual({ key: "liked", label: "Was hat dir gefallen?", type: "multi", value: ["Essen"] });
+    const dup = validateFeedback(questions, { overall: 3, liked: ["Essen", "Essen"] });
+    expect(dup.ok && dup.answers[1]?.value).toEqual(["Essen"]);
+  });
+
+  it("limits text length", () => {
+    expect(validateFeedback(questions, { overall: 3, better: "a".repeat(2001) })).toEqual({ ok: false, errors: { better: t.textTooLong } });
+    expect(validateFeedback(questions, { overall: 3, better: "a".repeat(2000) }).ok).toBe(true);
+  });
+
+  it("refuses an empty submission without required questions", () => {
+    const optional = questions.filter((question) => !question.required);
+    expect(validateFeedback(optional, {})).toEqual({ ok: false, errors: { _form: t.empty } });
+  });
+});

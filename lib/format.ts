@@ -86,3 +86,10 @@ const timeBerlin = new Intl.DateTimeFormat("de-DE", {
 export function formatTimeBerlin(iso: string): string {
   return timeBerlin.format(new Date(iso));
 }
+
+const oneDecimal = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/** Average with exactly one decimal, e.g. `formatAverage(4)` -> `4,0` (specs/038-camp-feedback). */
+export function formatAverage(value: number): string {
+  return oneDecimal.format(value);
+}

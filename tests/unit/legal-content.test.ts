@@ -63,7 +63,7 @@ describe("retention", () => {
 });
 
 describe("legal copy", () => {
-  it("has the 15 privacy sections of the contract in order", () => {
+  it("has the 16 privacy sections of the contract in order", () => {
     expect(legalMessages.privacy.sections.map((section) => section.id)).toEqual([
       "verantwortlicher",
       "ueberblick",
@@ -74,6 +74,7 @@ describe("legal copy", () => {
       "teilnehmerseite",
       "schulbefreiung",
       "busticket",
+      "feedback",
       "organisation",
       "team",
       "dienstleister",

@@ -90,6 +90,7 @@ Rules:
 - Participant link request: on the landing page (section and footer link shown only while the release letter is on for the current camp and it has at least one active registration; never in the top nav, specs/031-landing-review-fixes) a person enters an email and gets one mail per matching active registration with the link to its participant page; the page always answers the same and requests are throttled (specs/020-school-release).
 - Prelaunch gate: while the server env `COMING_SOON` is `true` (set only for Vercel Production), every path except admin, sign in and sign up, the Stripe webhook, cron and the legal pages shows the coming soon page `/demnaechst` to visitors without an admin profile, and non GET requests get 503; removing the variable and redeploying goes live (specs/023-coming-soon).
 - Impressum (`/impressum`) and Datenschutz (`/datenschutz`): static pages linked in the footer of every public page and on the coming soon page; operator data live only in `lib/legal/operator.ts`, missing values show as marked gaps; open during the prelaunch gate; the privacy text must match the services and data flows the code really uses (specs/025-legal-pages).
+- Camp feedback page (`/feedback/<code>`): per camp public page with an unguessable, renewable code, reached by a QR code the team shows at camp end; admins open and close it; answers are bound only to the camp (no registration, no time, no ip); one answer per browser through a cookie, bots held off by trap field, signed timestamp and ip throttling; no mail (specs/038-camp-feedback).
 
 **Registration & payment**
 
@@ -112,6 +113,7 @@ Rules:
 - Room planning (`/admin/zimmerplanung`): houses and rooms with bed counts (shared by all camps), per camp room gender, and drag and drop or click assignment of active registrations to rooms with a print view (specs/008-room-planning).
 - Tent circles (`/admin/zeltkreise`): per camp circles with name, kind (mixed, female, male) and exactly one leader from the camp's registrations; drag and drop or click assignment of active registrations as participants, no capacity; a leader is never a participant; print view (specs/011-tent-circles).
 - Bus ticket (`/admin/bus`): per camp switch plus the one form question (with fixed options) and the answer options that mean "takes the bus"; no separate bus flag. Every active bus registration gets its own QR code with a random ticket code (not the participant link) on the participant page, in the arrival info mail and via "send bus ticket" in the registration dialog. Team members with the new `bus` permission scan with the phone camera per trip (outbound, return): green with name (plus a "payment open" hint, never blocking) or red (no bus ticket, cancelled, already boarded, invalid, other camp, unknown); one boarding per registration and trip, manual boarding and undo, live list of who is missing. Admins block a ticket or issue a new one, which invalidates older codes. No Apple or Google Wallet (specs/021-bus-ticket).
+- Feedback (`/admin/feedback`): questions per camp (rating 1 to 5, single choice, multiple choice, free text, each with a stable key) with copy from earlier camps, results per camp, history across camps per key, CSV export, the QR code in full screen and as PNG, link renewal; everything needs the new `feedback` permission (specs/038-camp-feedback).
 - Transactional email (see below).
 
 **Auth & roles**
@@ -168,6 +170,9 @@ Core tables:
 - `bus_boardings`: one row per registration and trip (`outbound` / `return`) with time, scanning admin and kind (scan, manual); deleted with the registration.
 - `registrations.reminders_paused`: no automatic payment reminders for this registration (specs/016-mail-settings).
 - `email_deliveries`: one row per send attempt; rows without `registration_id` and kind `test` are admin test sends that count against the daily quota.
+- `camp_feedback_settings`: per camp open switch and the secret link code of the feedback page (specs/038-camp-feedback).
+- `camp_feedback_questions`: feedback questions per camp with type, options, order and a key that stays the same across years.
+- `feedback_responses`: one row per answer with only `camp_id`, a nonce against double submits and the answers incl. the question text at the time; deliberately no time, ip or registration.
 
 The registration gender (`female` / `male`) is a fixed core field of the one registration form, stored in `registrations.gender`; older registrations may lack it.
 
@@ -299,7 +304,7 @@ Even though this document is written in English, the two languages have strict, 
 
 ## Quick reference (target layout — Next.js)
 
-- Public routes: `app/page.tsx` (landing), `app/bezahlen/*`, `app/packzettel/page.tsx`, `app/meine-anmeldung/[token]/page.tsx`, `app/kalender/[campId]/route.ts`, `app/impressum/page.tsx`, `app/datenschutz/page.tsx`
+- Public routes: `app/page.tsx` (landing), `app/bezahlen/*`, `app/packzettel/page.tsx`, `app/meine-anmeldung/[token]/page.tsx`, `app/kalender/[campId]/route.ts`, `app/impressum/page.tsx`, `app/datenschutz/page.tsx`, `app/feedback/[code]/page.tsx`
 - Admin: `app/admin/*` (protected by Clerk in `proxy.ts`) + `components/admin/*`
 - Room planning and tent circles: `app/admin/zimmerplanung`, `app/admin/zeltkreise`, server data in `lib/admin/rooms-data.ts` and `lib/admin/tent-circles-data.ts`
 - Auth: Clerk (`proxy.ts`, Clerk components/hooks) + `app/admin/accept-invitation`
