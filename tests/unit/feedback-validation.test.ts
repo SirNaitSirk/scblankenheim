@@ -68,3 +68,11 @@ describe("validateFeedback", () => {
     expect(validateFeedback(optional, {})).toEqual({ ok: false, errors: { _form: t.empty } });
   });
 });
+
+describe("uuidSchema", () => {
+  it("accepts seeded ids without an RFC version", async () => {
+    const { uuidSchema } = await import("@/lib/feedback/schema");
+    expect(uuidSchema.safeParse("00000000-0000-0000-0000-000000000001").success).toBe(true);
+    expect(uuidSchema.safeParse("not-an-id").success).toBe(false);
+  });
+});

@@ -39,4 +39,5 @@ export const feedbackQuestionInputSchema = z
 
 export type FeedbackQuestionInput = z.output<typeof feedbackQuestionInputSchema>;
 
-export const uuidSchema = z.string().uuid();
+/** Lax id check like the rest of the project; seeded camp ids carry no RFC version nibble. */
+export const uuidSchema = z.guid();

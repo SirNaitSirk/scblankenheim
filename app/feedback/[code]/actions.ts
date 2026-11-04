@@ -15,7 +15,7 @@ import { checkSubmission } from "@/lib/register/form-token-server";
  */
 
 const inputSchema = z.object({
-  nonce: z.string().uuid(),
+  nonce: z.guid(),
   formToken: z.string().max(200),
   trap: z.string().max(500),
   answers: z.record(z.string(), z.unknown()),
