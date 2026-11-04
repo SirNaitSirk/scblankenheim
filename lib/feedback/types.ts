@@ -12,19 +12,23 @@ export type FeedbackQuestion = {
   type: FeedbackQuestionType;
   required: boolean;
   options: string[];
+  allowComment: boolean;
   sortOrder: number;
 };
 
 /** What the public page needs of a question; no ids. */
-export type PublicFeedbackQuestion = Pick<FeedbackQuestion, "key" | "label" | "type" | "required" | "options">;
+export type PublicFeedbackQuestion = Pick<FeedbackQuestion, "key" | "label" | "type" | "required" | "options" | "allowComment">;
 
 export type RatingValue = 1 | 2 | 3 | 4 | 5;
 
-/** One answered question inside a stored response; label is the text at submit time. */
+/**
+ * One answered question inside a stored response; label is the text at submit
+ * time. Rating and choice answers may carry a voluntary comment (US6).
+ */
 export type FeedbackAnswer =
-  | { key: string; label: string; type: "rating"; value: RatingValue }
-  | { key: string; label: string; type: "single"; value: string }
-  | { key: string; label: string; type: "multi"; value: string[] }
+  | { key: string; label: string; type: "rating"; value: RatingValue; comment?: string }
+  | { key: string; label: string; type: "single"; value: string; comment?: string }
+  | { key: string; label: string; type: "multi"; value: string[]; comment?: string }
   | { key: string; label: string; type: "text"; value: string };
 
 /** A stored response as read back; only the id, never a person or time. */
@@ -35,8 +39,13 @@ export type OptionShare = { option: string; count: number; share: number };
 type SummaryBase = { key: string; label: string; answered: number; deleted: boolean };
 
 export type QuestionSummary =
-  | (SummaryBase & { type: "rating"; average: number | null; distribution: [number, number, number, number, number] })
-  | (SummaryBase & { type: "single" | "multi"; options: OptionShare[] })
+  | (SummaryBase & {
+      type: "rating";
+      average: number | null;
+      distribution: [number, number, number, number, number];
+      comments: string[];
+    })
+  | (SummaryBase & { type: "single" | "multi"; options: OptionShare[]; comments: string[] })
   | (SummaryBase & { type: "text"; texts: string[] });
 
 export type CampFeedbackSummary = {

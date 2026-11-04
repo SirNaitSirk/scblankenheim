@@ -333,6 +333,7 @@ export type Database = {
           label: string;
           type: string;
           required: boolean;
+          allow_comment: boolean;
           options: string[];
           sort_order: number;
           created_at: string;
@@ -345,6 +346,7 @@ export type Database = {
           label: string;
           type: string;
           required?: boolean;
+          allow_comment?: boolean;
           options?: string[];
           sort_order: number;
           created_at?: string;

@@ -73,6 +73,7 @@ export function questionsToCopy(
       type: question.type,
       required: question.required,
       options: [...question.options],
+      allowComment: question.allowComment,
       sortOrder: (order += 1),
     }));
 }
@@ -81,6 +82,7 @@ function isAnswer(value: unknown): value is FeedbackAnswer {
   if (!value || typeof value !== "object") return false;
   const item = value as Record<string, unknown>;
   if (typeof item.key !== "string" || typeof item.label !== "string") return false;
+  if (item.comment !== undefined && (typeof item.comment !== "string" || item.type === "text")) return false;
   switch (item.type) {
     case "rating":
       return typeof item.value === "number" && Number.isInteger(item.value) && item.value >= 1 && item.value <= 5;

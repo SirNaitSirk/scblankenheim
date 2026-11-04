@@ -92,6 +92,19 @@ function QuestionCard({ summary }: { summary: QuestionSummary }) {
             ))}
           </ul>
         ))}
+
+      {summary.type !== "text" && summary.comments.length > 0 && (
+        <details className="group">
+          <summary className="cursor-pointer text-sm font-medium text-foreground">{t.comments(summary.comments.length)}</summary>
+          <ul className="mt-2 flex max-h-[28rem] flex-col gap-2 overflow-y-auto">
+            {summary.comments.map((comment, index) => (
+              <li key={index} className="whitespace-pre-line rounded-input bg-ink-50 px-3 py-2 text-sm text-foreground">
+                {comment}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
     </Card>
   );
 }

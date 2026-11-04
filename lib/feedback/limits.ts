@@ -7,6 +7,9 @@ export const FEEDBACK_OPTIONS_MIN = 2;
 export const FEEDBACK_OPTIONS_MAX = 20;
 export const FEEDBACK_OPTION_MAX = 100;
 export const FEEDBACK_TEXT_MAX = 2000;
+
+/** Form value key suffix of the voluntary comment of a question (US6). */
+export const FEEDBACK_COMMENT_SUFFIX = "__comment";
 export const FEEDBACK_QUESTIONS_MAX = 20;
 
 // Many people answer over one camp wifi, so the per ip limit is generous (research R4).

@@ -15,6 +15,8 @@ antworten direkt. Jedes Camp behält seine Antworten, so entsteht eine Historie 
 
 **Produktentscheidungen (mit dem Projektverantwortlichen geklärt am 2026-11-03 und 2026-11-04)**:
 
+- Ergänzung 2026-11-04: Bewertungs und Auswahlfragen können ein freiwilliges Kommentarfeld bekommen, etwa „Lobpreis 1 bis 5“ plus „Magst du etwas dazu schreiben?“. Allgemeines Feedback ohne Bewertung ist eine eigene Frage vom Typ Freitext.
+
 - Feedback ist anonym. Eine Antwort gehört nur zu einem Camp. Es gibt keinerlei Bezug zu
   Anmeldungen oder Personen, auch nicht als Vermerk „hat geantwortet“.
 - Der Zugang läuft über einen QR Code, der am Ende des Camps gezeigt wird (etwa per Beamer oder
@@ -183,6 +185,37 @@ auf und bekommt keinen Zugriff. Mit der Berechtigung klappt es.
 2. **Given** die Benutzerverwaltung, **When** ein Superadmin eine Admin bearbeitet, **Then** kann er
    die Berechtigung „Feedback“ wie die anderen vergeben und entziehen.
 
+### User Story 6 · Kommentar zu einer Bewertung (Priority: P2)
+
+Eine Admin legt die Frage „Wie fandest du den Lobpreis?“ als Bewertung 1 bis 5 an und schaltet
+„Kommentar erlauben“ an. Eine Teilnehmerin tippt auf die 4. Darunter erscheint ein Textfeld
+„Magst du etwas dazu schreiben?“ mit dem Hinweis „freiwillig“. Sie schreibt einen Satz und schickt
+ab. In der Auswertung steht der Satz unter den Balken der Lobpreisfrage.
+
+**Why this priority**: Zahlen allein sagen nicht, warum etwas gut oder schlecht war. Ohne
+Kommentar wäre das Feedback trotzdem nutzbar, darum P2.
+
+**Independent Test**: Eine Bewertungsfrage mit Kommentar anlegen, auf der Feedbackseite mit und ohne
+Kommentar antworten. Die Auswertung zeigt den Kommentar bei dieser Frage, der CSV Export hat eine
+eigene Spalte dafür.
+
+**Acceptance Scenarios**:
+
+1. **Given** der Fragedialog, **When** der Typ Bewertung, Einfachauswahl oder Mehrfachauswahl ist,
+   **Then** gibt es den Schalter „Kommentar erlauben“, standardmäßig aus. Beim Typ Freitext fehlt er.
+2. **Given** eine Frage mit Kommentar, **When** die Person noch nichts gewählt hat, **Then** ist das
+   Kommentarfeld nicht zu sehen.
+3. **Given** eine Frage mit Kommentar, **When** die Person eine Antwort wählt, **Then** erscheint
+   darunter das freiwillige Kommentarfeld mit Zeichenzähler.
+4. **Given** ein Kommentar ist geschrieben, **When** abgeschickt wird, **Then** wird er zusammen mit
+   der Antwort dieser Frage gespeichert. Ein leerer Kommentar wird nicht gespeichert.
+5. **Given** die Auswertung, **When** eine Frage Kommentare hat, **Then** stehen sie als Liste unter
+   dem Ergebnis der Frage mit ihrer Anzahl.
+6. **Given** der CSV Export, **When** eine Frage Kommentare erlaubt oder hat, **Then** gibt es direkt
+   nach ihrer Spalte eine Spalte „<Frage> · Kommentar“.
+7. **Given** Fragen werden aus einem anderen Camp übernommen, **When** die Quelle Kommentare erlaubt,
+   **Then** erlaubt auch die Kopie Kommentare.
+
 ### Edge Cases
 
 - **Mehrfach antworten**: Wer den Browser wechselt oder die Browserdaten löscht, kann erneut
@@ -197,7 +230,9 @@ auf und bekommt keinen Zugriff. Mit der Berechtigung klappt es.
   Hinweis abgelehnt.
 - **Inhalt verrät die Person**: Wer im Freitext seinen Namen schreibt, ist nicht anonym. Der Hinweis
   auf der Seite bittet darum, keine Namen zu nennen. Das System prüft den Text nicht.
-- **Sehr lange Freitexte**: Freitext ist auf 2000 Zeichen begrenzt. Die Begrenzung wird beim
+- **Kommentar ohne Antwort**: Ohne gewählte Antwort ist das Kommentarfeld nicht sichtbar. Schickt jemand trotzdem einen Kommentar ohne Antwort, verwirft der Server ihn.
+- **Kommentar nachträglich ausgeschaltet**: Schon gespeicherte Kommentare bleiben in Auswertung und Export.
+- **Sehr lange Freitexte**: Freitext und Kommentar sind auf 2000 Zeichen begrenzt. Die Begrenzung wird beim
   Schreiben angezeigt.
 - **Prelaunch Sperre**: Die Feedbackseite folgt den Regeln der bestehenden Sperre „demnächst“ wie
   andere öffentliche Seiten.
@@ -276,14 +311,21 @@ auf und bekommt keinen Zugriff. Mit der Berechtigung klappt es.
   anonym sind und nur dem Camp zugeordnet werden, dass die Teilnahme freiwillig ist und dass im
   Browser ein Vermerk über die schon gegebene Antwort gesetzt wird.
 - **FR-025**: Alle sichtbaren Texte MÜSSEN deutsch sein.
+- **FR-026**: Bewertungs und Auswahlfragen MÜSSEN optional einen freiwilligen Kommentar erlauben
+  können. Das Kommentarfeld erscheint erst nach Wahl einer Antwort, ist nie Pflicht und auf 2000
+  Zeichen begrenzt.
+- **FR-027**: Ein Kommentar MUSS zusammen mit der Antwort seiner Frage gespeichert werden und für ihn
+  gelten dieselben Regeln zur Anonymität (FR-008). Ein Kommentar ohne Antwort wird verworfen.
+- **FR-028**: Auswertung und CSV Export MÜSSEN Kommentare pro Frage zeigen; die Historie bleibt
+  unverändert.
 
 ### Key Entities
 
 - **Feedbackfrage**: gehört zu einem Camp. Text, Typ (Bewertung, Einfachauswahl, Mehrfachauswahl,
-  Freitext), Pflicht, Antworten bei Auswahl, Reihenfolge und ein im Camp eindeutiger Schlüssel, der
-  über die Jahre gleich bleibt.
+  Freitext), Pflicht, Antworten bei Auswahl, Reihenfolge, „Kommentar erlauben“ und ein im Camp
+  eindeutiger Schlüssel, der über die Jahre gleich bleibt.
 - **Feedbackantwort**: gehört zu einem Camp und zu nichts sonst. Enthält pro beantworteter Frage den
-  Schlüssel, den damaligen Text, den Typ und den Wert.
+  Schlüssel, den damaligen Text, den Typ, den Wert und optional einen Kommentar.
 - **Feedbackeinstellung**: pro Camp der Schalter „offen“ und der geheime Teil der Adresse für den QR
   Code.
 

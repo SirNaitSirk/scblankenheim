@@ -1,4 +1,4 @@
-import { FEEDBACK_TEXT_MAX } from "./limits";
+import { FEEDBACK_COMMENT_SUFFIX, FEEDBACK_TEXT_MAX } from "./limits";
 import { feedbackMessages } from "./messages";
 import type { FeedbackAnswer, PublicFeedbackQuestion, RatingValue } from "./types";
 
@@ -59,6 +59,16 @@ function checkValue(question: PublicFeedbackQuestion, raw: unknown): Check {
   }
 }
 
+const TOO_LONG = Symbol("too_long");
+
+/** Trimmed voluntary comment (US6); null when empty. Kept only next to a value. */
+function commentOf(raw: unknown): string | null | typeof TOO_LONG {
+  if (typeof raw !== "string") return null;
+  const value = raw.trim();
+  if (value === "") return null;
+  return value.length > FEEDBACK_TEXT_MAX ? TOO_LONG : value;
+}
+
 export function validateFeedback(
   questions: readonly PublicFeedbackQuestion[],
   raw: Record<string, unknown>,
@@ -73,7 +83,13 @@ export function validateFeedback(
       continue;
     }
     const result = checkValue(question, value);
-    if ("error" in result) errors[question.key] = result.error;
+    if ("error" in result) {
+      errors[question.key] = result.error;
+      continue;
+    }
+    const comment = question.allowComment ? commentOf(raw[`${question.key}${FEEDBACK_COMMENT_SUFFIX}`]) : null;
+    if (comment === TOO_LONG) errors[question.key] = t.commentTooLong;
+    else if (comment && result.answer.type !== "text") answers.push({ ...result.answer, comment });
     else answers.push(result.answer);
   }
 

@@ -1,11 +1,16 @@
+import { feedbackCsvCommentHeader } from "./messages";
 import type { FeedbackAnswer, FeedbackQuestion, FeedbackResponse } from "./types";
 
 /**
  * CSV export of a camp's feedback (specs/038-camp-feedback, FR-022). One row per
- * response in shuffled order, one column per key, no person, id or time.
+ * response in shuffled order, one column per key plus a comment column after
+ * every question that allows or has comments (US6); no person, id or time.
  */
 
 const FORMULA_START = /^[=+\-@]/;
+const BOM = "﻿";
+
+type Column = { key: string; label: string; comment: boolean };
 
 function escapeCsv(value: string): string {
   // A leading formula sign would run as a formula in spreadsheets.
@@ -13,8 +18,9 @@ function escapeCsv(value: string): string {
   return /[";\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
-function cellOf(answer: FeedbackAnswer | undefined): string {
+function cellOf(answer: FeedbackAnswer | undefined, comment: boolean): string {
   if (!answer) return "";
+  if (comment) return answer.type === "text" ? "" : (answer.comment ?? "");
   if (answer.type === "multi") return answer.value.join(", ");
   return String(answer.value);
 }
@@ -34,19 +40,34 @@ export function feedbackResponsesToCsv(
   responses: readonly FeedbackResponse[],
   random: () => number = Math.random,
 ): string {
-  const columns = [...questions]
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((question) => ({ key: question.key, label: question.label }));
-  const known = new Set(columns.map((column) => column.key));
+  const commented = new Set<string>();
   const extra = new Map<string, string>();
+  const known = new Set(questions.map((question) => question.key));
   for (const response of responses) {
-    for (const answer of response.answers) if (!known.has(answer.key)) extra.set(answer.key, answer.label);
+    for (const answer of response.answers) {
+      if (answer.type !== "text" && answer.comment) commented.add(answer.key);
+      if (!known.has(answer.key)) extra.set(answer.key, answer.label);
+    }
   }
-  for (const [key, label] of extra) columns.push({ key, label });
+
+  const base = [
+    ...[...questions]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((question) => ({ key: question.key, label: question.label, allow: question.allowComment })),
+    ...[...extra].map(([key, label]) => ({ key, label, allow: false })),
+  ];
+  const columns: Column[] = base.flatMap((column) => {
+    const own = { key: column.key, label: column.label, comment: false };
+    return column.allow || commented.has(column.key)
+      ? [own, { key: column.key, label: feedbackCsvCommentHeader(column.label), comment: true }]
+      : [own];
+  });
 
   const header = columns.map((column) => escapeCsv(column.label)).join(";");
   const lines = shuffled(responses, random).map((response) =>
-    columns.map((column) => escapeCsv(cellOf(response.answers.find((answer) => answer.key === column.key)))).join(";"),
+    columns
+      .map((column) => escapeCsv(cellOf(response.answers.find((answer) => answer.key === column.key), column.comment)))
+      .join(";"),
   );
-  return `﻿${[header, ...lines].join("\r\n")}`;
+  return `${BOM}${[header, ...lines].join("\r\n")}`;
 }

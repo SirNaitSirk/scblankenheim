@@ -3,7 +3,7 @@ import { answerCountForKey, answeredKeys, parseAnswers, questionChangeProblem, q
 import type { FeedbackQuestion, FeedbackResponse } from "@/lib/feedback/types";
 
 function question(key: string, sortOrder: number, extra: Partial<FeedbackQuestion> = {}): FeedbackQuestion {
-  return { id: `id_${key}`, campId: "c1", key, label: key, type: "rating", required: false, options: [], sortOrder, ...extra };
+  return { id: `id_${key}`, campId: "c1", key, label: key, type: "rating", required: false, options: [], allowComment: false, sortOrder, ...extra };
 }
 
 const responses: FeedbackResponse[] = [
@@ -54,11 +54,11 @@ describe("questionChangeProblem", () => {
 
 describe("questionsToCopy", () => {
   it("copies only missing keys in source order after the target", () => {
-    const source = [question("b", 1), question("a", 0, { type: "multi", options: ["x", "y"] }), question("c", 2)];
+    const source = [question("b", 1), question("a", 0, { type: "multi", options: ["x", "y"], allowComment: true }), question("c", 2)];
     const target = [question("b", 4)];
     expect(questionsToCopy(source, target)).toEqual([
-      { key: "a", label: "a", type: "multi", required: false, options: ["x", "y"], sortOrder: 5 },
-      { key: "c", label: "c", type: "rating", required: false, options: [], sortOrder: 6 },
+      { key: "a", label: "a", type: "multi", required: false, options: ["x", "y"], allowComment: true, sortOrder: 5 },
+      { key: "c", label: "c", type: "rating", required: false, options: [], allowComment: false, sortOrder: 6 },
     ]);
   });
 
@@ -75,12 +75,15 @@ describe("parseAnswers", () => {
         { key: "a", label: "A", type: "rating", value: 3 },
         { key: "b", label: "B", type: "rating", value: 9 },
         { key: "c", label: "C", type: "multi", value: ["x"] },
+        { key: "e", label: "E", type: "rating", value: 2, comment: "gut" },
+        { key: "f", label: "F", type: "text", value: "x", comment: "nicht erlaubt" },
         { key: "d", type: "text", value: "no label" },
         "junk",
       ]),
     ).toEqual([
       { key: "a", label: "A", type: "rating", value: 3 },
       { key: "c", label: "C", type: "multi", value: ["x"] },
+      { key: "e", label: "E", type: "rating", value: 2, comment: "gut" },
     ]);
     expect(parseAnswers(null)).toEqual([]);
   });

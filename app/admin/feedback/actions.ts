@@ -16,7 +16,7 @@ import {
 } from "@/lib/feedback/data";
 import { FEEDBACK_QUESTIONS_MAX } from "@/lib/feedback/limits";
 import { answeredKeys, questionChangeProblem, questionsToCopy, type QuestionChangeProblem } from "@/lib/feedback/rules";
-import { feedbackQuestionInputSchema, uuidSchema } from "@/lib/feedback/schema";
+import { feedbackQuestionInputSchema, uuidSchema, type FeedbackQuestionInput } from "@/lib/feedback/schema";
 import { getServiceClient } from "@/lib/supabase/server";
 
 /**
@@ -76,6 +76,11 @@ function fieldErrorsOf(error: z.ZodError): Record<string, string> {
   return errors;
 }
 
+function toRow(input: FeedbackQuestionInput) {
+  const { allowComment, ...rest } = input;
+  return { ...rest, allow_comment: allowComment };
+}
+
 function isUniqueViolation(error: unknown): boolean {
   return typeof error === "object" && error !== null && (error as { code?: string }).code === "23505";
 }
@@ -93,7 +98,7 @@ export async function createFeedbackQuestion(campId: string, raw: unknown): Prom
     const sortOrder = questions.reduce((max, question) => Math.max(max, question.sortOrder), -1) + 1;
     const { data, error } = await getServiceClient()
       .from("camp_feedback_questions")
-      .insert({ camp_id: campId, ...parsed.data, sort_order: sortOrder })
+      .insert({ ...toRow(parsed.data), camp_id: campId, sort_order: sortOrder })
       .select("id")
       .single();
     if (isUniqueViolation(error)) return { ok: false, error: e.duplicateKey, fieldErrors: { key: e.duplicateKey } };
@@ -124,7 +129,7 @@ export async function updateFeedbackQuestion(id: string, raw: unknown): Promise<
     }
     const { error } = await getServiceClient()
       .from("camp_feedback_questions")
-      .update({ ...parsed.data, updated_at: new Date().toISOString() })
+      .update({ ...toRow(parsed.data), updated_at: new Date().toISOString() })
       .eq("id", id);
     if (isUniqueViolation(error)) return { ok: false, error: e.duplicateKey, fieldErrors: { key: e.duplicateKey } };
     if (error) throw error;
@@ -188,6 +193,7 @@ export async function copyFeedbackQuestions(targetCampId: string, sourceCampId: 
             type: question.type,
             required: question.required,
             options: question.options,
+            allow_comment: question.allowComment,
             sort_order: question.sortOrder,
           })),
         );

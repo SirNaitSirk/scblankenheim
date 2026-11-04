@@ -44,6 +44,7 @@ export function FeedbackQuestionDialog({
   const [label, setLabel] = useState(question?.label ?? "");
   const [type, setType] = useState<FeedbackQuestionType>(question?.type ?? "rating");
   const [required, setRequired] = useState(question?.required ?? false);
+  const [allowComment, setAllowComment] = useState(question?.allowComment ?? false);
   const [options, setOptions] = useState<string[]>(question?.options.length ? question.options : ["", ""]);
   const [key, setKey] = useState(question?.key ?? "");
   const [keyTouched, setKeyTouched] = useState(question !== null);
@@ -67,7 +68,7 @@ export function FeedbackQuestionDialog({
   function save() {
     setErrors({});
     setFormError(null);
-    const input = { label, type, required, key: key.trim() || suggestKey(label, otherKeys), options };
+    const input = { label, type, required, allowComment: type !== "text" && allowComment, key: key.trim() || suggestKey(label, otherKeys), options };
     startSaving(async () => {
       const result = question ? await updateFeedbackQuestion(question.id, input) : await createFeedbackQuestion(campId, input);
       if (result.ok) {
@@ -129,6 +130,13 @@ export function FeedbackQuestionDialog({
             <Switch id="feedback-required" checked={required} onCheckedChange={setRequired} label={t.required} />
           </div>
         </div>
+
+        {type !== "text" && (
+          <div className="flex flex-col gap-1">
+            <Switch id="feedback-comment" checked={allowComment} onCheckedChange={setAllowComment} label={t.allowComment} />
+            <p className="text-sm text-muted-foreground">{t.allowCommentHint}</p>
+          </div>
+        )}
 
         {isChoice(type) && (
           <Field label={t.options} error={errors.options}>

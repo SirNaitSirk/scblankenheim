@@ -111,6 +111,7 @@ export function FeedbackQuestions({
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <Badge tone="neutral">{de.feedback.types[question.type]}</Badge>
                     {question.required && <Badge tone="pending">{t.required}</Badge>}
+                    {question.allowComment && question.type !== "text" && <Badge>{t.comment}</Badge>}
                     <span>
                       {t.key}: <code className="font-mono">{question.key}</code>
                     </span>

@@ -19,7 +19,7 @@ import type { FeedbackAnswer, FeedbackQuestion, FeedbackResponse, PublicFeedback
 
 export type FeedbackSettings = { campId: string; open: boolean; linkCode: string };
 
-const QUESTION_COLUMNS = "id, camp_id, key, label, type, required, options, sort_order";
+const QUESTION_COLUMNS = "id, camp_id, key, label, type, required, allow_comment, options, sort_order";
 
 type QuestionRow = {
   id: string;
@@ -28,6 +28,7 @@ type QuestionRow = {
   label: string;
   type: string;
   required: boolean;
+  allow_comment: boolean;
   options: string[];
   sort_order: number;
 };
@@ -42,13 +43,14 @@ function toQuestion(row: QuestionRow): FeedbackQuestion | null {
     type: row.type,
     required: row.required,
     options: row.options ?? [],
+    allowComment: row.allow_comment ?? false,
     sortOrder: row.sort_order,
   };
 }
 
 export function toPublicQuestion(question: FeedbackQuestion): PublicFeedbackQuestion {
-  const { key, label, type, required, options } = question;
-  return { key, label, type, required, options };
+  const { key, label, type, required, options, allowComment } = question;
+  return { key, label, type, required, options, allowComment };
 }
 
 export async function getFeedbackSettings(campId: string): Promise<FeedbackSettings | null> {

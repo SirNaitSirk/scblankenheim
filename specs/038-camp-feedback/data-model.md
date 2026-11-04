@@ -82,3 +82,18 @@ Neue Art `kind = 'feedback'` mit `ip` und `camp_id`, für die Drosselung (R4). W
 - `FeedbackHistoryRow`: `key`, `type`, `label` (neuester), `previousLabels[]`, pro Camp (sortiert
   nach `start_date` aufsteigend, Camps ohne Antworten ausgelassen) entweder leer oder
   `{ answered, average }` bzw. `{ answered, shares }`.
+
+## Ergänzung 2026-11-04 · Kommentar zu einer Frage (US6)
+
+Migration `supabase/migrations/0019_feedback_comments.sql`:
+
+| Tabelle | Spalte | Typ | Regel |
+|---------|--------|-----|-------|
+| `camp_feedback_questions` | `allow_comment` | boolean not null default false | nur für `rating`, `single`, `multi` wirksam; bei `text` immer false gespeichert |
+
+`FeedbackAnswer` bekommt bei `rating`, `single` und `multi` das optionale Feld `comment?: string`
+(getrimmt, 1 bis 2000 Zeichen, fehlt wenn leer). Keine Änderung an `feedback_responses`, der Wert
+liegt im jsonb. Ein Kommentar ohne Wert der Frage wird verworfen.
+
+`QuestionSummary` bekommt bei `rating`, `single` und `multi` das Feld `comments: string[]`
+(nicht leer, in Reihenfolge der Antwort `id`).

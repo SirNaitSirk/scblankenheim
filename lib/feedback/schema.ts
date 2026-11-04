@@ -18,11 +18,13 @@ export const feedbackQuestionInputSchema = z
     label: z.string().trim().min(1, e.label).max(FEEDBACK_LABEL_MAX, e.label),
     type: z.enum(FEEDBACK_QUESTION_TYPES),
     required: z.boolean(),
+    allowComment: z.boolean().default(false),
     key: z.string().trim().regex(FEEDBACK_KEY_PATTERN, e.key),
     options: z.array(z.string()).default([]),
   })
   .transform((input, ctx) => {
-    if (input.type !== "single" && input.type !== "multi") return { ...input, options: [] as string[] };
+    if (input.type === "text") return { ...input, options: [] as string[], allowComment: false };
+    if (input.type === "rating") return { ...input, options: [] as string[] };
     const options = input.options.map((option) => option.trim()).filter((option) => option !== "");
     const unique = new Set(options);
     const valid =

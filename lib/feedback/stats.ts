@@ -60,8 +60,15 @@ function shares(options: readonly string[], picked: readonly string[][], answere
   }));
 }
 
+function commentsOf(answers: readonly FeedbackAnswer[]): string[] {
+  return answers.flatMap((answer) =>
+    answer.type !== "text" && answer.comment && answer.comment.trim() !== "" ? [answer.comment] : [],
+  );
+}
+
 function summarizeColumn(column: Column, responses: readonly FeedbackResponse[]): QuestionSummary {
   const answers = answersFor(column, responses);
+  const comments = commentsOf(answers);
   const base = { key: column.key, label: column.label, answered: answers.length, deleted: column.deleted };
   switch (column.type) {
     case "rating": {
@@ -72,14 +79,20 @@ function summarizeColumn(column: Column, responses: readonly FeedbackResponse[])
         distribution[answer.value - 1] += 1;
         sum += answer.value;
       }
-      return { ...base, type: "rating", average: answers.length > 0 ? roundOne(sum / answers.length) : null, distribution };
+      return {
+        ...base,
+        type: "rating",
+        average: answers.length > 0 ? roundOne(sum / answers.length) : null,
+        distribution,
+        comments,
+      };
     }
     case "single":
     case "multi": {
       const picked = answers.map((answer) =>
         answer.type === "multi" ? answer.value : answer.type === "single" ? [answer.value] : [],
       );
-      return { ...base, type: column.type, options: shares(column.options, picked, answers.length) };
+      return { ...base, type: column.type, options: shares(column.options, picked, answers.length), comments };
     }
     case "text": {
       const texts = answers.flatMap((answer) => (answer.type === "text" && answer.value.trim() !== "" ? [answer.value] : []));

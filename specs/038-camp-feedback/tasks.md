@@ -134,6 +134,21 @@ description: "Task list for 038-camp-feedback"
 
 ---
 
+## Phase 9: User Story 6 · Kommentar zu einer Frage (P2)
+
+**Goal**: rating and choice questions can carry an optional comment.
+
+**Independent Test**: spec US6 independent test.
+
+- [X] T041 [US6] Create `supabase/migrations/0019_feedback_comments.sql` (header comment, specs/038 US6): `alter table public.camp_feedback_questions add column allow_comment boolean not null default false`; add `allow_comment` to Row, Insert in `lib/database.types.ts`. Applying is done by the owner.
+- [X] T042 [US6] Extend `lib/feedback/types.ts` (`allowComment` on `FeedbackQuestion` and `PublicFeedbackQuestion`, optional `comment` on rating, single and multi answers, `comments: string[]` on their summaries), `lib/feedback/rules.ts` (`parseAnswers` keeps a string comment, `questionsToCopy` copies `allowComment`), `lib/feedback/schema.ts` (`allowComment` boolean, forced false for `text`), `lib/feedback/data.ts` (select and map `allow_comment`), `app/admin/feedback/actions.ts` (write `allow_comment` on create, update, copy).
+- [X] T043 [US6] In `lib/feedback/validation.ts` read `<key>__comment` for questions with `allowComment`, trim, max 2000 chars (error under the question), attach only when the answer has a value; drop otherwise. Add `FEEDBACK_COMMENT_SUFFIX = "__comment"` to `lib/feedback/limits.ts`.
+- [X] T044 [US6] In `lib/feedback/stats.ts` collect non empty `comments` per rating and choice question; in `lib/feedback/csv.ts` add a column „<label> · Kommentar“ right after each question that allows or has comments.
+- [X] T045 [P] [US6] Extend `tests/unit/feedback-validation.test.ts`, `tests/unit/feedback-stats.test.ts`, `tests/unit/feedback-csv.test.ts`, `tests/unit/feedback-rules.test.ts` for comments.
+- [X] T046 [US6] Copy: `de.feedback.dialog.allowComment` „Kommentar erlauben“ with hint, `de.feedback.questions.comment` badge, `de.feedback.results.comments(count)`, `feedbackMessages.commentLabel` „Magst du etwas dazu schreiben?“ in `lib/admin/messages.ts` and `lib/feedback/messages.ts`.
+- [X] T047 [US6] UI: switch in `components/admin/feedback-question-dialog.tsx` (hidden for Freitext), badge in `components/admin/feedback-questions.tsx`, comment textarea with counter in `components/feedback/feedback-form.tsx` shown once the question has a value, comment list in `components/admin/feedback-results.tsx`.
+- [X] T048 Run `npm run lint`, `npm test`, `npm run build` and report the output.
+
 ## Dependencies
 
 - Phase 1 before everything (constitution III).

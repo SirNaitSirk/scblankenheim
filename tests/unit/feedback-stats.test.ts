@@ -3,16 +3,16 @@ import { buildHistory, summarizeCamp } from "@/lib/feedback/stats";
 import type { FeedbackQuestion, FeedbackResponse, HistoryInput } from "@/lib/feedback/types";
 
 const questions: FeedbackQuestion[] = [
-  { id: "q1", campId: "c", key: "overall", label: "Gesamt", type: "rating", required: true, options: [], sortOrder: 0 },
-  { id: "q2", campId: "c", key: "liked", label: "Gefallen", type: "multi", required: false, options: ["Lobpreis", "Essen"], sortOrder: 1 },
-  { id: "q3", campId: "c", key: "better", label: "Besser", type: "text", required: false, options: [], sortOrder: 2 },
+  { id: "q1", campId: "c", key: "overall", label: "Gesamt", type: "rating", required: true, options: [], allowComment: false, sortOrder: 0 },
+  { id: "q2", campId: "c", key: "liked", label: "Gefallen", type: "multi", required: false, options: ["Lobpreis", "Essen"], allowComment: false, sortOrder: 1 },
+  { id: "q3", campId: "c", key: "better", label: "Besser", type: "text", required: false, options: [], allowComment: false, sortOrder: 2 },
 ];
 
 const responses: FeedbackResponse[] = [
   {
     id: "b",
     answers: [
-      { key: "overall", label: "Gesamt", type: "rating", value: 5 },
+      { key: "overall", label: "Gesamt", type: "rating", value: 5, comment: "Super Lobpreis" },
       { key: "liked", label: "Gefallen", type: "multi", value: ["Lobpreis", "Essen"] },
       { key: "better", label: "Besser", type: "text", value: "Mehr Schlaf" },
     ],
@@ -25,7 +25,7 @@ const responses: FeedbackResponse[] = [
       { key: "old", label: "Alte Frage", type: "single", value: "Ja" },
     ],
   },
-  { id: "c", answers: [{ key: "overall", label: "Gesamt", type: "rating", value: 4 }] },
+  { id: "c", answers: [{ key: "overall", label: "Gesamt", type: "rating", value: 4, comment: "Zu laut" }] },
 ];
 
 describe("summarizeCamp", () => {
@@ -38,6 +38,7 @@ describe("summarizeCamp", () => {
   it("averages ratings with one decimal and a distribution", () => {
     expect(summary.questions[0]).toEqual({
       key: "overall", label: "Gesamt", answered: 3, deleted: false, type: "rating", average: 4.3, distribution: [0, 0, 0, 2, 1],
+      comments: ["Super Lobpreis", "Zu laut"],
     });
   });
 
@@ -49,6 +50,7 @@ describe("summarizeCamp", () => {
         { option: "Essen", count: 2, share: 1 },
         { option: "Baden", count: 1, share: 0.5 },
       ],
+      comments: [],
     });
   });
 
@@ -67,7 +69,7 @@ describe("summarizeCamp", () => {
 describe("buildHistory", () => {
   const camp = (id: string, startDate: string | null, label: string, values: number[]): HistoryInput => ({
     id, name: `Camp ${id}`, startDate,
-    questions: [{ id: `q${id}`, campId: id, key: "overall", label, type: "rating", required: true, options: [], sortOrder: 0 }],
+    questions: [{ id: `q${id}`, campId: id, key: "overall", label, type: "rating", required: true, options: [], allowComment: false, sortOrder: 0 }],
     responses: values.map((value, i) => ({ id: `${id}${i}`, answers: [{ key: "overall", label, type: "rating", value: value as 1 }] })),
   });
 

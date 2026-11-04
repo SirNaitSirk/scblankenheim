@@ -18,6 +18,7 @@ export const feedbackMessages = {
   ratingHigh: "sehr gut",
   ratingValue: (value: number) => `${value} von 5`,
   multiHint: "Mehrere Antworten möglich",
+  commentLabel: "Magst du etwas dazu schreiben?",
   counter: (length: number) => `${length} von ${FEEDBACK_TEXT_MAX} Zeichen`,
   submit: "Feedback absenden",
   sending: "Wird gesendet",
@@ -44,6 +45,12 @@ export const feedbackMessages = {
     rating: "Bitte wähle eine Zahl von 1 bis 5.",
     option: "Bitte wähle eine der Antworten.",
     textTooLong: `Bitte höchstens ${FEEDBACK_TEXT_MAX} Zeichen.`,
+    commentTooLong: `Bitte schreib im Kommentar höchstens ${FEEDBACK_TEXT_MAX} Zeichen.`,
     empty: "Bitte beantworte mindestens eine Frage.",
   },
 } as const;
+
+/** CSV header of the comment column next to a question (US6). */
+export function feedbackCsvCommentHeader(label: string): string {
+  return `${label} · Kommentar`;
+}

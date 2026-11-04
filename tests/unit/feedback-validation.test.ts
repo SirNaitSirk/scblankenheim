@@ -4,10 +4,10 @@ import type { PublicFeedbackQuestion } from "@/lib/feedback/types";
 import { validateFeedback } from "@/lib/feedback/validation";
 
 const questions: PublicFeedbackQuestion[] = [
-  { key: "overall", label: "Wie war das Camp?", type: "rating", required: true, options: [] },
-  { key: "liked", label: "Was hat dir gefallen?", type: "multi", required: false, options: ["Lobpreis", "Workshops", "Essen"] },
-  { key: "again", label: "Kommst du wieder?", type: "single", required: false, options: ["Ja", "Nein"] },
-  { key: "better", label: "Was sollen wir besser machen?", type: "text", required: false, options: [] },
+  { key: "overall", label: "Wie war das Camp?", type: "rating", required: true, options: [], allowComment: false },
+  { key: "liked", label: "Was hat dir gefallen?", type: "multi", required: false, options: ["Lobpreis", "Workshops", "Essen"], allowComment: false },
+  { key: "again", label: "Kommst du wieder?", type: "single", required: false, options: ["Ja", "Nein"], allowComment: false },
+  { key: "better", label: "Was sollen wir besser machen?", type: "text", required: false, options: [], allowComment: false },
 ];
 
 const t = feedbackMessages.errors;
@@ -61,6 +61,33 @@ describe("validateFeedback", () => {
   it("limits text length", () => {
     expect(validateFeedback(questions, { overall: 3, better: "a".repeat(2001) })).toEqual({ ok: false, errors: { better: t.textTooLong } });
     expect(validateFeedback(questions, { overall: 3, better: "a".repeat(2000) }).ok).toBe(true);
+  });
+
+  it("keeps a trimmed comment only next to a value of a question that allows it", () => {
+    const commented = questions.map((question) => (question.key === "overall" ? { ...question, allowComment: true } : question));
+    expect(validateFeedback(commented, { overall: 4, overall__comment: "  Toll  " })).toEqual({
+      ok: true,
+      answers: [{ key: "overall", label: "Wie war das Camp?", type: "rating", value: 4, comment: "Toll" }],
+    });
+    expect(validateFeedback(commented, { overall: 4, overall__comment: "   " })).toEqual({
+      ok: true,
+      answers: [{ key: "overall", label: "Wie war das Camp?", type: "rating", value: 4 }],
+    });
+    expect(validateFeedback(questions, { overall: 4, overall__comment: "nicht erlaubt" })).toEqual({
+      ok: true,
+      answers: [{ key: "overall", label: "Wie war das Camp?", type: "rating", value: 4 }],
+    });
+    const liked = commented.map((question) => ({ ...question, allowComment: true }));
+    const withoutValue = validateFeedback(liked, { overall: 4, liked__comment: "ohne Antwort" });
+    expect(withoutValue.ok && withoutValue.answers).toHaveLength(1);
+  });
+
+  it("limits comment length", () => {
+    const commented = questions.map((question) => (question.key === "overall" ? { ...question, allowComment: true } : question));
+    expect(validateFeedback(commented, { overall: 4, overall__comment: "a".repeat(2001) })).toEqual({
+      ok: false,
+      errors: { overall: t.commentTooLong },
+    });
   });
 
   it("refuses an empty submission without required questions", () => {

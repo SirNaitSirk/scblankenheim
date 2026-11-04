@@ -5,7 +5,7 @@ import { PaymentNotice } from "@/components/payment/payment-shell";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/cn";
-import { FEEDBACK_TEXT_MAX } from "@/lib/feedback/limits";
+import { FEEDBACK_COMMENT_SUFFIX, FEEDBACK_TEXT_MAX } from "@/lib/feedback/limits";
 import { feedbackMessages as copy } from "@/lib/feedback/messages";
 import type { SubmitFeedbackInput, SubmitFeedbackResult } from "@/lib/feedback/submit-types";
 import type { PublicFeedbackQuestion } from "@/lib/feedback/types";
@@ -20,16 +20,24 @@ const choiceClass =
   "transition-colors duration-150 hover:border-ink-300 has-[:checked]:border-accent has-[:checked]:bg-accent/10 " +
   "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring";
 
+function hasValue(value: string | string[] | undefined): boolean {
+  return value !== undefined && (typeof value === "string" ? value.trim() !== "" : value.length > 0);
+}
+
 function Question({
   question,
   value,
+  comment,
   error,
   onChange,
+  onCommentChange,
 }: {
   question: PublicFeedbackQuestion;
   value: string | string[] | undefined;
+  comment: string;
   error: string | undefined;
   onChange: (value: string | string[]) => void;
+  onCommentChange: (comment: string) => void;
 }) {
   const id = `q_${question.key}`;
   const errorId = `${id}_error`;
@@ -136,6 +144,22 @@ function Question({
         </div>
       )}
 
+      {question.allowComment && question.type !== "text" && hasValue(value) && (
+        <div className="mt-4 flex flex-col gap-1.5">
+          <label htmlFor={`${id}_comment`} className="text-sm font-medium text-foreground">
+            {copy.commentLabel}
+          </label>
+          <Textarea
+            id={`${id}_comment`}
+            value={comment}
+            maxLength={FEEDBACK_TEXT_MAX}
+            rows={3}
+            onChange={(event) => onCommentChange(event.target.value)}
+          />
+          <span className="self-end text-xs tabular-nums text-muted-foreground">{copy.counter(comment.length)}</span>
+        </div>
+      )}
+
       {error && (
         <p id={errorId} className="mt-2 text-sm text-danger">
           {error}
@@ -179,9 +203,7 @@ export function FeedbackForm({
   function localErrors(): Record<string, string> {
     const found: Record<string, string> = {};
     for (const question of questions) {
-      const value = values[question.key];
-      const blank = value === undefined || (typeof value === "string" ? value.trim() === "" : value.length === 0);
-      if (question.required && blank) found[question.key] = copy.errors.required;
+      if (question.required && !hasValue(values[question.key])) found[question.key] = copy.errors.required;
     }
     return found;
   }
@@ -255,7 +277,11 @@ export function FeedbackForm({
           key={question.key}
           question={question}
           value={values[question.key]}
+          comment={String(values[`${question.key}${FEEDBACK_COMMENT_SUFFIX}`] ?? "")}
           error={errors[question.key]}
+          onCommentChange={(comment) =>
+            setValues((current) => ({ ...current, [`${question.key}${FEEDBACK_COMMENT_SUFFIX}`]: comment }))
+          }
           onChange={(value) => {
             setValues((current) => ({ ...current, [question.key]: value }));
             if (errors[question.key]) {

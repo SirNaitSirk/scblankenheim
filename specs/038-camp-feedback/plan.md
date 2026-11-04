@@ -191,3 +191,20 @@ Siehe [quickstart.md](./quickstart.md).
 ## Complexity Tracking
 
 Keine Verletzung.
+
+## Ergänzung 2026-11-04 · Kommentar zu einer Frage (US6)
+
+- **Daten**: Migration `0019_feedback_comments.sql` mit `camp_feedback_questions.allow_comment`;
+  Kommentar als optionales `comment` im jsonb der Antwort (siehe data-model.md). Typen in
+  `lib/database.types.ts` von Hand ergänzt.
+- **Admin**: Schalter „Kommentar erlauben“ im Fragedialog für Bewertung und Auswahl; Badge
+  „Kommentar“ in der Fragenliste; Übernahme kopiert den Schalter. Zod erzwingt `false` bei Freitext.
+- **Öffentliche Seite**: Kommentarfeld erscheint unter der Frage, sobald eine Antwort gewählt ist,
+  mit Zeichenzähler und Kennzeichnung „freiwillig“; Werte gehen als `<key>__comment` an die Action.
+  `validateFeedback` hängt den getrimmten Kommentar an die Antwort und verwirft ihn ohne Antwort.
+- **Auswertung**: `summarizeCamp` sammelt `comments`; die Karte zeigt sie unter dem Ergebnis.
+  CSV bekommt nach jeder Frage mit Kommentaren eine Spalte „<Frage> · Kommentar“. Historie
+  unverändert.
+- **Constitution Check**: unverändert erfüllt; neue Spalte nur per Migration, keine CHECK
+  Constraints, Texte in den Messages Modulen.
+- **Tests**: Ergänzungen in `feedback-validation`, `feedback-stats`, `feedback-csv`.
