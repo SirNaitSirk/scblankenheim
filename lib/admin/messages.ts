@@ -296,6 +296,10 @@ export const de = {
       createTitle: "Neue Anmeldung",
       editTitle: "Anmeldung bearbeiten",
       createDescription: "Lege eine Anmeldung für das aktuelle Camp an.",
+      sectionMail: "Mail",
+      sendConfirmation: "Anmeldebestätigung senden",
+      sendConfirmationHint:
+        "Die Person bekommt dieselbe Bestätigung wie bei der Anmeldung über die Website, mit Link zur Teilnehmerseite und bei offenem Betrag mit Bezahlknopf.",
       editDescription: (name: string) => `Angaben von ${name} anpassen.`,
       sectionContact: "Kontakt",
       gender: "Geschlecht",
@@ -327,6 +331,7 @@ export const de = {
     },
     toast: {
       created: "Anmeldung hinzugefügt.",
+      createdWithConfirmation: "Anmeldung hinzugefügt. Die Bestätigung wird verschickt.",
       updated: "Anmeldung aktualisiert.",
       deleted: "Anmeldung gelöscht.",
       restored: "Anmeldung wiederhergestellt.",

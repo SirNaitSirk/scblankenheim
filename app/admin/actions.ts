@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import {
   createRegistration,
@@ -52,7 +53,11 @@ import {
   type ResolveOutcome,
 } from "@/lib/admin/participant-messages";
 import { participantPath, participantUrl } from "@/lib/email/links";
-import { sendPaymentLinkEmail, type PaymentLinkOutcome } from "@/lib/email/send";
+import {
+  sendConfirmationEmail,
+  sendPaymentLinkEmail,
+  type PaymentLinkOutcome,
+} from "@/lib/email/send";
 import { de } from "@/lib/admin/messages";
 import { dropHiddenAnswers } from "@/lib/register/conditions";
 import { GENDER_OPTIONS } from "@/lib/register/validation";
@@ -206,26 +211,44 @@ async function withoutHiddenAnswers(campId: string, input: RegistrationInput): P
 
 // --- actions ----------------------------------------------------------------
 
+const createOptionsSchema = z.object({ sendConfirmation: z.boolean() });
+
 export async function createRegistrationAction(
   values: RegistrationFormValues,
+  options: { sendConfirmation: boolean },
 ): Promise<ActionResult> {
   return runGuarded(async (admin) => {
     const parsed = registrationSchema.safeParse(values);
     if (!parsed.success) return fieldErrorResult(parsed.error);
+    const parsedOptions = createOptionsSchema.safeParse(options);
+    if (!parsedOptions.success) return { ok: false, error: de.registrations.toast.error };
 
     const camp = await getCurrentCamp();
     if (!camp) {
       return { ok: false, error: de.registrations.errors.noCurrentCamp };
     }
 
-    const reference = await createRegistration(camp.id, await withoutHiddenAnswers(camp.id, parsed.data));
+    const { id, reference } = await createRegistration(
+      camp.id,
+      await withoutHiddenAnswers(camp.id, parsed.data),
+    );
+    const label = actorLabel(admin);
     await writeLog({
-      actor: actorLabel(admin),
+      actor: label,
       action: "registration.create",
       message: `${nameLabel(parsed.data)} (${reference})`,
     });
+
+    // The same confirmation as the public sign up, sent after the response so
+    // the dialog closes at once; failures land in the mail history and log
+    // (specs/039-admin-confirmation-mail).
+    const confirmation = parsedOptions.data.sendConfirmation ? "queued" : "off";
+    if (confirmation === "queued") {
+      after(() => sendConfirmationEmail(id, { trigger: "admin", actor: { id: admin.id, label } }));
+    }
+
     revalidateRegistrations();
-    return { ok: true, id: reference };
+    return { ok: true, id: reference, confirmation };
   });
 }
 

@@ -390,18 +390,23 @@ export function RegistrationsManager({
   );
 
   const submitRegistration = useCallback(
-    (values: RegistrationFormValues): Promise<ActionResult> =>
+    (
+      values: RegistrationFormValues,
+      options: { sendConfirmation: boolean },
+    ): Promise<ActionResult> =>
       dialog?.mode === "edit" && dialog.registration
         ? updateRegistrationAction(dialog.registration.id, values)
-        : createRegistrationAction(values),
+        : createRegistrationAction(values, options),
     [dialog],
   );
 
-  const onFormSuccess = useCallback(() => {
+  const onFormSuccess = useCallback((result: Extract<ActionResult, { ok: true }>) => {
     showToast(
       dialog?.mode === "edit"
         ? de.registrations.toast.updated
-        : de.registrations.toast.created,
+        : result.confirmation === "queued"
+          ? de.registrations.toast.createdWithConfirmation
+          : de.registrations.toast.created,
     );
     setDialog(null);
     router.refresh();

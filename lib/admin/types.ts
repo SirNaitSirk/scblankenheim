@@ -159,7 +159,14 @@ export type CampInput = {
 
 /** Server Action result: German error copy + optional per-field messages. */
 export type ActionResult =
-  | { ok: true; id?: string; roomGender?: Gender; leaderMoved?: boolean }
+  | {
+      ok: true;
+      id?: string;
+      roomGender?: Gender;
+      leaderMoved?: boolean;
+      /** Confirmation mail of a newly created registration (specs/039-admin-confirmation-mail). */
+      confirmation?: "queued" | "off";
+    }
   | { ok: false; error: string; fieldErrors?: Record<string, string> };
 
 /** Participant messages for the admin dialog (specs/018-participant-messages). */

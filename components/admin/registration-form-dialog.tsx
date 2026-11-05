@@ -211,8 +211,11 @@ export function RegistrationFormDialog({
   formFields: CampFormField[];
   priceTiers: PriceTier[];
   onClose: () => void;
-  onSubmit: (values: RegistrationFormValues) => Promise<ActionResult>;
-  onSuccess: () => void;
+  onSubmit: (
+    values: RegistrationFormValues,
+    options: { sendConfirmation: boolean },
+  ) => Promise<ActionResult>;
+  onSuccess: (result: Extract<ActionResult, { ok: true }>) => void;
   onDelete?: () => void;
   onRestore?: () => void;
   appUrl?: string | null;
@@ -245,6 +248,8 @@ export function RegistrationFormDialog({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // Only shown when creating (specs/039-admin-confirmation-mail).
+  const [sendConfirmation, setSendConfirmation] = useState(true);
   // Bumped after a payment link send so the mail history shows the new attempt.
   const [mailsReloadKey, setMailsReloadKey] = useState(0);
 
@@ -295,9 +300,9 @@ export function RegistrationFormDialog({
     }
     setSaving(true);
     setFormError(null);
-    const result = await onSubmit(values);
+    const result = await onSubmit(values, { sendConfirmation: mode === "create" && sendConfirmation });
     if (result.ok) {
-      onSuccess();
+      onSuccess(result);
       return;
     }
     if (result.fieldErrors) setErrors(result.fieldErrors);
@@ -559,6 +564,18 @@ export function RegistrationFormDialog({
                 ))}
               </div>
             )}
+          </Section>
+        )}
+
+        {mode === "create" && (
+          <Section title={t.sectionMail}>
+            <Switch
+              id="reg-send-confirmation"
+              checked={sendConfirmation}
+              onCheckedChange={setSendConfirmation}
+              label={t.sendConfirmation}
+            />
+            <p className="text-sm text-muted-foreground">{t.sendConfirmationHint}</p>
           </Section>
         )}
       </form>

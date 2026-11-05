@@ -243,17 +243,36 @@ export async function deliver(input: {
   }
 }
 
-/** Registration confirmation (US1). Runs after the register response via `after()`. */
-export async function sendConfirmationEmail(registrationId: string): Promise<void> {
+/**
+ * Registration confirmation (US1). Runs after the register response via `after()`.
+ * Admin created registrations pass trigger `admin` and the acting admin
+ * (specs/039-admin-confirmation-mail).
+ */
+export async function sendConfirmationEmail(
+  registrationId: string,
+  options: { trigger?: DeliveryTrigger; actor?: { id: string; label: string } | null } = {},
+): Promise<void> {
+  const trigger = options.trigger ?? "registration";
+  const actor = options.actor ?? null;
   try {
     const target = await loadMailTarget(registrationId);
     if (!target) {
-      await writeLog({ level: "warning", action: "email.skipped", message: `confirmation ${registrationId}: nicht gefunden` });
+      await writeLog({
+        level: "warning",
+        actor: actor?.label ?? null,
+        action: "email.skipped",
+        message: `confirmation ${registrationId}: nicht gefunden`,
+      });
       return;
     }
-    await deliver({ target, kind: "confirmation", trigger: "registration", render: confirmationEmail });
+    await deliver({ target, kind: "confirmation", trigger, actor, render: confirmationEmail });
   } catch {
-    await writeLog({ level: "warning", action: "email.failed", message: `confirmation ${registrationId}` });
+    await writeLog({
+      level: "warning",
+      actor: actor?.label ?? null,
+      action: "email.failed",
+      message: `confirmation ${registrationId}`,
+    });
   }
 }
 

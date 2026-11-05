@@ -303,16 +303,18 @@ export function generateReference(): string {
 export async function createRegistration(
   campId: string,
   input: RegistrationInput,
-): Promise<string> {
+): Promise<{ id: string; reference: string }> {
   const supabase = getServiceClient();
   const row = mapRegistrationInputToRow(input);
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const reference = generateReference();
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("registrations")
-      .insert({ camp_id: campId, reference, ...row });
-    if (!error) return reference;
+      .insert({ camp_id: campId, reference, ...row })
+      .select("id")
+      .single();
+    if (!error) return { id: data.id, reference };
     if (!isUniqueViolation(error)) throw error;
   }
   throw new Error("could not generate a unique registration reference");

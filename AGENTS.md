@@ -102,7 +102,7 @@ Rules:
 
 **Admin dashboard** (`app/admin/*`, protected by Clerk)
 
-- Registrations: table with filters, custom filters, column selector, CSV export, inline edit, add, delete. The registration dialog shows a read only mail history per registration from `email_deliveries` (specs/013-registration-mail-history).
+- Registrations: table with filters, custom filters, column selector, CSV export, inline edit, add, delete. The registration dialog shows a read only mail history per registration from `email_deliveries` (specs/013-registration-mail-history). Adding a registration has a switch, on by default, that sends the same confirmation mail as the public sign up (specs/039-admin-confirmation-mail).
 - Finance overview: aggregated payment/revenue view.
 - Finance tab (`/admin/finanzen`) for the accountant: sums, filters (open, partial, overdue, paused), search, inline edit of paid amount and payment status, payment link copy/send, pause or resume automatic reminders per registration, CSV export. Only finance fields reach the browser; writes need the `finances` permission (specs/009-finance-tab). Price tiers stay in `/admin/preise`.
 - Camps management: create camps, configure `camp_form_fields`, set the current camp (`camp_settings`), pricing.
