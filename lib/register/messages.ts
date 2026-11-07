@@ -32,7 +32,7 @@ export const registerMessages = {
         "Alle Plätze sind vergeben. Wenn du trotzdem Fragen hast oder auf einen frei werdenden Platz hoffst, schreib uns gern.",
     },
     contact: "Schreib uns",
-    contactHref: "mailto:info@fcg-blankenheim.de",
+    contactHref: "mailto:info@summercamp.fcg-blankenheim.de",
   },
   countdown: {
     reachedTitle: "Es geht los!",
@@ -111,7 +111,7 @@ export const registerMessages = {
         "Über diesen Link kannst du auch später bezahlen.",
       ],
       contactLead: "Falls du doch nicht kannst, schreib uns an",
-      contactEmail: "info@fcg-blankenheim.de",
+      contactEmail: "info@summercamp.fcg-blankenheim.de",
     },
     progress: (n: number, total: number) => `Schritt ${n} von ${total}`,
     announce: (n: number, total: number, title: string) =>
