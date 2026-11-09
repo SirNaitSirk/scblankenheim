@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { ADMIN_THEME_COLORS } from "@/lib/admin/theme-colors";
 
 export type ThemeChoice = "light" | "dark" | "system";
 
@@ -30,7 +31,15 @@ function resolve(choice: ThemeChoice): "light" | "dark" {
 }
 
 function applyToDom(choice: ThemeChoice) {
-  document.documentElement.setAttribute(ATTR, resolve(choice));
+  const theme = resolve(choice);
+  document.documentElement.setAttribute(ATTR, theme);
+  // The manual choice wins over the system media query for the status bar tint
+  // of the home screen app (specs/040-admin-mobile-app, research R4).
+  document
+    .querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
+    .forEach((meta) => {
+      meta.content = ADMIN_THEME_COLORS[theme];
+    });
 }
 
 // External-store subscription for the persisted choice: mirrors the sidebar

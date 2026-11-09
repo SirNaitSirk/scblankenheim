@@ -183,6 +183,9 @@ export const de = {
     expand: "Seitenleiste ausklappen",
     openMenu: "Menü öffnen",
     closeMenu: "Menü schließen",
+    menu: "Menü",
+    reload: "Neu laden",
+    bottomNav: "Schnellzugriff",
     account: "Konto",
     theme: {
       label: "Design",
@@ -290,6 +293,10 @@ export const de = {
         "Für die aktuelle Filterauswahl gibt es keine Treffer. Setze die Filter zurück, um alle Anmeldungen zu sehen.",
     },
     deletedBadge: "Gelöscht",
+    card: {
+      due: "Betrag",
+      outstanding: "Offen",
+    },
     add: "Anmeldung hinzufügen",
     openRow: "Anmeldung öffnen",
     form: {

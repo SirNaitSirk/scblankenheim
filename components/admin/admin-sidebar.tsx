@@ -16,11 +16,12 @@ import {
   Users,
 } from "@phosphor-icons/react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { canSeeTab } from "@/lib/admin/access";
 import { de } from "@/lib/admin/messages";
-import { NAV_ITEMS } from "./nav-items";
+import { NAV_ITEMS, isActive } from "./nav-items";
 
 const NAV_ICONS: Record<string, Icon> = {
   "/admin": SquaresFour,
@@ -37,11 +38,6 @@ const NAV_ICONS: Record<string, Icon> = {
   "/admin/profil": UserCircle,
 };
 
-function isActive(pathname: string, href: string): boolean {
-  if (href === "/admin") return pathname === "/admin";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 /**
  * Sidebar content (brand block + nav). Positioning and width are owned by
  * AdminShell so the same content serves the desktop rail and the mobile drawer.
@@ -51,9 +47,12 @@ export function SidebarContent({
   onNavigate,
   visibleTabs,
   isSuperadmin,
+  footer,
 }: {
   collapsed?: boolean;
   onNavigate?: () => void;
+  /** Extra content below the nav, e.g. the theme control in the phone drawer. */
+  footer?: ReactNode;
   visibleTabs: string[];
   isSuperadmin: boolean;
 }) {
@@ -110,7 +109,7 @@ export function SidebarContent({
                   title={collapsed ? item.label : undefined}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-3 rounded-input px-3 py-2 text-sm font-medium transition-colors duration-150",
+                    "flex items-center gap-3 rounded-input px-3 py-3 text-sm font-medium transition-colors duration-150 md:py-2",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
                     collapsed && "justify-center px-0",
                     active
@@ -130,6 +129,11 @@ export function SidebarContent({
           })}
         </ul>
       </nav>
+      {footer ? (
+        <div className="border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          {footer}
+        </div>
+      ) : null}
     </div>
   );
 }

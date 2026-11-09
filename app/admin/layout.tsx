@@ -1,10 +1,29 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { TeamClerkProvider } from "@/components/clerk-provider";
+import { ADMIN_THEME_COLORS } from "@/lib/admin/theme-colors";
 import { getCurrentProfile } from "@/lib/admin/data";
 
+// Home screen app (specs/040-admin-mobile-app): the manifest and the Apple
+// settings are linked only here, so public pages stay plain bookmarks.
 export const metadata: Metadata = {
   title: "Admin · FCG Summercamp",
+  manifest: "/admin.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Summercamp Admin",
+    statusBarStyle: "default",
+  },
+};
+
+// `viewportFit: cover` exposes the safe area insets used by topbar, drawer,
+// dialogs and bottom bar. No maximum scale: pinch zoom stays available.
+export const viewport: Viewport = {
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: ADMIN_THEME_COLORS.light },
+    { media: "(prefers-color-scheme: dark)", color: ADMIN_THEME_COLORS.dark },
+  ],
 };
 
 // Admin pages read live, privileged data per request (service-role Supabase +

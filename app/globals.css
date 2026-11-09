@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Home screen app mode (specs/040-admin-mobile-app). */
+@custom-variant standalone (@media (display-mode: standalone));
+
 /* ============================================================================
    CampConnect Design System — tokens
    Three layers: primitive -> semantic -> component.
@@ -380,5 +383,32 @@ body {
   .print-sheet .packing-label {
     color: #0a0a0b !important;
     text-decoration: none !important;
+  }
+}
+
+
+/* ============================================================================
+   Admin on phones and as home screen app (specs/040-admin-mobile-app).
+   Scoped to the admin surface so public pages stay unchanged. Unlayered on
+   purpose: these rules must win over the utility classes of the primitives.
+   ========================================================================== */
+@media (max-width: 47.99rem) {
+  /* iOS zooms into focused controls below 16px. */
+  .admin-theme-scope :is(input, select, textarea) {
+    font-size: 16px;
+  }
+  /* Touch targets of at least 44px for small buttons. */
+  .admin-theme-scope [data-size="sm"] {
+    min-height: 44px;
+  }
+}
+
+.admin-theme-scope {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (display-mode: standalone) {
+  html[data-admin-theme] {
+    overscroll-behavior: none;
   }
 }

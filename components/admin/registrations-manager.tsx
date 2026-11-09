@@ -1,6 +1,6 @@
 "use client";
 
-import { Columns, DownloadSimple, Plus } from "@phosphor-icons/react";
+import { Columns, DownloadSimple, MagnifyingGlass, Plus } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
 import {
@@ -43,7 +43,9 @@ import {
   type ColumnDef,
   formatFieldValue,
 } from "./registration-columns";
+import { RegistrationCardList } from "./registration-card-list";
 import { RegistrationFormDialog } from "./registration-form-dialog";
+import { EmptyState } from "./states";
 import {
   type CustomFilter,
   RegistrationsFilters,
@@ -454,7 +456,7 @@ export function RegistrationsManager({
 
   return (
     <Card className="flex flex-col">
-      <div className="flex flex-col gap-4 p-6">
+      <div className="flex flex-col gap-4 p-4 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-bold tracking-tight text-foreground">
             {de.registrations.title}
@@ -462,15 +464,18 @@ export function RegistrationsManager({
               {de.registrations.resultCount(filtered.length)}
             </span>
           </h2>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setColumnsOpen(true)}
-            >
-              <Columns size={16} weight="bold" />
-              {de.registrations.columnsButton}
-            </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Columns only shape the table, which phones do not show. */}
+            <div className="hidden md:block">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setColumnsOpen(true)}
+              >
+                <Columns size={16} weight="bold" />
+                {de.registrations.columnsButton}
+              </Button>
+            </div>
             <Button variant="outline" size="sm" onClick={onExport}>
               <DownloadSimple size={16} weight="bold" />
               {de.common.exportCsv}
@@ -501,18 +506,37 @@ export function RegistrationsManager({
       </div>
 
       <div className="border-t border-border">
-        <RegistrationsTable
-          rows={filtered}
-          columns={visibleColumnDefs}
-          sortColumn={sortColumn}
-          sortDir={sortDir}
-          onSort={onSort}
-          onReorderColumn={reorderKey}
-          onEdit={onEdit}
-          onPaymentChange={onPaymentChange}
-          onResetFilters={clearFilters}
-          canWrite={canWrite}
-        />
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={MagnifyingGlass}
+            title={de.registrations.empty.title}
+            description={de.registrations.empty.description}
+            action={
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                {de.registrations.clearFilters}
+              </Button>
+            }
+          />
+        ) : (
+          <>
+            <div className="md:hidden">
+              <RegistrationCardList rows={filtered} onEdit={onEdit} canWrite={canWrite} />
+            </div>
+            <div className="hidden md:block">
+              <RegistrationsTable
+                rows={filtered}
+                columns={visibleColumnDefs}
+                sortColumn={sortColumn}
+                sortDir={sortDir}
+                onSort={onSort}
+                onReorderColumn={reorderKey}
+                onEdit={onEdit}
+                onPaymentChange={onPaymentChange}
+                canWrite={canWrite}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       <ColumnSettingsDialog

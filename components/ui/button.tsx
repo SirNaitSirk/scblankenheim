@@ -44,6 +44,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
+      data-size={size}
       className={cn(base, variants[variant], sizes[size], className)}
       {...props}
     >
@@ -68,6 +69,7 @@ export function ButtonLink({
 }: ButtonLinkProps) {
   return (
     <a
+      data-size={size}
       className={cn(base, variants[variant], sizes[size], className)}
       {...props}
     >

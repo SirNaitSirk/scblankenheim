@@ -1,11 +1,9 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ArrowsDownUp, MagnifyingGlass } from "@phosphor-icons/react";
+import { ArrowDown, ArrowUp, ArrowsDownUp } from "@phosphor-icons/react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { EmptyState } from "@/components/admin/states";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
   PAYMENT_STATUS_LABELS,
@@ -22,12 +20,12 @@ import { type ColumnDef, formatFieldValue } from "./registration-columns";
 
 export type SortDir = "asc" | "desc";
 
-const statusTone: Record<RegistrationStatus, "neutral" | "danger"> = {
+export const statusTone: Record<RegistrationStatus, "neutral" | "danger"> = {
   active: "neutral",
   cancelled: "danger",
 };
 
-const paymentTone: Record<PaymentStatus, "paid" | "pending" | "neutral"> = {
+export const paymentTone: Record<PaymentStatus, "paid" | "pending" | "neutral"> = {
   unpaid: "neutral",
   processing: "pending",
   partial: "pending",
@@ -182,7 +180,6 @@ export function RegistrationsTable({
   onReorderColumn,
   onEdit,
   onPaymentChange,
-  onResetFilters,
   canWrite,
 }: {
   rows: Registration[];
@@ -193,7 +190,6 @@ export function RegistrationsTable({
   onReorderColumn: (fromKey: string, toKey: string) => void;
   onEdit: (registration: Registration) => void;
   onPaymentChange: (id: string, payment: PaymentStatus) => void;
-  onResetFilters: () => void;
   canWrite: boolean;
 }) {
   // Transient header drag state; the persisted order stays the source of truth.
@@ -203,21 +199,6 @@ export function RegistrationsTable({
     setDraggingKey(null);
     setOverKey(null);
   };
-  if (rows.length === 0) {
-    return (
-      <EmptyState
-        icon={MagnifyingGlass}
-        title={de.registrations.empty.title}
-        description={de.registrations.empty.description}
-        action={
-          <Button variant="outline" size="sm" onClick={onResetFilters}>
-            {de.registrations.clearFilters}
-          </Button>
-        }
-      />
-    );
-  }
-
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-sm">

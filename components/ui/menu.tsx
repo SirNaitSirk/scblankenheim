@@ -84,7 +84,7 @@ export function Menu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => (open ? close() : openMenu())}
-        className="flex h-8 w-8 items-center justify-center rounded-input text-muted-foreground transition-colors duration-150 hover:bg-ink-100 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+        className="flex h-11 w-11 items-center justify-center rounded-input md:h-8 md:w-8 text-muted-foreground transition-colors duration-150 hover:bg-ink-100 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
       >
         <DotsThreeVertical size={18} weight="bold" />
       </button>

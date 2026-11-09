@@ -78,7 +78,7 @@ export function Dialog({
   // black tint (not an ink token) because the ink scale inverts in dark mode.
   return createPortal(
     <div
-      className="admin-theme-scope fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      className="admin-theme-scope fixed inset-0 z-50 flex items-start justify-center sm:items-center sm:p-6"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -93,11 +93,13 @@ export function Dialog({
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "animate-dialog relative flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop",
+          // Phones: full screen sheet (specs/040-admin-mobile-app); from sm a floating panel.
+          "animate-dialog relative flex h-[100dvh] max-h-[100dvh] w-full max-w-lg flex-col overflow-hidden bg-surface shadow-pop",
+          "sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:rounded-card sm:border sm:border-border",
           className,
         )}
       >
-        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-6 py-4">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 sm:py-4">
           <div className="flex flex-col gap-1">
             <h2 className="font-display text-lg font-bold tracking-tight text-foreground">
               {title}
@@ -110,16 +112,16 @@ export function Dialog({
             type="button"
             aria-label={closeLabel}
             onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-input text-muted-foreground transition-colors duration-150 hover:bg-ink-100 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+            className="-mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-input text-muted-foreground sm:mr-0 sm:h-8 sm:w-8 transition-colors duration-150 hover:bg-ink-100 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             <X size={18} weight="bold" />
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">{children}</div>
 
         {footer ? (
-          <div className="flex shrink-0 items-center justify-end gap-3 border-t border-border px-6 py-4">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 border-t border-border px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:py-4">
             {footer}
           </div>
         ) : null}

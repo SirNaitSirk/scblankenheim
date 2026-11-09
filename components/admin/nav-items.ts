@@ -13,6 +13,15 @@ export type NavItem = {
  * Finanzen is specs/009-finance-tab;
  * Feedback is specs/038-camp-feedback.
  */
+/** Whether a nav entry is the current page: the overview only exactly, others by prefix. */
+export function isActive(pathname: string, href: string): boolean {
+  if (href === "/admin") return pathname === "/admin";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/** Entries of the bottom bar in the home screen app (specs/040-admin-mobile-app). */
+export const BOTTOM_BAR_HREFS = ["/admin", "/admin/finanzen", "/admin/bus"] as const;
+
 export const NAV_ITEMS: NavItem[] = [
   { label: de.nav.dashboard, href: "/admin" },
   { label: de.nav.finances, href: "/admin/finanzen" },
