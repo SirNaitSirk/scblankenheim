@@ -40,7 +40,7 @@ import {
   upsertSchoolRelease,
 } from "@/lib/school-release/data";
 import { fieldErrorsOf, schoolReleaseInputSchema } from "@/lib/school-release/schema";
-import { formatReleaseDates, isReleaseActive, isReleaseUnlocked, prefillAddress } from "@/lib/school-release/settings";
+import { formatReleaseDates, isReleaseActive, isReleaseUnlocked } from "@/lib/school-release/settings";
 import type { AdminSchoolReleaseResult } from "@/lib/school-release/types";
 import { syncRoomAssignment } from "@/lib/admin/rooms-data";
 import { syncTentCircle } from "@/lib/admin/tent-circles-data";
@@ -563,13 +563,7 @@ export async function loadSchoolReleaseAction(reference: string): Promise<AdminS
     return {
       ok: true,
       release: {
-        data: stored && {
-          teacherName: stored.teacherName,
-          schoolName: stored.schoolName,
-          schoolAddress: stored.schoolAddress,
-          participantAddress: stored.participantAddress,
-          className: stored.className,
-        },
+        data: stored && { schoolName: stored.schoolName, schoolLocation: stored.schoolLocation },
         available: isReleaseActive(settings) && registration.status === "active",
         canEdit: canUseSection(admin, "registrations"),
         participantLocked: !isReleaseUnlocked({
@@ -578,7 +572,6 @@ export async function loadSchoolReleaseAction(reference: string): Promise<AdminS
           amountPaid: registration.amount_paid,
         }),
         participantName: `${registration.first_name ?? ""} ${registration.last_name ?? ""}`.trim(),
-        prefillAddress: prefillAddress(registration.form_data, settings.addressKeys),
         dates: formatReleaseDates(settings.dates),
         updatedAt: stored?.updatedAt ?? null,
         updatedBy: stored ? (byParticipant ? "participant" : "admin") : null,

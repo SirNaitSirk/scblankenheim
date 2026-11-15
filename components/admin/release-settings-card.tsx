@@ -13,18 +13,18 @@ import { Card } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { de } from "@/lib/admin/messages";
-import { cn } from "@/lib/cn";
-import { ADDRESS_KEYS_MAX, RELEASE_DATES_MAX, SIGNER_MAX } from "@/lib/school-release/limits";
+import { RELEASE_DATES_MAX } from "@/lib/school-release/limits";
 import { releaseMessages } from "@/lib/school-release/messages";
-import { missingForEnable, type AddressFieldOption } from "@/lib/school-release/settings";
+import { missingForEnable } from "@/lib/school-release/settings";
 import type { ReleaseSettings } from "@/lib/school-release/types";
 
 const t = de.schoolRelease.settings;
 
 /**
- * Per camp settings of the school release letter (specs/020-school-release,
- * US3): switch, dates, signer, address fields and the signature image. The
- * switch stays locked until signature, a date and the signer name exist.
+ * Per camp settings of the school release letter (specs/020-school-release US3,
+ * specs/042-church-release-letter): switch, dates for the website hints and
+ * the stamp with signature. The switch stays locked until stamp, a date and
+ * the camp period exist.
  */
 export function ReleaseSettingsCard({
   campId,
@@ -32,7 +32,6 @@ export function ReleaseSettingsCard({
   endDate,
   initial,
   signatureUrl,
-  addressOptions,
   canWrite,
 }: {
   campId: string;
@@ -40,31 +39,21 @@ export function ReleaseSettingsCard({
   endDate: string | null;
   initial: ReleaseSettings;
   signatureUrl: string | null;
-  addressOptions: AddressFieldOption[];
   canWrite: boolean;
 }) {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
   const [enabled, setEnabled] = useState(initial.enabled);
   const [dates, setDates] = useState<string[]>(initial.dates);
-  const [signerName, setSignerName] = useState(initial.signerName ?? "");
-  const [signerRole, setSignerRole] = useState(initial.signerRole ?? "");
-  const [addressKeys, setAddressKeys] = useState<string[]>(initial.addressKeys);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [toast, setToast] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
   const [uploading, startUploading] = useTransition();
 
   const filledDates = dates.filter((date) => date !== "");
-  const missing = missingForEnable({
-    ...initial,
-    enabled,
-    dates: filledDates,
-    signerName: signerName.trim() || null,
-  });
+  const missing = missingForEnable({ ...initial, enabled, dates: filledDates }, { start: startDate, end: endDate });
   const locked = missing.length > 0;
   const hasPeriod = Boolean(startDate && endDate);
-  const labels = new Map(addressOptions.map((option) => [option.key, option.label]));
 
   function showToast(message: string) {
     setToast(message);
@@ -76,9 +65,6 @@ export function ReleaseSettingsCard({
       const result = await saveReleaseSettingsAction(campId, {
         enabled: enabled && !locked,
         dates: filledDates,
-        signerName,
-        signerRole,
-        addressKeys,
       });
       if (result.ok) {
         setErrors({});
@@ -111,16 +97,6 @@ export function ReleaseSettingsCard({
         router.refresh();
       }
     });
-  }
-
-  function toggleAddressKey(key: string) {
-    setAddressKeys((current) =>
-      current.includes(key)
-        ? current.filter((item) => item !== key)
-        : current.length < ADDRESS_KEYS_MAX
-          ? [...current, key]
-          : current,
-    );
   }
 
   return (
@@ -156,8 +132,7 @@ export function ReleaseSettingsCard({
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <Field label={t.dates} hint={hasPeriod ? t.datesHint : t.noPeriod} error={errors.dates}>
+        <Field label={t.dates} hint={hasPeriod ? t.datesHint : t.noPeriod} error={errors.dates}>
             <div className="flex flex-col gap-2">
               {dates.map((date, index) => (
                 <div key={index} className="flex items-center gap-2">
@@ -201,72 +176,9 @@ export function ReleaseSettingsCard({
             </div>
           </Field>
 
-          <div className="flex flex-col gap-4">
-            <Field label={t.signerName} htmlFor="release-signer-name">
-              <Input
-                id="release-signer-name"
-                value={signerName}
-                maxLength={SIGNER_MAX}
-                placeholder={t.signerNamePlaceholder}
-                disabled={!canWrite}
-                onChange={(event) => setSignerName(event.target.value)}
-              />
-            </Field>
-            <Field label={t.signerRole} htmlFor="release-signer-role">
-              <Input
-                id="release-signer-role"
-                value={signerRole}
-                maxLength={SIGNER_MAX}
-                placeholder={t.signerRolePlaceholder}
-                disabled={!canWrite}
-                onChange={(event) => setSignerRole(event.target.value)}
-              />
-            </Field>
-          </div>
-        </div>
-
-        <Field label={t.addressKeys} hint={t.addressKeysHint} error={errors.addressKeys}>
-          {addressOptions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t.noQuestionFields}</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {addressOptions.map((option) => {
-                const position = addressKeys.indexOf(option.key);
-                const selected = position >= 0;
-                return (
-                  <button
-                    key={option.key}
-                    type="button"
-                    aria-pressed={selected}
-                    disabled={!canWrite || (!selected && addressKeys.length >= ADDRESS_KEYS_MAX)}
-                    onClick={() => toggleAddressKey(option.key)}
-                    className={cn(
-                      "inline-flex items-center gap-2 rounded-pill border px-3 py-1.5 text-sm transition-colors",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
-                      selected
-                        ? "border-accent bg-accent/10 text-foreground"
-                        : "border-ink-200 text-muted-foreground hover:border-ink-300",
-                    )}
-                  >
-                    {selected && (
-                      <span className="grid h-5 w-5 place-items-center rounded-pill bg-accent text-xs font-semibold text-accent-foreground">
-                        {position + 1}
-                      </span>
-                    )}
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          {addressKeys.some((key) => !labels.has(key)) && (
-            <p className="text-xs text-danger">{t.toast.unknownField}</p>
-          )}
-        </Field>
-
         <Field label={t.signature} hint={t.signatureHint}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="grid h-20 w-48 shrink-0 place-items-center rounded-input border border-dashed border-ink-200 bg-paper p-2">
+            <div className="grid h-32 w-40 shrink-0 place-items-center rounded-input border border-dashed border-ink-200 bg-paper p-2">
               {signatureUrl ? (
                 // Signed URL of a private object; next/image would cache it beyond its lifetime.
                 // eslint-disable-next-line @next/next/no-img-element

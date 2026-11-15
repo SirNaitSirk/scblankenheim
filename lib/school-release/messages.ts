@@ -1,5 +1,6 @@
 /**
- * German copy of the school release letter (specs/020-school-release): the
+ * German copy of the school release letter (specs/020-school-release,
+ * specs/042-church-release-letter): the
  * participant card, the landing section and the PDF text. The only place this
  * wording lives; admin copy is in lib/admin/messages.ts, mail copy in
  * lib/email/messages.ts.
@@ -9,17 +10,12 @@ export const releaseMessages = {
     heading: "Schulbefreiung",
     intro: (dates: string) =>
       `Das Camp fällt auf ${dates}. Falls du an diesem Tag Schule hast, stellen wir dir eine Bitte um Unterrichtsbefreiung für deine Schule aus.`,
-    steps: "Trag die Angaben zu deiner Schule ein. Den Brief bekommst du sofort als PDF und zusätzlich per Mail.",
+    steps: "Trag Name und Ort deiner Schule ein. Die Bescheinigung bekommst du sofort als PDF und zusätzlich per Mail.",
     name: "Name",
-    participantAddress: "Deine Adresse",
-    participantAddressHint: "Straße und Hausnummer, darunter Postleitzahl und Ort",
-    teacherName: "Name der Lehrkraft",
-    teacherNameHint: "Zum Beispiel Frau Becker",
     schoolName: "Name der Schule",
-    schoolAddress: "Adresse der Schule",
-    schoolAddressHint: "Straße und Hausnummer, darunter Postleitzahl und Ort",
-    className: "Klasse",
-    optional: "optional",
+    schoolNameHint: "Zum Beispiel Gesamtschule Eifel",
+    schoolLocation: "Ort der Schule",
+    schoolLocationHint: "Zum Beispiel Nettersheim",
     submit: "Befreiung erstellen",
     submitting: "Wird erstellt …",
     update: "Befreiung aktualisieren",
@@ -29,7 +25,7 @@ export const releaseMessages = {
     mailSkipped: "Eine Mail konnten wir gerade nicht schicken. Lade das PDF einfach hier herunter.",
     edit: "Angaben ändern",
     cancel: "Abbrechen",
-    savedFor: (school: string, teacher: string) => `Für ${teacher}, ${school}`,
+    savedFor: (school: string, location: string) => `Für ${school}, ${location}`,
     lockedTitle: "Nach der Zahlung verfügbar",
     locked:
       "Sobald deine erste Zahlung bei uns eingegangen ist, kannst du hier deine Befreiung erstellen. Eine Teilzahlung reicht.",
@@ -44,7 +40,6 @@ export const releaseMessages = {
     check: "Bitte prüfe die markierten Felder.",
     required: "Bitte ausfüllen.",
     tooLong: (max: number) => `Höchstens ${max} Zeichen.`,
-    tooManyLines: (max: number) => `Höchstens ${max} Zeilen.`,
   },
   landing: {
     eyebrow: "Schulbefreiung",
@@ -59,35 +54,38 @@ export const releaseMessages = {
     invalidEmail: "Bitte gib eine gültige Mailadresse ein.",
     throttled: "Zu viele Anfragen. Bitte versuche es später erneut.",
   },
+  /**
+   * Text of the church's "Teilnehmer Bescheinigung", taken word for word from
+   * specs/042-church-release-letter/template-2026.pdf.
+   */
   letter: {
-    subject: "Bitte um Unterrichtsbefreiung",
-    salutation: (teacher: string) => `Guten Tag ${teacher},`,
-    attendance: (name: string, campName: string, period: string) =>
-      `${name} ist zu unserem ${campName} angemeldet, das ${period} stattfindet.`,
-    attendanceNoPeriod: (name: string, campName: string) =>
-      `${name} ist zu unserem ${campName} angemeldet.`,
-    period: (start: string, end: string) => `vom ${start} bis ${end}`,
-    address: (address: string) => `Anschrift: ${address}`,
-    className: (className: string) => `Klasse: ${className}`,
-    request: (name: string, dates: string) =>
-      `Wir bitten Sie herzlich, ${name} für ${dates} vom Unterricht freizustellen. Das Programm des Camps beginnt bereits an diesem Tag.`,
-    thanks: "Vielen Dank für Ihr Verständnis. Bei Rückfragen erreichen Sie uns gern unter den oben genannten Kontaktdaten.",
-    closing: "Mit freundlichen Grüßen",
-    placeDate: (date: string) => `Blankenheim, ${date}`,
-    organizer: "FCG Blankenheim Summercamp",
-    signatureMissing: "Unterschrift fehlt",
-    phone: (phone: string) => `Telefon ${phone}`,
-    email: (email: string) => `Mail ${email}`,
+    title: "Teilnehmer Bescheinigung",
+    subject: (period: string, location: string | null) =>
+      location ? `Summercamp vom ${period} in ${location}` : `Summercamp vom ${period}`,
+    subjectNoPeriod: (location: string | null) => (location ? `Summercamp in ${location}` : "Summercamp"),
+    period: (start: string, end: string) => `${start} bis ${end}`,
+    salutation: "Sehr geehrte Damen und Herren,",
+    legal:
+      "laut AV Schulpflicht zu §128 Schulgesetz wird bestimmt, dass Schülerinnen und Schüler die Teilnahme an den Kirchentagen ihres Glaubens eine Beurlaubung vom Besuch des Unterrichts für die Dauer des Kirchentages gewährt werden können, soweit nicht vorrangige schulische Belange (z.B. Klausuren, Abschlussprüfung) dem entgegenstehen.",
+    legalSource: "(AV Schulpflicht Nr. 2 Abs. 7)",
+    reasonBefore: "Da die Teilnahme aus religiösen Gründen bedingt ist (Zeitraum ",
+    reasonAfter: (person: string, name: string) => `), bitten wir ${person} ${name}, vom Unterricht zu befreien.`,
+    reasonNoPeriod: (person: string, name: string) =>
+      `Da die Teilnahme aus religiösen Gründen bedingt ist, bitten wir ${person} ${name}, vom Unterricht zu befreien.`,
+    person: { male: "den Teilnehmer", female: "die Teilnehmerin", unknown: "die teilnehmende Person" },
+    understanding: "Wir bitten um Ihr Verständnis.",
+    questions: "Für Fragen oder Erläuterungen stehe ich Ihnen selbstverständlich gerne zur Verfügung.",
+    closing: "Mit freundlichen Segensgrüßen",
+    placeDate: (place: string, date: string) => `${place}, ${date}`,
+    signatureMissing: "Stempel und Unterschrift fehlen",
   },
-  /** Sample data for the admin preview PDF. */
+  /** Sample data for the admin preview PDF, as in the template. */
   sample: {
-    participantName: "Lena Beispiel",
+    participantName: "John Hacatrian",
+    gender: "male",
     data: {
-      teacherName: "Frau Becker",
-      schoolName: "Gesamtschule Musterstadt",
-      schoolAddress: "Schulweg 1\n12345 Musterstadt",
-      participantAddress: "Lindenstraße 5\n12345 Musterstadt",
-      className: "8b",
+      schoolName: "Gesamtschule Eifel",
+      schoolLocation: "Nettersheim",
     },
   },
   dateJoin: " und ",
@@ -95,7 +93,7 @@ export const releaseMessages = {
   missing: {
     signature: "Unterschriftsbild hochladen",
     dates: "Mindestens ein Tag für die Befreiung",
-    signerName: "Name der unterzeichnenden Person",
+    campPeriod: "Start und Ende des Camps",
   },
   fileName: (lastName: string) => `Schulbefreiung-${lastName || "Camp"}.pdf`,
 } as const;

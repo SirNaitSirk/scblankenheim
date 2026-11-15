@@ -11,7 +11,7 @@ import { formatGermanDate } from "@/lib/time/berlin";
 import { allowedChangeFields, displayFieldValue, hiddenFieldKeys, storedFieldValue } from "./contact";
 import { OWN_MESSAGES_SHOWN } from "./limits";
 import { participantMessages as copy } from "./messages";
-import { formatReleaseDates, isReleaseActive, isReleaseUnlocked, prefillAddress } from "@/lib/school-release/settings";
+import { formatReleaseDates, isReleaseActive, isReleaseUnlocked } from "@/lib/school-release/settings";
 import type { ReleaseSettings, SchoolReleaseData } from "@/lib/school-release/types";
 
 /**
@@ -65,7 +65,6 @@ export type ParticipantRelease = {
   locked: boolean;
   participantName: string;
   data: SchoolReleaseData | null;
-  prefillAddress: string;
 };
 
 export type ParticipantView = {
@@ -281,6 +280,5 @@ function releaseCard(
     }),
     participantName: `${text(registration.first_name)} ${text(registration.last_name)}`.trim(),
     data: release.data,
-    prefillAddress: prefillAddress(registration.form_data, release.settings.addressKeys),
   };
 }

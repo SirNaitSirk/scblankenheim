@@ -215,7 +215,7 @@ const privacySections: LegalSection[] = [
     heading: "Schulbefreiung",
     blocks: [
       p(
-        "Fällt das Camp in die Schulzeit, kannst du auf der Teilnehmerseite ein Schreiben zur Befreiung vom Unterricht anfordern. Dafür erheben wir Name der Lehrkraft, Name und Anschrift der Schule, deine Anschrift und auf Wunsch die Klasse.",
+        "Fällt das Camp in die Schulzeit, kannst du auf der Teilnehmerseite ein Schreiben zur Befreiung vom Unterricht anfordern. Dafür erheben wir Name und Ort deiner Schule.",
       ),
       p(
         "Das Schreiben erstellen wir bei Bedarf neu und schicken es nur an die Mailadresse deiner Anmeldung. An Schulen senden wir nichts. Das Schreiben selbst speichern wir nicht; die Angaben löschen wir mit deiner Anmeldung.",

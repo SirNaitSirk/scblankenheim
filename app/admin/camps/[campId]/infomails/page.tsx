@@ -4,10 +4,9 @@ import { PageBody } from "@/components/admin/page-header";
 import { canUseSection } from "@/lib/admin/access";
 import { mailInfoToFormValues } from "@/lib/admin/camp-mail-info";
 import { getCampMailInfo } from "@/lib/admin/camp-mail-info-data";
-import { getCampById, getCampFormFields } from "@/lib/admin/data";
+import { getCampById } from "@/lib/admin/data";
 import { ReleaseSettingsCard } from "@/components/admin/release-settings-card";
 import { getReleaseSettings, signatureSignedUrl } from "@/lib/school-release/data";
-import { addressFieldOptions } from "@/lib/school-release/settings";
 import { guardTab } from "@/lib/admin/guard";
 import { emailMessages } from "@/lib/email/messages";
 
@@ -33,11 +32,7 @@ export default async function CampMailInfoPage({
   const camp = await getCampById(campId);
   if (!camp) notFound();
 
-  const [info, release, fields] = await Promise.all([
-    getCampMailInfo(campId),
-    getReleaseSettings(campId),
-    getCampFormFields(campId),
-  ]);
+  const [info, release] = await Promise.all([getCampMailInfo(campId), getReleaseSettings(campId)]);
   const signatureUrl = await signatureSignedUrl(release.signaturePath);
   const canWrite = canUseSection(profile, "camps");
 
@@ -58,7 +53,6 @@ export default async function CampMailInfoPage({
         endDate={camp.endDate || null}
         initial={release}
         signatureUrl={signatureUrl}
-        addressOptions={addressFieldOptions(fields)}
         canWrite={canWrite}
       />
     </PageBody>

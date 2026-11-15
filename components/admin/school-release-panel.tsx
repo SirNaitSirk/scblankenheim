@@ -4,21 +4,15 @@ import { EnvelopeSimple, FilePdf, PencilSimpleLine } from "@phosphor-icons/react
 import { useCallback, useEffect, useState, useTransition, type KeyboardEvent } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { de } from "@/lib/admin/messages";
 import type { ActionResult } from "@/lib/admin/types";
 import { formatDateTimeBerlin } from "@/lib/format";
-import {
-  ADDRESS_MAX,
-  CLASS_NAME_MAX,
-  SCHOOL_NAME_MAX,
-  TEACHER_NAME_MAX,
-} from "@/lib/school-release/limits";
+import { SCHOOL_LOCATION_MAX, SCHOOL_NAME_MAX } from "@/lib/school-release/limits";
 import type { AdminSchoolRelease, AdminSchoolReleaseResult } from "@/lib/school-release/types";
 
 const t = de.schoolRelease.panel;
 
-const RELEASE_FIELDS = ["teacherName", "schoolName", "schoolAddress", "participantAddress", "className"] as const;
+const RELEASE_FIELDS = ["schoolName", "schoolLocation"] as const;
 
 type State =
   | { phase: "loading" }
@@ -26,8 +20,8 @@ type State =
   | { phase: "ready"; release: AdminSchoolRelease };
 
 /**
- * Section „Schulbefreiung“ in the registration dialog (specs/020-school-release,
- * US4): read view with the last change, edit form, PDF download and sending
+ * Section „Schulbefreiung“ in the registration dialog (specs/020-school-release
+ * US4, specs/042-church-release-letter US3): read view with the last change, edit form, PDF download and sending
  * the letter by mail. Hidden while the release is off and nothing is saved.
  */
 export function SchoolReleasePanel({
@@ -174,55 +168,21 @@ function ReleaseBody({
           if (!pending) onSubmit(event.currentTarget);
         }}
       >
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
-          <Field label={t.teacher} htmlFor="release-admin-teacher" error={errors.teacherName}>
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <Field label={t.school} htmlFor="release-admin-school" error={errors.schoolName}>
             <Input
-              id="release-admin-teacher"
-              name="teacherName"
-              maxLength={TEACHER_NAME_MAX}
-              defaultValue={data?.teacherName ?? ""}
+              id="release-admin-school"
+              name="schoolName"
+              maxLength={SCHOOL_NAME_MAX}
+              defaultValue={data?.schoolName ?? ""}
             />
           </Field>
-          <Field label={t.className} htmlFor="release-admin-class" error={errors.className}>
+          <Field label={t.schoolLocation} htmlFor="release-admin-school-location" error={errors.schoolLocation}>
             <Input
-              id="release-admin-class"
-              name="className"
-              maxLength={CLASS_NAME_MAX}
-              defaultValue={data?.className ?? ""}
-            />
-          </Field>
-        </div>
-        <Field label={t.school} htmlFor="release-admin-school" error={errors.schoolName}>
-          <Input
-            id="release-admin-school"
-            name="schoolName"
-            maxLength={SCHOOL_NAME_MAX}
-            defaultValue={data?.schoolName ?? ""}
-          />
-        </Field>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label={t.schoolAddress} htmlFor="release-admin-school-address" error={errors.schoolAddress}>
-            <Textarea
-              id="release-admin-school-address"
-              name="schoolAddress"
-              rows={2}
-              maxLength={ADDRESS_MAX}
-              defaultValue={data?.schoolAddress ?? ""}
-              className="min-h-16"
-            />
-          </Field>
-          <Field
-            label={t.participantAddress}
-            htmlFor="release-admin-participant-address"
-            error={errors.participantAddress}
-          >
-            <Textarea
-              id="release-admin-participant-address"
-              name="participantAddress"
-              rows={2}
-              maxLength={ADDRESS_MAX}
-              defaultValue={data?.participantAddress ?? release.prefillAddress}
-              className="min-h-16"
+              id="release-admin-school-location"
+              name="schoolLocation"
+              maxLength={SCHOOL_LOCATION_MAX}
+              defaultValue={data?.schoolLocation ?? ""}
             />
           </Field>
         </div>
@@ -257,11 +217,8 @@ function ReleaseBody({
       {data ? (
         <div className="flex flex-col gap-2 rounded-input border border-border bg-surface p-3">
           <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
-            <Fact label={t.teacher} value={data.teacherName} />
             <Fact label={t.school} value={data.schoolName} />
-            <Fact label={t.schoolAddress} value={data.schoolAddress} />
-            <Fact label={t.participantAddress} value={data.participantAddress} />
-            {data.className && <Fact label={t.className} value={data.className} />}
+            <Fact label={t.schoolLocation} value={data.schoolLocation} />
           </dl>
           {release.updatedAt && (
             <p className="text-xs text-muted-foreground">

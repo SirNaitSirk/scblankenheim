@@ -152,10 +152,7 @@ describe("school release card (specs/020-school-release)", () => {
   const settings = {
     enabled: true,
     dates: ["2027-07-23"],
-    signerName: "Maria Schulz",
-    signerRole: null,
     signaturePath: "camp/signature-1.png",
-    addressKeys: ["shirt", "allergies"],
   };
   const withRelease = (patch: Partial<ParticipantRegistrationInput> = {}, enabled = true) =>
     buildParticipantView({
@@ -165,13 +162,12 @@ describe("school release card (specs/020-school-release)", () => {
       release: { settings: { ...settings, enabled }, data: null },
     });
 
-  it("shows dates, name and prefilled address when active", () => {
+  it("shows dates and name when active", () => {
     expect(withRelease().schoolRelease).toEqual({
       dates: "Freitag, 23. Juli 2027",
       locked: false,
       participantName: "Lena Muster",
       data: null,
-      prefillAddress: "M\nNüsse",
     });
   });
 

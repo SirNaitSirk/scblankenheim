@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { campMailInfoSchema, type CampMailInfoFormValues } from "@/lib/admin/camp-mail-info";
 import { getCampMailInfo, upsertCampMailInfo } from "@/lib/admin/camp-mail-info-data";
-import { getCampById, getCampFormFields, writeLog } from "@/lib/admin/data";
+import { getCampById, writeLog } from "@/lib/admin/data";
 import { AuthError, requirePermission } from "@/lib/admin/guard";
 import { de } from "@/lib/admin/messages";
 import type { ActionResult } from "@/lib/admin/types";
@@ -15,12 +15,7 @@ import {
 } from "@/lib/school-release/data";
 import { SIGNATURE_MAX_BYTES } from "@/lib/school-release/limits";
 import { releaseSettingsInputSchema, type ReleaseSettingsInput } from "@/lib/school-release/schema";
-import {
-  addressFieldOptions,
-  datesWithinCamp,
-  missingForEnable,
-  signatureTypeOf,
-} from "@/lib/school-release/settings";
+import { datesWithinCamp, missingForEnable, signatureTypeOf } from "@/lib/school-release/settings";
 
 const t = de.campMailInfo.toast;
 
@@ -107,14 +102,11 @@ export async function saveReleaseSettingsAction(
     if (!datesWithinCamp(values.dates, camp.startDate || null, camp.endDate || null)) {
       return { ok: false, error: r.datesOutside, fieldErrors: { dates: r.datesOutside } };
     }
-    const allowed = new Set(addressFieldOptions(await getCampFormFields(campId)).map((field) => field.key));
-    if (values.addressKeys.some((key) => !allowed.has(key))) {
-      return { ok: false, error: r.unknownField, fieldErrors: { addressKeys: r.unknownField } };
-    }
 
     const current = await getReleaseSettings(campId);
     const next = { ...current, ...values };
-    if (next.enabled && missingForEnable(next).length > 0) return { ok: false, error: r.incomplete };
+    const period = { start: camp.startDate || null, end: camp.endDate || null };
+    if (next.enabled && missingForEnable(next, period).length > 0) return { ok: false, error: r.incomplete };
 
     await saveReleaseSettings(campId, values);
     await writeLog({ actor: admin.label, action: "school_release.settings_saved", message: camp.name });

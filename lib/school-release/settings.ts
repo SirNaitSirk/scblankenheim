@@ -4,27 +4,19 @@ import type { ReleaseSettings } from "./types";
 
 /**
  * Pure helpers for the per camp release settings (specs/020-school-release,
- * research R4, R5). A camp without a `camp_mail_info` row behaves like
- * `EMPTY_RELEASE_SETTINGS`: switched off and nothing filled.
+ * specs/042-church-release-letter). A camp without a `camp_mail_info` row
+ * behaves like `EMPTY_RELEASE_SETTINGS`: switched off and nothing filled.
  */
 
 export const EMPTY_RELEASE_SETTINGS: ReleaseSettings = {
   enabled: false,
   dates: [],
-  signerName: null,
-  signerRole: null,
   signaturePath: null,
-  addressKeys: [],
 };
 
 type ReleaseRow = Pick<
   Tables<"camp_mail_info">,
-  | "release_enabled"
-  | "release_dates"
-  | "release_signer_name"
-  | "release_signer_role"
-  | "release_signature_path"
-  | "release_address_keys"
+  "release_enabled" | "release_dates" | "release_signature_path"
 >;
 
 export function toReleaseSettings(row: ReleaseRow | null | undefined): ReleaseSettings {
@@ -32,27 +24,30 @@ export function toReleaseSettings(row: ReleaseRow | null | undefined): ReleaseSe
   return {
     enabled: row.release_enabled === true,
     dates: [...(row.release_dates ?? [])].map((date) => date.slice(0, 10)).sort(),
-    signerName: row.release_signer_name?.trim() || null,
-    signerRole: row.release_signer_role?.trim() || null,
     signaturePath: row.release_signature_path || null,
-    addressKeys: [...(row.release_address_keys ?? [])],
   };
 }
 
 export type MissingItem = keyof typeof releaseMessages.missing;
 
-/** What still blocks switching the release on; empty when complete. */
-export function missingForEnable(settings: ReleaseSettings): MissingItem[] {
+/** Start and end of the camp; the letter names the whole period. */
+export type CampPeriod = { start: string | null; end: string | null };
+
+/**
+ * What still blocks switching the release on; empty when complete. The camp
+ * period is only checked here, when switching on: the letter names it.
+ */
+export function missingForEnable(settings: ReleaseSettings, camp: CampPeriod): MissingItem[] {
   const missing: MissingItem[] = [];
   if (!settings.signaturePath) missing.push("signature");
   if (settings.dates.length === 0) missing.push("dates");
-  if (!settings.signerName) missing.push("signerName");
+  if (!camp.start || !camp.end) missing.push("campPeriod");
   return missing;
 }
 
-/** Switched on and complete. */
+/** Switched on with stamp and dates. */
 export function isReleaseActive(settings: ReleaseSettings): boolean {
-  return settings.enabled && missingForEnable(settings).length === 0;
+  return settings.enabled && Boolean(settings.signaturePath) && settings.dates.length > 0;
 }
 
 /** Payment fields that decide whether the person may create the letter (spec FR-006a). */
@@ -84,29 +79,6 @@ export function datesWithinCamp(
   return dates.every((date) => date >= first && date <= last);
 }
 
-function answerText(value: unknown): string {
-  if (typeof value === "string") return value.trim().replace(/\s+/g, " ");
-  if (typeof value === "number") return String(value);
-  return "";
-}
-
-/**
- * Address prefill from the registration's form answers: the first configured
- * field on line one, the rest joined with spaces on line two. Empty answers
- * are skipped.
- */
-export function prefillAddress(formData: unknown, addressKeys: readonly string[]): string {
-  const answers =
-    formData && typeof formData === "object" && !Array.isArray(formData)
-      ? (formData as Record<string, unknown>)
-      : {};
-  const [firstKey, ...restKeys] = addressKeys;
-  if (!firstKey) return "";
-  const first = answerText(answers[firstKey]);
-  const rest = restKeys.map((key) => answerText(answers[key])).filter((value) => value !== "").join(" ");
-  return [first, rest].filter((line) => line !== "").join("\n");
-}
-
 const longDate = new Intl.DateTimeFormat("de-DE", {
   weekday: "long",
   day: "numeric",
@@ -127,22 +99,6 @@ export function formatLongDate(isoDate: string): string {
  */
 export function formatReleaseDates(dates: readonly string[]): string {
   return [...dates].sort().map(formatLongDate).join(releaseMessages.dateJoin);
-}
-
-// Core answers live in their own columns, not in form_data, so they cannot prefill the address.
-const CORE_KEYS = new Set(["first_name", "last_name", "email", "gender"]);
-const ADDRESS_FIELD_TYPES = new Set(["text", "textarea", "number", "select"]);
-
-export type AddressFieldOption = { key: string; label: string };
-
-/** Form fields that may prefill the address, in form order. */
-export function addressFieldOptions(
-  fields: ReadonlyArray<{ key: string; label: string; fieldType: string; sortOrder: number }>,
-): AddressFieldOption[] {
-  return [...fields]
-    .filter((field) => ADDRESS_FIELD_TYPES.has(field.fieldType) && !CORE_KEYS.has(field.key))
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((field) => ({ key: field.key, label: field.label }));
 }
 
 /** Detects PNG or JPEG by magic bytes; null for anything else. */

@@ -3,6 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Lets phones in the local network use the dev server (HMR, Server Actions).
   allowedDevOrigins: ["192.168.2.226"],
+  // The school release PDF reads the church logo from disk at runtime
+  // (specs/042-church-release-letter); routes and Server Actions that render
+  // or mail it need the file in their function bundle.
+  outputFileTracingIncludes: {
+    "/**": ["./lib/school-release/assets/**/*"],
+  },
   experimental: {
     // Prefetched and visited admin tabs are reused in the browser for 30s, so
     // switching tabs feels instant. Every admin Server Action calls

@@ -82,13 +82,13 @@ export const emailMessages = {
 
   schoolRelease: {
     subject: (camp: string) => `Deine Schulbefreiung für das ${camp}`,
-    preheader: "Dein Brief an die Schule liegt als PDF bei.",
+    preheader: "Deine Teilnehmer Bescheinigung für die Schule liegt als PDF bei.",
     title: "Deine Schulbefreiung",
     intro: (camp: string) =>
-      `im Anhang findest du deinen Brief an die Schule mit der Bitte um Unterrichtsbefreiung für das ${camp}.`,
-    dates: (dates: string) => `Er gilt für ${dates}.`,
-    attachment: "Druck ihn aus oder leite ihn an deine Lehrkraft weiter. Den Brief hat die Campleitung bereits unterschrieben.",
-    change: "Stimmt etwas nicht? Auf deiner Seite zur Anmeldung kannst du die Angaben ändern und den Brief neu erstellen:",
+      `im Anhang findest du die Teilnehmer Bescheinigung der Gemeinde für deine Schule mit der Bitte um Unterrichtsbefreiung für das ${camp}.`,
+    dates: (period: string) => `Sie gilt für den ganzen Campzeitraum vom ${period}.`,
+    attachment: "Druck sie aus oder gib sie an deine Schule weiter. Stempel und Unterschrift der Gemeinde sind schon drauf.",
+    change: "Stimmt etwas nicht? Auf deiner Seite zur Anmeldung kannst du die Angaben ändern und die Bescheinigung neu erstellen:",
     button: "Zur Schulbefreiung",
   },
 

@@ -59,13 +59,7 @@ export async function findParticipantByToken(token: string): Promise<Participant
     messages: messages ?? [],
     release: {
       settings: releaseSettings,
-      data: releaseData && {
-        teacherName: releaseData.teacherName,
-        schoolName: releaseData.schoolName,
-        schoolAddress: releaseData.schoolAddress,
-        participantAddress: releaseData.participantAddress,
-        className: releaseData.className,
-      },
+      data: releaseData && { schoolName: releaseData.schoolName, schoolLocation: releaseData.schoolLocation },
     },
     busTicket,
   });

@@ -520,14 +520,7 @@ export async function sendSchoolRelease(
 
     const pdf = await buildReleasePdf(registrationId, { requireActive: trigger === "participant" });
     if (!pdf) return "skipped";
-    const { data: registration } = await getServiceClient()
-      .from("registrations")
-      .select("camp_id")
-      .eq("id", registrationId)
-      .maybeSingle();
-    const settings = registration ? await getReleaseSettings(registration.camp_id) : null;
     const rendered = schoolReleaseEmail(target.context, {
-      dates: settings ? formatReleaseDates(settings.dates) : "",
       url: `${target.context.participantUrl}#${RELEASE_ANCHOR}`,
     });
 

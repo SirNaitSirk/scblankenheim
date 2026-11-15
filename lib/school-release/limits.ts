@@ -1,13 +1,8 @@
-/** Centralized limits for the school release letter (specs/020-school-release). */
+/** Centralized limits for the school release letter (specs/020-school-release, specs/042-church-release-letter). */
 
-export const TEACHER_NAME_MAX = 120;
 export const SCHOOL_NAME_MAX = 160;
-export const ADDRESS_MAX = 300;
-export const ADDRESS_LINES_MAX = 4;
-export const CLASS_NAME_MAX = 40;
-export const SIGNER_MAX = 120;
+export const SCHOOL_LOCATION_MAX = 80;
 export const RELEASE_DATES_MAX = 5;
-export const ADDRESS_KEYS_MAX = 4;
 
 export const SIGNATURE_MAX_BYTES = 512 * 1024;
 export const SIGNATURE_URL_TTL_S = 60; // signed preview URL of the private signature image

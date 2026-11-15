@@ -1,31 +1,29 @@
-/** Domain types of the school release letter (specs/020-school-release, data-model.md). */
+/**
+ * Domain types of the school release letter (specs/020-school-release,
+ * specs/042-church-release-letter data-model.md).
+ */
 
 export type ReleaseSettings = {
   enabled: boolean;
-  dates: string[]; // ISO dates
-  signerName: string | null;
-  signerRole: string | null;
-  signaturePath: string | null;
-  addressKeys: string[];
+  dates: string[]; // ISO dates, only for hints on the website
+  signaturePath: string | null; // stamp with signature, one image
 };
 
 export type SchoolReleaseData = {
-  teacherName: string;
   schoolName: string;
-  schoolAddress: string;
-  participantAddress: string;
-  className: string | null;
+  schoolLocation: string;
 };
+
+export type ReleaseGender = "female" | "male" | null;
 
 /** Everything the letter needs; built on the server, rendered by `buildLetter`. */
 export type ReleaseLetterInput = {
-  settings: ReleaseSettings;
   data: SchoolReleaseData;
   participantName: string;
-  campName: string;
+  gender: ReleaseGender;
   campStart: string | null; // ISO date
   campEnd: string | null; // ISO date
-  senderLines: string[];
+  campLocation: string | null;
   today: string; // ISO date
 };
 
@@ -36,7 +34,6 @@ export type AdminSchoolRelease = {
   canEdit: boolean; // `registrations` permission
   participantLocked: boolean; // not paid yet, the person cannot create it themselves (FR-006a)
   participantName: string;
-  prefillAddress: string;
   dates: string; // German long format, empty when none set
   updatedAt: string | null;
   updatedBy: "participant" | "admin" | null;

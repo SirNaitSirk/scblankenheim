@@ -178,11 +178,8 @@ function readReleaseInput(formData: FormData): Record<string, unknown> {
     return typeof raw === "string" ? raw : "";
   };
   return {
-    teacherName: value("teacherName"),
     schoolName: value("schoolName"),
-    schoolAddress: value("schoolAddress"),
-    participantAddress: value("participantAddress"),
-    className: value("className"),
+    schoolLocation: value("schoolLocation"),
   };
 }
 

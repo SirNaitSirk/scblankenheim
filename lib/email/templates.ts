@@ -273,16 +273,17 @@ export function reminderEmail(kind: ReminderKind, ctx: EmailContext): RenderedEm
   }
 }
 
-/** Release letter mail with the PDF attached by the sender (specs/020-school-release, US1). */
-export function schoolReleaseEmail(
-  ctx: EmailContext,
-  release: { dates: string; url: string },
-): RenderedEmail {
+/**
+ * Release letter mail with the PDF attached by the sender (specs/020-school-release
+ * US1). The letter names the whole camp period (specs/042-church-release-letter).
+ */
+export function schoolReleaseEmail(ctx: EmailContext, release: { url: string }): RenderedEmail {
   const copy = m.schoolRelease;
   const opening = openingBlocks(ctx);
   const closing = closingBlocks(ctx);
   const intro = copy.intro(ctx.campName);
-  const dates = release.dates ? copy.dates(release.dates) : "";
+  const period = campDates(ctx);
+  const dates = period ? copy.dates(period) : "";
   const bodyHtml = [
     ...opening.map(renderParagraph),
     renderParagraph(intro),

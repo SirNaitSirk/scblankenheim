@@ -5,16 +5,8 @@ import { useState, useTransition, type FormEvent } from "react";
 import type { SchoolReleaseState } from "@/app/meine-anmeldung/[token]/actions";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/cn";
 import type { ParticipantRelease } from "@/lib/participant/view";
-import {
-  ADDRESS_MAX,
-  CLASS_NAME_MAX,
-  RELEASE_ANCHOR,
-  SCHOOL_NAME_MAX,
-  TEACHER_NAME_MAX,
-} from "@/lib/school-release/limits";
+import { RELEASE_ANCHOR, SCHOOL_LOCATION_MAX, SCHOOL_NAME_MAX } from "@/lib/school-release/limits";
 import { releaseMessages } from "@/lib/school-release/messages";
 
 const copy = releaseMessages.card;
@@ -23,8 +15,9 @@ const copy = releaseMessages.card;
 const touchText = "text-base sm:text-sm";
 
 /**
- * "Schulbefreiung" on the participant page (specs/020-school-release, US1,
- * plan "UI"): the person enters teacher and school, gets the letter as PDF
+ * "Schulbefreiung" on the participant page (specs/020-school-release US1,
+ * specs/042-church-release-letter US1): the person enters name and location
+ * of the school, gets the church's letter as PDF
  * right away and by mail. Saved data show as a short summary with the
  * download; „Angaben ändern“ opens the form again.
  */
@@ -90,7 +83,7 @@ export function SchoolReleaseForm({
             <CheckCircle size={22} weight="fill" className="mt-0.5 shrink-0 text-accent" aria-hidden />
             <div className="min-w-0 text-sm leading-relaxed">
               <p className="font-medium text-foreground">{copy.saved}</p>
-              <p className="break-words text-muted-foreground">{copy.savedFor(data.schoolName, data.teacherName)}</p>
+              <p className="break-words text-muted-foreground">{copy.savedFor(data.schoolName, data.schoolLocation)}</p>
               {state.status === "saved" && (
                 <p aria-live="polite" className="mt-1 text-muted-foreground">
                   {state.mail === "queued" ? copy.mailQueued : copy.mailSkipped}
@@ -127,54 +120,11 @@ export function SchoolReleaseForm({
           </div>
 
           <Field
-            label={copy.participantAddress}
-            htmlFor="release-participant-address"
-            hint={copy.participantAddressHint}
-            error={errors.participantAddress}
+            label={copy.schoolName}
+            htmlFor="release-school"
+            hint={copy.schoolNameHint}
+            error={errors.schoolName}
           >
-            <Textarea
-              id="release-participant-address"
-              name="participantAddress"
-              rows={2}
-              required
-              maxLength={ADDRESS_MAX}
-              autoComplete="street-address"
-              defaultValue={data?.participantAddress ?? release.prefillAddress}
-              aria-invalid={Boolean(errors.participantAddress)}
-              className={cn("min-h-16", touchText)}
-            />
-          </Field>
-
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
-            <Field
-              label={copy.teacherName}
-              htmlFor="release-teacher"
-              hint={copy.teacherNameHint}
-              error={errors.teacherName}
-            >
-              <Input
-                id="release-teacher"
-                name="teacherName"
-                required
-                maxLength={TEACHER_NAME_MAX}
-                defaultValue={data?.teacherName ?? ""}
-                aria-invalid={Boolean(errors.teacherName)}
-                className={touchText}
-              />
-            </Field>
-            <Field label={`${copy.className} (${copy.optional})`} htmlFor="release-class" error={errors.className}>
-              <Input
-                id="release-class"
-                name="className"
-                maxLength={CLASS_NAME_MAX}
-                defaultValue={data?.className ?? ""}
-                aria-invalid={Boolean(errors.className)}
-                className={touchText}
-              />
-            </Field>
-          </div>
-
-          <Field label={copy.schoolName} htmlFor="release-school" error={errors.schoolName}>
             <Input
               id="release-school"
               name="schoolName"
@@ -187,20 +137,20 @@ export function SchoolReleaseForm({
           </Field>
 
           <Field
-            label={copy.schoolAddress}
-            htmlFor="release-school-address"
-            hint={copy.schoolAddressHint}
-            error={errors.schoolAddress}
+            label={copy.schoolLocation}
+            htmlFor="release-school-location"
+            hint={copy.schoolLocationHint}
+            error={errors.schoolLocation}
           >
-            <Textarea
-              id="release-school-address"
-              name="schoolAddress"
-              rows={2}
+            <Input
+              id="release-school-location"
+              name="schoolLocation"
               required
-              maxLength={ADDRESS_MAX}
-              defaultValue={data?.schoolAddress ?? ""}
-              aria-invalid={Boolean(errors.schoolAddress)}
-              className={cn("min-h-16", touchText)}
+              maxLength={SCHOOL_LOCATION_MAX}
+              autoComplete="address-level2"
+              defaultValue={data?.schoolLocation ?? ""}
+              aria-invalid={Boolean(errors.schoolLocation)}
+              className={touchText}
             />
           </Field>
 

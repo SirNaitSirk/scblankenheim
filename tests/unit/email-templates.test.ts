@@ -215,7 +215,8 @@ describe("school release (specs/020-school-release)", () => {
   it("renders the release mail and the link mail without dashes", () => {
     const mail = schoolReleaseEmail(ctx, release);
     expect(mail.subject).toContain("Schulbefreiung");
-    expect(mail.text).toContain(release.dates);
+    expect(mail.text).toContain("Sie gilt für den ganzen Campzeitraum vom 20.07.2027 bis 27.07.2027.");
+    expect(mail.text).not.toContain("Lehrkraft");
     expect(mail.text).toContain(release.url);
     const link = participantLinkEmail(ctx, release.url);
     expect(link.text).toContain(release.url);

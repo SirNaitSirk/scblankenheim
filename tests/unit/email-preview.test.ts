@@ -79,21 +79,20 @@ describe("buildMailPreviews", () => {
     expect(free.html).not.toContain("Jetzt bezahlen");
   });
 
-  it("names the configured release dates, else the first camp day", () => {
+  it("names the release dates in the hint and the camp period in the release mail", () => {
     const release = {
       ...EMPTY_RELEASE_SETTINGS,
       enabled: true,
       dates: ["2027-07-24"],
-      signerName: "Campleitung",
       signaturePath: "camp/signature.png",
     };
-    const configured = buildMailPreviews(camp, undefined, release).find((p) => p.id === "school_release")!;
-    expect(configured.text).toContain("Samstag, 24. Juli 2027");
     const [paid, free] = buildMailPreviews(camp, undefined, release);
+    expect(paid!.text).toContain("Samstag, 24. Juli 2027");
     expect(paid!.text).toContain("sobald deine erste Zahlung");
     expect(free!.text).not.toContain("sobald deine erste Zahlung");
-    const fallback = buildMailPreviews(camp).find((p) => p.id === "school_release")!;
-    expect(fallback.text).toContain("Dienstag, 20. Juli 2027");
+    const releaseMail = buildMailPreviews(camp, undefined, release).find((p) => p.id === "school_release")!;
+    expect(releaseMail.text).toContain("Sie gilt für den ganzen Campzeitraum vom");
+    expect(releaseMail.text).not.toContain("Samstag, 24. Juli 2027");
   });
 
   it("omits the date without a due date", () => {

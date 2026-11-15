@@ -7,28 +7,21 @@ import { RELEASE_IP_MAX, RELEASE_IP_WINDOW_MS, SIGNATURE_BUCKET, SIGNATURE_URL_T
 import { releaseMessages } from "./messages";
 import { renderReleasePdf, type SignatureImage } from "./pdf";
 import { EMPTY_RELEASE_SETTINGS, isReleaseActive, isReleaseUnlocked, toReleaseSettings } from "./settings";
-import type { ReleaseSettings, SchoolReleaseData } from "./types";
+import type { ReleaseGender, ReleaseSettings, SchoolReleaseData } from "./types";
 
 /**
  * Service role reads and writes for the school release letter
- * (specs/020-school-release). Callers check the token or the admin permission
+ * (specs/020-school-release, specs/042-church-release-letter). Callers check the token or the admin permission
  * before calling. The signature image lives in a private bucket and is only
  * read here.
  */
 
-const SETTINGS_COLUMNS =
-  "release_enabled, release_dates, release_signer_name, release_signer_role, release_signature_path, release_address_keys, contact_name, contact_phone, reply_to";
+const SETTINGS_COLUMNS = "release_enabled, release_dates, release_signature_path";
 
 type SettingsRow = {
   release_enabled: boolean;
   release_dates: string[];
-  release_signer_name: string | null;
-  release_signer_role: string | null;
   release_signature_path: string | null;
-  release_address_keys: string[];
-  contact_name: string | null;
-  contact_phone: string | null;
-  reply_to: string | null;
 };
 
 async function loadSettingsRow(campId: string): Promise<SettingsRow | null> {
@@ -53,10 +46,7 @@ export async function saveReleaseSettings(campId: string, patch: ReleaseSettings
   const row: Record<string, unknown> = { camp_id: campId, updated_at: new Date().toISOString() };
   if (patch.enabled !== undefined) row.release_enabled = patch.enabled;
   if (patch.dates !== undefined) row.release_dates = patch.dates;
-  if (patch.signerName !== undefined) row.release_signer_name = patch.signerName;
-  if (patch.signerRole !== undefined) row.release_signer_role = patch.signerRole;
   if (patch.signaturePath !== undefined) row.release_signature_path = patch.signaturePath;
-  if (patch.addressKeys !== undefined) row.release_address_keys = patch.addressKeys;
   const { error } = await getServiceClient()
     .from("camp_mail_info")
     .upsert(row as { camp_id: string }, { onConflict: "camp_id" });
@@ -68,30 +58,21 @@ export type StoredSchoolRelease = SchoolReleaseData & { updatedBy: string; updat
 export async function getSchoolRelease(registrationId: string): Promise<StoredSchoolRelease | null> {
   const { data, error } = await getServiceClient()
     .from("school_releases")
-    .select("teacher_name, school_name, school_address, participant_address, class_name, updated_by, updated_at")
+    .select("school_name, school_location, updated_by, updated_at")
     .eq("registration_id", registrationId)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
   return {
-    teacherName: data.teacher_name,
     schoolName: data.school_name,
-    schoolAddress: data.school_address,
-    participantAddress: data.participant_address,
-    className: data.class_name,
+    schoolLocation: data.school_location,
     updatedBy: data.updated_by,
     updatedAt: data.updated_at,
   };
 }
 
 function sameData(a: SchoolReleaseData, b: SchoolReleaseData): boolean {
-  return (
-    a.teacherName === b.teacherName &&
-    a.schoolName === b.schoolName &&
-    a.schoolAddress === b.schoolAddress &&
-    a.participantAddress === b.participantAddress &&
-    (a.className ?? null) === (b.className ?? null)
-  );
+  return a.schoolName === b.schoolName && a.schoolLocation === b.schoolLocation;
 }
 
 /**
@@ -112,11 +93,8 @@ export async function upsertSchoolRelease(
       {
         registration_id: registrationId,
         camp_id: campId,
-        teacher_name: data.teacherName,
         school_name: data.schoolName,
-        school_address: data.schoolAddress,
-        participant_address: data.participantAddress,
-        class_name: data.className,
+        school_location: data.schoolLocation,
         updated_by: updatedBy,
         updated_at: new Date().toISOString(),
       },
@@ -164,38 +142,31 @@ export async function removeSignatureObject(path: string | null): Promise<void> 
   await getServiceClient().storage.from(SIGNATURE_BUCKET).remove([path]);
 }
 
-/** Organizer and contact lines from the camp's mail settings (specs/016-mail-settings). */
-function senderLines(row: SettingsRow | null): string[] {
-  const m = releaseMessages.letter;
-  const replyTo = row?.reply_to?.trim() || process.env.EMAIL_REPLY_TO?.trim() || "";
-  return [
-    m.organizer,
-    row?.contact_name?.trim() ?? "",
-    row?.contact_phone?.trim() ? m.phone(row.contact_phone.trim()) : "",
-    replyTo ? m.email(replyTo) : "",
-  ];
-}
-
 export type ReleasePdf = { bytes: Uint8Array; fileName: string };
 
-type CampFacts = { name: string; start_date: string | null; end_date: string | null };
+type CampFacts = { start_date: string | null; end_date: string | null; location: string | null };
+
+const CAMP_COLUMNS = "start_date, end_date, location";
+
+function toGender(value: string | null | undefined): ReleaseGender {
+  return value === "female" || value === "male" ? value : null;
+}
 
 async function render(input: {
-  row: SettingsRow | null;
   settings: ReleaseSettings;
   data: SchoolReleaseData;
   participantName: string;
+  gender: ReleaseGender;
   lastName: string;
   camp: CampFacts;
 }): Promise<ReleasePdf> {
   const letter = buildLetter({
-    settings: input.settings,
     data: input.data,
     participantName: input.participantName,
-    campName: input.camp.name,
+    gender: input.gender,
     campStart: input.camp.start_date,
     campEnd: input.camp.end_date,
-    senderLines: senderLines(input.row),
+    campLocation: input.camp.location,
     today: berlinDate(new Date()),
   });
   const bytes = await renderReleasePdf(letter, await loadSignature(input.settings.signaturePath));
@@ -215,7 +186,7 @@ export async function buildReleasePdf(
   const supabase = getServiceClient();
   const { data: registration, error } = await supabase
     .from("registrations")
-    .select("id, camp_id, first_name, last_name, status, payment_status, amount_due, amount_paid, deleted")
+    .select("id, camp_id, first_name, last_name, gender, status, payment_status, amount_due, amount_paid, deleted")
     .eq("id", registrationId)
     .maybeSingle();
   if (error) throw error;
@@ -231,7 +202,7 @@ export async function buildReleasePdf(
   }
 
   const [{ data: camp }, row, data] = await Promise.all([
-    supabase.from("camps").select("name, start_date, end_date").eq("id", registration.camp_id).maybeSingle(),
+    supabase.from("camps").select(CAMP_COLUMNS).eq("id", registration.camp_id).maybeSingle(),
     loadSettingsRow(registration.camp_id),
     getSchoolRelease(registrationId),
   ]);
@@ -241,14 +212,21 @@ export async function buildReleasePdf(
 
   const firstName = registration.first_name?.trim() ?? "";
   const lastName = registration.last_name?.trim() ?? "";
-  return render({ row, settings, data, participantName: `${firstName} ${lastName}`.trim(), lastName, camp });
+  return render({
+    settings,
+    data,
+    participantName: `${firstName} ${lastName}`.trim(),
+    gender: toGender(registration.gender),
+    lastName,
+    camp,
+  });
 }
 
 /** Preview with sample data and the camp's current settings, switch on or off. */
 export async function buildPreviewPdf(campId: string): Promise<ReleasePdf | null> {
   const { data: camp } = await getServiceClient()
     .from("camps")
-    .select("name, start_date, end_date")
+    .select(CAMP_COLUMNS)
     .eq("id", campId)
     .maybeSingle();
   if (!camp) return null;
@@ -256,10 +234,10 @@ export async function buildPreviewPdf(campId: string): Promise<ReleasePdf | null
   const settings = row ? toReleaseSettings(row) : EMPTY_RELEASE_SETTINGS;
   const sample = releaseMessages.sample;
   return render({
-    row,
     settings,
     data: { ...sample.data },
     participantName: sample.participantName,
+    gender: toGender(sample.gender),
     lastName: "Vorschau",
     camp,
   });

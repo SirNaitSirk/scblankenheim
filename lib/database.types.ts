@@ -214,16 +214,13 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["participant_messages"]["Insert"]>;
         Relationships: [];
       };
-      // supabase/migrations/0015_school_release.sql
+      // supabase/migrations/0015_school_release.sql, 0020_church_release_letter.sql
       school_releases: {
         Row: {
           registration_id: string;
           camp_id: string;
-          teacher_name: string;
           school_name: string;
-          school_address: string;
-          participant_address: string;
-          class_name: string | null;
+          school_location: string;
           updated_by: string;
           created_at: string;
           updated_at: string;
@@ -231,11 +228,8 @@ export type Database = {
         Insert: {
           registration_id: string;
           camp_id: string;
-          teacher_name: string;
           school_name: string;
-          school_address: string;
-          participant_address: string;
-          class_name?: string | null;
+          school_location: string;
           updated_by: string;
           created_at?: string;
           updated_at?: string;
@@ -677,10 +671,7 @@ export type Database = {
           // supabase/migrations/0015_school_release.sql
           release_enabled: boolean;
           release_dates: string[];
-          release_signer_name: string | null;
-          release_signer_role: string | null;
           release_signature_path: string | null;
-          release_address_keys: string[];
         };
         Insert: {
           camp_id: string;
@@ -716,10 +707,7 @@ export type Database = {
           contact_phone?: string | null;
           release_enabled?: boolean;
           release_dates?: string[];
-          release_signer_name?: string | null;
-          release_signer_role?: string | null;
           release_signature_path?: string | null;
-          release_address_keys?: string[];
         };
         Update: Partial<Database["public"]["Tables"]["camp_mail_info"]["Insert"]>;
         Relationships: [];
